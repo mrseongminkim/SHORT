@@ -1,0 +1,75 @@
+?object: [(dfa | nfa | transducer | sstransducer | ssfa)+]
+
+    peg: "@PEG" vars eol pegbody
+    tdpl: "@TDPL" vars eol tdplbody
+    dfa: "@DFA" finals [alphabeti] eol transitions
+    nfa: "@NFA" finals [(star initials)] [alphabeti] eol transitions
+    transducer: "@Transducer" finals [(star initials)] [(alphabeti [(alphabeto)])] eol ttransitions
+    sstransducer: "@SST" finals [(star initials)] alphabeti eol ssttransitions
+    ssfa: "@SSFA" finals [(star initials)] [alphabeti] eol ssatransitions
+
+    ?alphabet: [var (var)* ]
+
+    ?var: name
+    name: /[a-zA-Z0-9]+/
+    number: /[0-9]+/
+
+    finals: [(var)+]
+    alphabeti: "$" alphabet
+    alphabeto: "$" alphabet
+
+    transitions: [(strule eol)+]
+    ?strule: statedecl | transition
+    transition: var symbol var
+
+    ttransitions: [(tstrule eol)+]
+    ?tstrule: statedecl | ttransition
+    ttransition: var symbol symbol var
+
+    ssttransitions: [(sststrule eol)+]
+    ?sststrule: statedecl | ssttransition
+    ?ssttransition: var pspec var
+    spec: sepsilon | nspec
+    ?nspec: sallspec | sonespec | snotspec
+    sallspec: "@a"
+    sonespec: "@o" names
+    snotspec: "@n" names
+    ?pspec: vpspec | eqpspec | neqpspec
+    vpspec: spec spec
+    eqpspec: nspec "@="
+    sepsilon: "@epsilon"
+    neqpspec: nspec nspec "!"
+
+    ssatransitions: [(ssatransition eol)+]
+    ?ssatransition: var spec var
+
+    ?vars: names
+    ?names: [var ( var)* ]
+
+    pegbody: [(pegrule eol)+]
+    pegrule: var "<-" expr
+    ?expr: "(" expr ")" | var | not | concat | kstar | cond | test
+    not: "!" expr
+    concat: expr expr
+    kstar: expr star
+    cond: expr SLASH expr
+    !test: AMPERSAND expr
+
+    tdplbody: [(tdplrule eol)+]
+    tdplrule: var "<-" var var "|" var
+
+    statedecl: var
+
+    emptyline: /\n/
+
+    symbol: var | epsilon
+    epsilon: "@epsilon"
+    initials: [var (var)* ]
+    star: "*"
+    dollar: /\$/
+    AMPERSAND: /&/
+    SLASH: /\//
+    eol: /[\n\r]+/
+    %ignore /[ \t\f\"]+/
+    %ignore /#[^\n]*\n/
+    %ignore /#[^\r\n]*/

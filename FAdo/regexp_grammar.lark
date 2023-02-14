@@ -1,0 +1,68 @@
+?rege: disjn
+    ?disjn:  conjn
+        | rege _UNIONT conjn -> disj
+
+    ?conjn: shufflen
+        |conjn _CONJT shufflen -> conj
+
+    ?shufflen: concatn
+        | shufflen _SHUFFLET concatn -> shuffle
+
+    ?concatn: rep
+        | concatn [_CONCATT] rep -> concat
+
+    ?rep: lre
+        | rep _START -> star
+        | rep _OPTIONT  -> option
+
+    ?lre: base
+        | _NOTT  lre  -> notn
+        | _USHUFFLET  lre -> u_shuffle
+
+    ?base: "(" rege ")" | symbol | epsilon | emptyset | sigmas | sigmap
+
+?regrpn: disjrpn | concatrpn | starrpn | symbol | epsilon | emptyset | sigmas | sigmap  | optionrpn | ushufflerpn
+    | shufflerpn  | conjrpn | notrpn
+
+    disjrpn: _UNIONT regrpn regrpn -> disj
+    concatrpn: _CONCATT regrpn regrpn -> concat
+    starrpn: _START regrpn     -> star
+    shufflerpn: _SHUFFLET regrpn regrpn -> shuffle
+    conjrpn: _CONJT regrpn regrpn -> conj
+    notrpn: _NOTT regrpn -> notn
+    ushufflerpn: _USHUFFLET regrpn -> u_shuffle
+    optionrpn: _OPTIONT regrpn  -> option
+
+?re2d: disj2n
+    ?disj2n:  concat2n
+        | re2d _UNIONT concat2n -> disj2
+
+    ?concat2n: rep2
+        | concat2n [_CONCATT] rep2 -> concat2
+
+    ?rep2: base2
+        | rep2 _START -> star2
+        | rep2 _OPTIONT  -> option2
+
+    ?base2: "(" re2d ")"
+        |  "(" rege _TUPLET rege ")" -> tuple
+
+
+    _START: "*"
+    _SHUFFLET: ":"
+    _CONJT: "&"
+    _NOTT: "~"
+    _CONCATT: "."
+    _UNIONT: "+" | "|"
+    _OPTIONT: "-" | "?"
+    _TUPLET: "/"
+    _USHUFFLET: "!"
+
+    symbol: /[a-zA-Z0-9]/
+
+    epsilon: "@epsilon"
+    emptyset: "@empty_set"
+    sigmap: "@sigmaP"
+    sigmas: "@sigmaS"
+
+    %ignore /[ \t\f\"]+/
