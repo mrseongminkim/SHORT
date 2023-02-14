@@ -38,7 +38,8 @@ def FA2GFA(aut):
     gfa.setSigma(aut.Sigma)
     if isinstance(aut, NFA):
         # this should be optimized
-        fa = aut._toNFASingleInitial()
+        # modify only when it needed
+        fa = aut._toNFASingleInitial() if len(aut.Initial) > 1 else aut
         gfa.Initial = uSet(fa.Initial)
         gfa.States = fa.States[:]
         gfa.setFinal(fa.Final)
