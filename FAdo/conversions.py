@@ -922,15 +922,16 @@ class GFA(OFA):
         :returns: the weight of the state
         :rtype: int"""
         r = 0
+        self_loop = 0
+        if state in self.delta[state]:
+            self_loop = 1
+            r += self.delta[state][state].treeLength() * (len(self.predecessors[state]) - self_loop) * (len(self.delta[state]) - self_loop)
         for i in self.predecessors[state]:
             if i != state:
-                r += self.delta[i][state].alphabeticLength() * (len(self.delta[state]) - 1)
+                r += self.delta[i][state].treeLength() * (len(self.delta[state]) - self_loop)
         for i in self.delta[state]:
             if i != state:
-                r += self.delta[state][i].alphabeticLength() * (len(self.predecessors[state]) - 1)
-        if state in self.delta[state]:
-            r += self.delta[state][state].alphabeticLength() * (
-                    len(self.predecessors[state]) * len(self.delta[state]) - 1)
+                r += self.delta[state][i].treeLength() * (len(self.predecessors[state]) - self_loop)
         return r
 
     def weightWithCycles(self, state, cycles):
