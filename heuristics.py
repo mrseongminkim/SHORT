@@ -3,8 +3,23 @@ from FAdo.reex import *
 from FAdo.conversions import *
 
 from queue import PriorityQueue
+import random
 
 from sample import *
+
+def random_elimination(nfa: NFA) -> RegExp:
+    gfa = FA2GFA(nfa)
+    random_order = [i for i in range(1, len(nfa.States) - 1)]
+    #fixed seed for debuggin purpose
+    random.seed(0)
+    random.shuffle(random_order)
+    for i in random_order:
+        gfa.eliminate(i)
+    return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
+
+def test_random_elimination():
+    fig10 = get_fig10()
+    print(random_elimination(fig10))
 
 def state_weight(nfa: NFA) -> RegExp:
     gfa = FA2GFA(nfa)
