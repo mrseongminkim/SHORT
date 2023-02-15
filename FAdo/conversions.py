@@ -88,7 +88,10 @@ def cutPoints(aut):
     :returns: set of states
     :rtype: set of int"""
     gfa = FA2GFA(aut)
-    gfa.normalize()
+    #Modify it after implement Random NFA Generator!
+    normalized = True
+    if (not normalized):
+        gfa.normalize()
     # make gfa a graph instead of a digraph
     new_edges = []
     for a in gfa.delta:
