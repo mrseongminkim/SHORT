@@ -38,24 +38,6 @@ def make_vertical_subautomata(nfa: NFA, initial_state, final_state) -> NFA:
     del new.delta[final_state]
     return new
 
-def horizontal_decomposition(nfa: NFA, state_weight, repeated) -> RegExp:
-    result = RegExp(nfa.Sigma)
-    group = identify_group(nfa)
-    subautomatas = make_horizontal_subautomata(nfa, group)
-    for subautomata in subautomatas:
-        if len(cutPoints(subautomata)):
-            result = CDisj(result, decomposition(subautomata, state_weight, repeated))
-        elif (state_weight):
-            result = CDisj(result, repeated_state_weight(subautomata)) if repeated else CDisj(result, state_weight(subautomata))
-        else:
-            result = CDisj(result, random_elimination(subautomata))
-    return result
-
-def make_horizontal_subautomata(nfa: NFA, group) -> list:
-    subautomatas = []
-    for sub_group in group:
-        pass
-
 def identify_group(nfa: NFA) -> list:
     gfa = FA2GFA(nfa)
     index = 0
@@ -96,4 +78,30 @@ def test_decomposition(state_weight = False, repeated = False):
     result = decomposition(nfa, state_weight, repeated)
     print(result)
 
-test_decomposition()
+
+
+def horizontal_decomposition(nfa: NFA, state_weight, repeated) -> RegExp:
+    result = None
+    group = identify_group(nfa)
+    subautomatas = make_horizontal_subautomata(nfa, group)
+    for subautomata in subautomatas:
+        if len(cutPoints(subautomata)):
+            result = CDisj(result, decomposition(subautomata, state_weight, repeated))
+        elif state_weight and repeated:
+            result = CDisj(result, repeated_state_weight_elimination(subautomata)) if result != None else repeated_state_weight_elimination(subautomata)
+        elif state_weight:
+            result = CDisj(result, state_weight_elimination(subautomata)) if result != None else state_weight_elimination(subautomata)
+        else:
+            result = CDisj(result, random_elimination(subautomata)) if result != None else random_elimination(subautomata)
+    return result
+
+def make_horizontal_subautomata(nfa: NFA, group) -> list:
+    if len(group):
+        return [nfa]
+
+def test_horizontal_decomposition():
+    nfa = nfa_with_no_bridge_and_single_group()
+    horizontal_decomposition_result = horizontal_decomposition(nfa, True, True)
+    print(horizontal_decomposition_result)
+
+test_horizontal_decomposition()
