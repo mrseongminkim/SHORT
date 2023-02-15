@@ -18,10 +18,11 @@ def random_elimination(nfa: NFA) -> RegExp:
     return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
 def test_random_elimination():
-    fig10 = get_fig10()
-    print(random_elimination(fig10))
+    nfa = nfa_with_no_bridge_and_single_group()
+    random_elimination_result = random_elimination(nfa)
+    print(random_elimination_result)
 
-def state_weight(nfa: NFA) -> RegExp:
+def state_weight_elimination(nfa: NFA) -> RegExp:
     gfa = FA2GFA(nfa)
     pq = PriorityQueue()
     for i in range(1, len(gfa.States) - 1):
@@ -30,7 +31,7 @@ def state_weight(nfa: NFA) -> RegExp:
         gfa.eliminate(pq.get()[1])
     return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
-def repeated_state_weight(nfa: NFA) -> RegExp:
+def repeated_state_weight_elimination(nfa: NFA) -> RegExp:
     gfa = FA2GFA(nfa)
     for i in range(len(gfa.States) - 2):
         min_val = gfa.weight(1)
@@ -43,9 +44,9 @@ def repeated_state_weight(nfa: NFA) -> RegExp:
         gfa.eliminateState(min_idx)
     return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
-def test_state_weight():
-    fig10 = get_fig10()
-    state_weight_result = state_weight(fig10)
-    repeated_state_weight_result = repeated_state_weight(fig10)
-    print(state_weight_result)
-    print(repeated_state_weight_result)
+def test_state_weight_elimination():
+    nfa = nfa_with_no_bridge_and_single_group()
+    state_weight_elimination_result = state_weight_elimination(nfa)
+    repeated_state_weight_elimination_result = repeated_state_weight_elimination(nfa)
+    print(state_weight_elimination_result)
+    print(repeated_state_weight_elimination_result)
