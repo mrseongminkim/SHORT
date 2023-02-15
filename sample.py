@@ -61,3 +61,23 @@ def get_fig7():
     fig7.addTransition(2, 'a', 3)
     fig7.addTransition(3, 'b', 4)
     return fig7
+
+def nfa_for_identify_group_test():
+    nfa = NFA()
+    nfa.setSigma(['x'])
+    nfa.addState('0')
+    nfa.addState('1')
+    nfa.addState('2')
+    nfa.addState('3')
+    nfa.addState('4')
+    nfa.addState('5')
+    nfa.setInitial([0])
+    nfa.setFinal([5])
+    nfa.addTransition(0, 'x', 1)
+    nfa.addTransition(0, 'x', 2)
+    nfa.addTransition(0, 'x', 3)
+    nfa.addTransition(1, 'x', 4)
+    nfa.addTransition(2, 'x', 4)
+    nfa.addTransition(3, 'x', 5)
+    nfa.addTransition(4, 'x', 5)
+    return nfa
