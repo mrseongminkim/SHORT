@@ -1,25 +1,25 @@
 from FAdo.fa import *
 
-def get_fig10():
-    fig10 = NFA()
-    fig10.setSigma(['a', 'b', 'c'])
-    fig10.addState('0')
-    fig10.addState('1')
-    fig10.addState('2')
-    fig10.addState('3')
-    fig10.addState('4')
-    fig10.setInitial([0])
-    fig10.setFinal([4])
-    fig10.addTransition(0, 'a', 1)
-    fig10.addTransition(1, 'b', 3)
-    fig10.addTransition(2, 'b', 1)
-    fig10.addTransition(2, 'a', 2)
-    fig10.addTransition(2, 'b', 2)
-    fig10.addTransition(2, 'c', 2)
-    fig10.addTransition(2, 'b', 3)
-    fig10.addTransition(3, 'c', 2)
-    fig10.addTransition(3, 'a', 4)
-    return fig10
+def nfa_with_no_bridge_and_single_group():
+    nfa = NFA()
+    nfa.setSigma(['a', 'b', 'c'])
+    nfa.addState('0')
+    nfa.addState('1')
+    nfa.addState('2')
+    nfa.addState('3')
+    nfa.addState('4')
+    nfa.setInitial([0])
+    nfa.setFinal([4])
+    nfa.addTransition(0, 'a', 1)
+    nfa.addTransition(1, 'b', 3)
+    nfa.addTransition(2, 'b', 1)
+    nfa.addTransition(2, 'a', 2)
+    nfa.addTransition(2, 'b', 2)
+    nfa.addTransition(2, 'c', 2)
+    nfa.addTransition(2, 'b', 3)
+    nfa.addTransition(3, 'c', 2)
+    nfa.addTransition(3, 'a', 4)
+    return nfa
 
 def get_fig8():
     fig8 = NFA()
