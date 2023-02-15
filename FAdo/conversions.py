@@ -119,10 +119,13 @@ def cutPoints(aut):
     cutpoints = copy(gfa.cuts) - gfa.Final
     # remove self-loops and check if the cut points are in a loop
     gfa = FA2GFA(aut)
-    gfa.normalize()
+    #Modify it after implement Random NFA Generator!
+    if (not normalized):
+        gfa.normalize()
     for i in gfa.delta:
         if i in gfa.delta[i]:
             del gfa.delta[i][i]
+    #Check condition 3
     cycles = gfa.evalNumberOfStateCycles()
     for i in cycles:
         if cycles[i] != 0 and i in cutpoints:
@@ -1044,7 +1047,6 @@ class GFA(OFA):
     # noinspection PyUnresolvedReferences
     def assignNum(self, st):
         """
-
         :param st:"""
         self.num[st] = self.c
         self.c += 1
