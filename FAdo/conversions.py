@@ -112,6 +112,7 @@ def cutPoints(aut):
     gfa.parent = {}
     gfa.low = {}
     gfa.cuts = set([])
+    #Check condition 2
     gfa.assignNum(gfa.Initial)
     gfa.assignLow(gfa.Initial)
     # initial state is never a cut point, so it should be removed
