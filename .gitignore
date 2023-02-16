@@ -1,3 +1,5 @@
 FAdo.pdf
 *.pyc
 temp.py
+*.c
+NFAs
