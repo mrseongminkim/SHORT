@@ -2,3 +2,5 @@ FAdo.pdf
 *.pyc
 *.pdf
 *.gv
+*.txt
+*.pickle
