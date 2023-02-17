@@ -1,3 +1,4 @@
 FAdo.pdf
 *.pyc
-random_nfa_generator
+*.pdf
+*.gv
