@@ -1,6 +1,7 @@
 from FAdo.fa import *
 
 def nfa_with_no_bridge_and_single_group():
+    '''Fig 10'''
     nfa = NFA()
     nfa.setSigma(['a', 'b', 'c'])
     nfa.addState('0')
