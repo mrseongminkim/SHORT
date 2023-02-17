@@ -1,5 +1,4 @@
 FAdo.pdf
 *.pyc
-temp.py
 *.c
-NFAs
+random_nfa_generator
