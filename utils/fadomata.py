@@ -1,4 +1,7 @@
+from copy import *
+
 from FAdo.conversions import *
+from FAdo.reex import *
 
 def get_weight(gfa: GFA, state: int) -> int:
     '''Counterpart of GFA.weight method'''
@@ -15,11 +18,9 @@ def get_weight(gfa: GFA, state: int) -> int:
             weight += gfa.delta[state][i].treeLength() * (len(gfa.predecessors[state]) - self_loop)
     return weight
 
-#Test needed also what is the type of cutPoints? find it and add it
-def get_bridge_states(gfa: GFA):
+def get_bridge_states(gfa: GFA) -> set:
     '''Counterpart of cutPoints function'''
     new = gfa.dup()
-    #new.normalize()
     new_edges = []
     for a in new.delta:
         for b in new.delta[a]:
@@ -43,7 +44,6 @@ def get_bridge_states(gfa: GFA):
     new.cuts.remove(new.Initial)
     cutpoints = copy(new.cuts) - new.Final
     new = gfa.dup()
-    #new.normalize()
     for i in new.delta:
         if i in new.delta[i]:
             del new.delta[i][i]
@@ -51,10 +51,9 @@ def get_bridge_states(gfa: GFA):
     for i in cycles:
         if cycles[i] != 0 and i in cutpoints:
             cutpoints.remove(i)
-    print(type(cutpoints))
     return cutpoints
 
-def convert_nfa_to_gfa(nfa: NFA):
+def convert_nfa_to_gfa(nfa: NFA) -> GFA:
     '''Counterpart of FA2GFA function'''
     gfa = GFA()
     gfa.setSigma(nfa.Sigma)
@@ -68,4 +67,20 @@ def convert_nfa_to_gfa(nfa: NFA):
         for c in nfa.delta[s]:
             for s1 in nfa.delta[s][c]:
                 gfa.addTransition(s, c, s1)
+    for i in range(len(gfa.States)):
+        if i not in gfa.delta:
+            gfa.delta[i] = {}
     return gfa
+
+def add_transition(gfa: GFA, sti1: int, sym: RegExp, sti2: int):
+        '''Counterpart of GFA.addTransition'''
+        if sti1 not in gfa.delta:
+            gfa.delta[sti1] = {}
+        if sti2 not in gfa.delta[sti1]:
+            gfa.delta[sti1][sti2] = sym
+        else:
+            gfa.delta[sti1][sti2] = reex.CDisj(gfa.delta[sti1][sti2], sym, copy(gfa.Sigma))
+        try:
+            gfa.predecessors[sti2].add(sti1)
+        except KeyError:
+            pass
