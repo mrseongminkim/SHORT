@@ -59,15 +59,22 @@ def make_subautomaton(gfa: GFA, reachable_states: list) -> GFA:
                 if copied_state_index_1 is list(new.Final)[0]:
                     continue
                 if original_state_index_2 in gfa.delta[original_state_index_1]:
-                    new.addTransition(copied_state_index_1, gfa.delta[original_state_index_1][original_state_index_2], copied_state_index_2)
+                    add_transition(new, copied_state_index_1, gfa.delta[original_state_index_1][original_state_index_2], copied_state_index_2)
+        for i in range(len(new.States)):
+            if i not in new.delta:
+                new.delta[i] = {}
         return new
 
 def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegExp:
     subautomata = []
     groups = []
     for state in gfa.delta[gfa.Initial]:
+        if state == list(gfa.Final)[0]:
+            continue
         reachable_states = [gfa.Initial]
         check_all_reachable_states(gfa, state, list(gfa.Final)[0], reachable_states)
+        if list(gfa.Final)[0] not in reachable_states:
+            continue
         is_disjoint = True
         for group in groups:
             if [state for state in reachable_states if state in group] != [gfa.Initial, list(gfa.Final)[0]]:
@@ -76,7 +83,7 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegE
                 break
         if is_disjoint:
             groups.append(reachable_states)
-    if len(groups) == 1:
+    if len(groups) <= 1:
         subautomata.append(gfa)
     else:
         for group in groups:
@@ -86,15 +93,15 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegE
         if len(get_bridge_states(subautomaton)):
             result = decompose(subautomaton, state_weight, repeated)
         elif state_weight and repeated:
-            result = repeated_state_weight_elimination(subautomaton)
+            result = eliminate_by_repeated_state_weight_heuristic(subautomaton)
         elif state_weight:
-            result = state_weight_elimination(subautomaton)
+            result = eliminate_by_state_weight_heuristic(subautomaton)
         else:
-            result = random_elimination(subautomaton)
+            result = eliminate_randomly(subautomaton)
         final_result = result if final_result == None else CDisj(final_result, result)
     return final_result
 
-def random_elimination(gfa: GFA) -> RegExp:
+def eliminate_randomly(gfa: GFA) -> RegExp:
     random_order = [i for i in range(1, len(gfa.States) - 1)]
     shuffle(random_order)
     for i in random_order:
@@ -104,7 +111,7 @@ def random_elimination(gfa: GFA) -> RegExp:
     else:
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
-def state_weight_elimination(gfa: GFA) -> RegExp:
+def eliminate_by_state_weight_heuristic(gfa: GFA) -> RegExp:
     pq = PriorityQueue()
     for i in range(1, len(gfa.States) - 1):
         pq.put((get_weight(gfa, i), i))
@@ -115,7 +122,7 @@ def state_weight_elimination(gfa: GFA) -> RegExp:
     else:
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
-def repeated_state_weight_elimination(gfa: GFA) -> RegExp:
+def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
     for i in range(len(gfa.States) - 2):
         min_val = get_weight(gfa, 1)
         min_idx = 1
