@@ -79,11 +79,11 @@ def generate(n: int, k: int, d: float, file_name: str):
     make_fado_recognizable_nfa(n, k, nfa, finals, file_name)
 
 def main():
-    k = 2
-    for n in range(3, 4):
-        for d in [0.2, 0.5]:
-            file_name = '../data/n' + str(n) + ('_sparse' if d == 0.2 else '_dense') + '.txt'
-            for i in range(10):
-                generate(n, k, d, file_name)
+    for n in range(3, 11):
+        for k in [2, 5, 10]:
+            for d in [0.2, 0.5]:
+                file_name = '../data/n' + str(n) + 'k' + str(k) + ('s' if d == 0.2 else 'd') + '.txt'
+                for i in range(20000):
+                    generate(n, k, d, file_name)
 
 main()
