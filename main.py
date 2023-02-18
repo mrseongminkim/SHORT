@@ -132,7 +132,3 @@ def get_bridge_states(gfa: GFA):
         if cycles[i] != 0 and i in cutpoints:
             cutpoints.remove(i)
     return cutpoints
-
-nfa = FA2GFA(nfa_with_no_bridge_and_two_group())
-result = decompose(nfa, False, False)
-print(result)
