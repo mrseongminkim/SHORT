@@ -1,27 +1,12 @@
-from FAdo.fio import *
-from FAdo.conversions import *
-
 from pickle import load, dump
 
-def nfa_to_gfa(nfa: NFA):
-    gfa = GFA()
-    gfa.setSigma(nfa.Sigma)
-    gfa.Initial = uSet(nfa.Initial)
-    gfa.States = nfa.States[:]
-    gfa.setFinal(nfa.Final)
-    gfa.predecessors = {}
-    for i in range(len(gfa.States)):
-        gfa.predecessors[i] = set([])
-    for s in nfa.delta:
-        for c in nfa.delta[s]:
-            for s1 in nfa.delta[s][c]:
-                gfa.addTransition(s, c, s1)
-    return gfa
+from FAdo.fio import *
 
-#Change 4 to 11 when you done debugging
-def load_data():
+from fadomata import *
+
+def load_data() -> list:
     data = []
-    for n in range(3, 4):
+    for n in range(3, 11):
         temp = []
         for d in ['_sparse', '_dense']:
             file_name = 'data/n' + str(n) + d

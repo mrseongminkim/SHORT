@@ -1,9 +1,8 @@
-from FAdo.fa import *
-from FAdo.reex import *
-from FAdo.conversions import *
-
 from queue import PriorityQueue
-import random
+from random import shuffle
+
+from FAdo.conversions import *
+from FAdo.reex import *
 
 from fadomata import *
 
@@ -41,7 +40,7 @@ def check_all_reachable_states(gfa: GFA, state: int, final_state: int, reachable
             for dest in gfa.delta[state]:
                 check_all_reachable_states(gfa, dest, final_state, reachable_states)
 
-def make_subautomaton(gfa: GFA, reachable_states: list):
+def make_subautomaton(gfa: GFA, reachable_states: list) -> GFA:
         reachable_states.sort()
         new = GFA()
         new.States = [str(i) for i in range(len(reachable_states))]
@@ -97,9 +96,7 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegE
 
 def random_elimination(gfa: GFA) -> RegExp:
     random_order = [i for i in range(1, len(gfa.States) - 1)]
-    #fixed seed for debuggin purpose
-    random.seed(0)
-    random.shuffle(random_order)
+    shuffle(random_order)
     for i in random_order:
         gfa.eliminate(i)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
