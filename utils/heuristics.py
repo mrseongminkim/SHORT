@@ -4,7 +4,7 @@ from random import shuffle
 from FAdo.conversions import *
 from FAdo.reex import *
 
-from fadomata import *
+from utils.fadomata import *
 
 def decompose(gfa: GFA, state_weight: bool = False, repeated: bool = False) -> RegExp:
     final_result = None
