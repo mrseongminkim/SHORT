@@ -1,4 +1,4 @@
-from copy import *
+import copy
 
 from FAdo.conversions import *
 from FAdo.reex import *
@@ -42,7 +42,7 @@ def get_bridge_states(gfa: GFA) -> set:
     new.assignNum(new.Initial)
     new.assignLow(new.Initial)
     new.cuts.remove(new.Initial)
-    cutpoints = copy(new.cuts) - new.Final
+    cutpoints = copy.copy(new.cuts) - new.Final
     new = gfa.dup()
     for i in new.delta:
         if i in new.delta[i]:
@@ -79,7 +79,7 @@ def add_transition(gfa: GFA, sti1: int, sym: RegExp, sti2: int):
         if sti2 not in gfa.delta[sti1]:
             gfa.delta[sti1][sti2] = sym
         else:
-            gfa.delta[sti1][sti2] = reex.CDisj(gfa.delta[sti1][sti2], sym, copy(gfa.Sigma))
+            gfa.delta[sti1][sti2] = reex.CDisj(gfa.delta[sti1][sti2], sym, copy.copy(gfa.Sigma))
         try:
             gfa.predecessors[sti2].add(sti1)
         except KeyError:
