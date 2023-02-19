@@ -82,8 +82,8 @@ def main():
     for n in range(3, 11):
         for k in [2, 5, 10]:
             for d in [0.2, 0.5]:
-                file_name = '../data/n' + str(n) + 'k' + str(k) + ('s' if d == 0.2 else 'd') + '.txt'
-                for i in range(20000):
+                file_name = '../data/raw/n' + str(n) + 'k' + str(k) + ('s' if d == 0.2 else 'd') + '.txt'
+                for i in range(100):
                     generate(n, k, d, file_name)
 
 main()
