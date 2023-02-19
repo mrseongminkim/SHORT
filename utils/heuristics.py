@@ -1,10 +1,35 @@
+import copy
 from queue import PriorityQueue
 from random import shuffle
 
+import networkx as nx
 from FAdo.conversions import *
 from FAdo.reex import *
 
 from utils.fadomata import *
+
+def get_bridge_states(gfa: GFA) -> set:
+    graph = nx.Graph()
+    for source in gfa.delta:
+        for target in gfa.delta[source]:
+            graph.add_edge(source, target)
+    bridges = set(nx.algorithms.bridges(graph))
+    bridges_states = {i[1] for i in bridges}
+    bridges_states = bridges_states.difference(gfa.Final.union({gfa.Initial}))
+    new = gfa.dup()
+    for i in new.delta:
+        if i in new.delta[i]:
+            del new.delta[i][i]
+    cycles = new.evalNumberOfStateCycles()
+    for i in cycles:
+        if cycles[i] != 0 and i in bridges_states:
+            bridges_states.remove(i)
+    for i in list(bridges_states):
+        reachable_states = []
+        check_all_reachable_states(gfa, i, list(gfa.Final)[0], reachable_states)
+        if list(gfa.Final)[0] not in reachable_states:
+            bridges_states.remove(i)
+    return bridges_states
 
 def decompose(gfa: GFA, state_weight: bool = False, repeated: bool = False) -> RegExp:
     final_result = None
@@ -29,7 +54,7 @@ def decompose_vertically(gfa: GFA) -> list:
 def make_vertical_subautomaton(gfa: GFA, initial_state: int, final_state: int) -> GFA:
     reachable_states = list()
     check_all_reachable_states(gfa, initial_state, final_state, reachable_states)
-    return make_subautomaton(gfa, reachable_states)
+    return make_subautomaton(gfa, reachable_states, initial_state, final_state)
 
 def check_all_reachable_states(gfa: GFA, state: int, final_state: int, reachable_states: list):
     if state not in reachable_states:
@@ -40,30 +65,33 @@ def check_all_reachable_states(gfa: GFA, state: int, final_state: int, reachable
             for dest in gfa.delta[state]:
                 check_all_reachable_states(gfa, dest, final_state, reachable_states)
 
-def make_subautomaton(gfa: GFA, reachable_states: list) -> GFA:
-        reachable_states.sort()
-        new = GFA()
-        new.States = [str(i) for i in range(len(reachable_states))]
-        new.Sigma = copy(gfa.Sigma)
-        new.setInitial(0)
-        new.setFinal([len(reachable_states) - 1])
-        new.predecessors = {}
-        for i in range(len(new.States)):
-            new.predecessors[i] = set([])
-        for i in range(len(reachable_states)):
-            for j in range(len(reachable_states)):
-                original_state_index_1 = reachable_states[i]
-                original_state_index_2 = reachable_states[j]
-                copied_state_index_1 = i
-                copied_state_index_2 = j
-                if copied_state_index_1 is list(new.Final)[0]:
-                    continue
-                if original_state_index_2 in gfa.delta[original_state_index_1]:
-                    add_transition(new, copied_state_index_1, gfa.delta[original_state_index_1][original_state_index_2], copied_state_index_2)
-        for i in range(len(new.States)):
-            if i not in new.delta:
-                new.delta[i] = {}
-        return new
+def make_subautomaton(gfa: GFA, reachable_states: list, initial_state: int, final_state: int) -> GFA:
+    new = GFA()
+    new.States = [str(i) for i in range(len(reachable_states))]
+    new.Sigma = copy.copy(gfa.Sigma)
+    new.setInitial(0)
+    new.setFinal([len(reachable_states) - 1])
+    new.predecessors = {}
+    for i in range(len(new.States)):
+        new.predecessors[i] = set([])
+    matching_states = {0 : initial_state, len(reachable_states) - 1 : final_state}
+    counter = 1
+    for i in reachable_states:
+        if i not in [initial_state, final_state]:
+            matching_states[counter] = i
+            counter += 1
+    for i in range(len(reachable_states)):
+        for j in range(len(reachable_states)):
+            original_state_index_1 = matching_states[i]
+            original_state_index_2 = matching_states[j]
+            if i is list(new.Final)[0]:
+                continue
+            if original_state_index_2 in gfa.delta[original_state_index_1]:
+                add_transition(new, i, gfa.delta[original_state_index_1][original_state_index_2], j)
+    for i in range(len(new.States)):
+        if i not in new.delta:
+            new.delta[i] = {}
+    return new
 
 def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegExp:
     subautomata = []
@@ -87,7 +115,7 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegE
         subautomata.append(gfa)
     else:
         for group in groups:
-            subautomata.append(make_subautomaton(gfa, group))
+            subautomata.append(make_subautomaton(gfa, group, gfa.Initial, list(gfa.Final)[0]))
     final_result = None
     for subautomaton in subautomata:
         if len(get_bridge_states(subautomaton)):
@@ -123,15 +151,21 @@ def eliminate_by_state_weight_heuristic(gfa: GFA) -> RegExp:
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
 def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
-    for i in range(len(gfa.States) - 2):
-        min_val = get_weight(gfa, 1)
-        min_idx = 1
-        for j in range(2, len(gfa.States) - 1):
-            curr_val = get_weight(gfa, j)
+    n = len(gfa.States) - 2
+    victim = [i + 1 for i in range(len(gfa.States) - 2)]
+    for i in range(n):
+        if (len(victim) == 1):
+            gfa.eliminate(victim[0])
+            continue;
+        min_val = get_weight(gfa, victim[0])
+        min_idx = 0
+        for j in range(1, len(victim)):
+            curr_val = get_weight(gfa, victim[j])
             if min_val > curr_val:
                 min_val = curr_val
                 min_idx = j
-        gfa.eliminateState(min_idx)
+        gfa.eliminate(victim[min_idx])
+        del victim[min_idx]
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
