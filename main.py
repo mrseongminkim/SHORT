@@ -1,4 +1,5 @@
 import time
+import csv
 
 from utils.data_loader import *
 from utils.heuristics import *
@@ -20,11 +21,9 @@ exp[0][n][k][d][0]: TIME = 0
 exp[0][n][k][d][1]: LENGTH = 0
 / 20000
 '''
-#'''
+'''
 data = load_data()
-
 exp = [[[[[0, 0] for d in range(2)] for k in range(3)] for n in range(8)] for c in range(6)]
-
 for n in range(8):
     for k in range(3):
         for d in range(2):
@@ -93,3 +92,24 @@ for n in range(8):
 with open('experimental_result.pkl', 'wb') as fp:
     dump(exp, fp)
 #'''
+
+exp = list()
+with open('experimental_result.pkl', 'rb') as fp:
+    exp = load(fp)
+
+alpha = ['2', '5', '10']
+density = ['0.2', '0.5']
+
+for c in range(6):
+    with open('C_' + str(c + 1) + '.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        title = ['n, k, d', 'time', 'size']
+        writer.writerow(title)
+        for n in range(8):
+            for k in range(3):
+                for d in range(2):
+                    paramters = 'n = ', str(n + 3) + ', k = ' + alpha[k] + ', d = ' + density[d]
+                    time_value = exp[c][n][k][d][0] / 100
+                    size_value = exp[c][n][k][d][1] / 100
+                    content = [paramters, time_value, size_value]
+                    writer.writerow(content)
