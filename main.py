@@ -28,7 +28,7 @@ for n in range(8):
     for k in range(3):
         for d in range(2):
             for i in range(100):
-                print('n' + str(n + 3) + 'k' + ('2' if not d else ('5' if d == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' NFA')
+                print('n' + str(n + 3) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' NFA')
                 #eliminate_randomly
                 gfa = data[n][k][d][i].dup()
                 start_time = time.time()
