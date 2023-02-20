@@ -16,3 +16,6 @@
     data_loader: read txt/pkl and save it to list  
     fadomata: modified FAdo functions/mehtods  
     heuristics: bunch of functions related to problems  
+4. result  
+    experimental_result.pkl holds all the accumulated datas.  
+    C_[1 - 6].csv holds average time and size  
