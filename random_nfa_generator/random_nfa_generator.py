@@ -9,6 +9,7 @@ def show_bitmap(nfa: gmpy2.mpz, size: int):
             print('0', end='')
     print()
 
+#Ensures non-returning, non-exiting, initially connected and single final state
 def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz, file_name: str):
     transition_list = ['0 @epsilon 1\n']
     size = n * n * k
