@@ -3,8 +3,8 @@ import copy
 from FAdo.conversions import *
 from FAdo.reex import *
 
+#Counterpart of GFA.weight method
 def get_weight(gfa: GFA, state: int) -> int:
-    '''Counterpart of GFA.weight method'''
     weight = 0
     self_loop = 0
     if state in gfa.delta[state]:
@@ -18,8 +18,8 @@ def get_weight(gfa: GFA, state: int) -> int:
             weight += gfa.delta[state][i].treeLength() * (len(gfa.predecessors[state]) - self_loop)
     return weight
 
+#Counterpart of FA2GFA function
 def convert_nfa_to_gfa(nfa: NFA) -> GFA:
-    '''Counterpart of FA2GFA function'''
     gfa = GFA()
     gfa.setSigma(nfa.Sigma)
     gfa.Initial = uSet(nfa.Initial)
@@ -37,8 +37,8 @@ def convert_nfa_to_gfa(nfa: NFA) -> GFA:
             gfa.delta[i] = {}
     return gfa
 
+#Counterpart of GFA.addTransition
 def add_transition(gfa: GFA, sti1: int, sym: RegExp, sti2: int):
-    '''Counterpart of GFA.addTransition'''
     if sti1 not in gfa.delta:
         gfa.delta[sti1] = {}
     if sti2 not in gfa.delta[sti1]:
