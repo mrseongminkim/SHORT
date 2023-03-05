@@ -104,7 +104,7 @@ def generate(n: int, k: int, d: float, file_name: str):
     rstate = gmpy2.random_state(random.randint(0, 2147483647 - 1))
     finals = gmpy2.mpz_rrandomb(rstate, n)
     if file_name == 'in-memory':
-        make_fado_recognizable_nfa_object(n, k, nfa, finals)
+        return make_fado_recognizable_nfa_object(n, k, nfa, finals)
     else:
         make_fado_recognizable_nfa(n, k, nfa, finals, file_name)
 
