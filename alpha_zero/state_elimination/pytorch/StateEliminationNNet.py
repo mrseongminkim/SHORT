@@ -1,11 +1,8 @@
-import sys
-sys.path.append('..')
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import *
+from alpha_zero.utils import *
 
 class StateEliminationNNet(nn.Module):
     def __init__(self, game, args):
