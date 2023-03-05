@@ -1,10 +1,7 @@
-import sys
-sys.path.append('..')
-
 import numpy as np
 
 from alpha_zero.Game import Game
-from .random_nfa_generator import generate
+from utils.random_nfa_generator import generate
 
 class StateEliminationGame(Game):
     def __init__(self, maxN = 18):
@@ -14,11 +11,11 @@ class StateEliminationGame(Game):
         self.n = n
         self.k = k
         self.d = d
-        self.gfs = gfs
+        self.gfs = gfs.dup()
         #self.n = np.random.randint(5, 11) #np.random.randint(3, maxN)
         #self.k = 5 #np.random.choice([2, 5, 10])
         #self.d = 0.2 #np.random.choice([0.2, 0.5])
-        #self.gfs = generate(self.n, self.k, self.d)
+        #self.gfs = generate(self.n, self.k, self.d, 'in-memory')
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype = int)
         for source_state in self.gfs.delta:
             for target_state in self.gfs.delta[source_state]:
@@ -46,7 +43,7 @@ class StateEliminationGame(Game):
                 for target_state in range(self.n + 2):
                     if new_board[action][target_state]:
                         beta = new_board[action][target_state]
-                        new_board[source_state][target_state] = alpha + beta + punct + self_loop
+                        new_board[source_state][target_state] += alpha + beta + punct + self_loop + (1 if new_board[source_state][target_state] else 0)
         new_board[action] = np.zeros(self.maxN + 2, dtype = int)
         return (new_board, player)
 
