@@ -28,7 +28,7 @@ args = dotdict({
     'arenaCompare' : 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct' : 1,
     'checkpoint' : './alpha_zero/models/',
-    'load_model' : True,
+    'load_model' : False,
     'load_folder_file' : ('/dev/models/8x100x50','best.pth.tar'),
     'numItersForTrainExamplesHistory' : 20,
 })
@@ -94,14 +94,15 @@ def test_alpha_zero():
                         end_time = time.time()
                         gfa.eliminateAll(order)
                         if (result != gfa.delta[0][n + min_n + 1].treeLength()):
+                            print('order', order)
                             print('result length', result)
-                            print('valid length', gfa.delta[0][4].treeLength())
+                            print('valid length', gfa.delta[0][n + min_n + 1].treeLength())
                             print('Something is wrong')
                             exit()
                         result_time = end_time - start_time
                         exp[n][k][d][0] += result_time
                         exp[n][k][d][1] += result
-        with open('alpha_zero_experiment_result.pkl', 'wb') as fp:
+        with open('./result/alpha_zero_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
 def test_heuristics():
@@ -180,6 +181,6 @@ def test_heuristics():
             dump(exp, fp)
 
 def main():
-    test_alpha_zero()
+    train_alpha_zero()
 
 main()
