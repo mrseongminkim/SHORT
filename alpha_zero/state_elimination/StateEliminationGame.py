@@ -7,20 +7,20 @@ class StateEliminationGame(Game):
     def __init__(self, maxN = 18):
         self.maxN = maxN
 
-    def getInitBoard(self, gfs = None, n = None, k = None, d = None):
-        if gfs == None:
+    def getInitBoard(self, gfa = None, n = None, k = None, d = None):
+        if gfa is None:
             n = np.random.randint(5, 11) #np.random.randint(3, maxN)
             k = 5 #np.random.choice([2, 5, 10])
             d = 0.2 #np.random.choice([0.2, 0.5])
-            gfs = generate(self.n, self.k, self.d, 'in-memory')
+            gfa = generate(n, k, d, 'in-memory')
         self.n = n + 2
         self.k = k
         self.d = d
-        self.gfs = gfs.dup()
+        self.gfa = gfa.dup() #it could be overhead
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype = int)
-        for source_state in self.gfs.delta:
-            for target_state in self.gfs.delta[source_state]:
-                board[source_state][target_state] = self.gfs.delta[source_state][target_state].treeLength()
+        for source_state in self.gfa.delta:
+            for target_state in self.gfa.delta[source_state]:
+                board[source_state][target_state] = self.gfa.delta[source_state][target_state].treeLength()
         # 0 as initial, self.n - 1 as final
         return board
     
@@ -30,22 +30,21 @@ class StateEliminationGame(Game):
     def getActionSize(self):
         return self.maxN
 
-    #error-pron code
     def getNextState(self, board, player, action):
         new_board = np.copy(board)
         action += 1
-        if action >= self.n + 1:
+        if action >= self.n - 1:
             return (new_board, player)
         self_loop = new_board[action][action]
         punct = 3 if self_loop else 1
-        for source_state in range(self.n + 1):
-            if new_board[source_state][action]:
+        for source_state in range(self.n - 1):
+            if new_board[source_state][action] and source_state != action:
                 alpha = new_board[source_state][action]
                 new_board[source_state][action] = 0
-                for target_state in range(self.n + 2):
-                    if new_board[action][target_state]:
+                for target_state in range(self.n):
+                    if new_board[action][target_state] and target_state != action:
                         beta = new_board[action][target_state]
-                        new_board[source_state][target_state] += alpha + beta + punct + self_loop + (1 if new_board[source_state][target_state] else 0)
+                        new_board[source_state][target_state] += alpha + self_loop + beta + punct + (1 if new_board[source_state][target_state] else 0)
         new_board[action] = np.zeros(self.maxN + 2, dtype = int)
         return (new_board, player)
 
