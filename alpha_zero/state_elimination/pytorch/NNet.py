@@ -1,7 +1,5 @@
 import os
 import time
-#import sys
-#sys.path.append('../../')
 
 import torch
 import torch.optim as optim
@@ -10,7 +8,7 @@ from tqdm import tqdm
 
 from alpha_zero.utils import *
 from alpha_zero.NeuralNet import NeuralNet
-from .StateEliminationNNet import StateEliminationNNet as sennet
+from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
     'lr': 0.001,
