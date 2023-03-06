@@ -20,7 +20,7 @@ from alpha_zero.state_elimination.pytorch.NNet import NNetWrapper as nn
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
 args = dotdict({
-    'numIters': 2000,
+    'numIters': 1000,
     # Number of complete self-play games to simulate during a new iteration.
     'numEps': 100,
     'tempThreshold': 15,        # temperature hyperparameters
@@ -31,10 +31,10 @@ args = dotdict({
     'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
-    'cpuct': 1,
+    'cpuct': 2,
     'checkpoint': './alpha_zero/models/',
     'load_model': False,
-    'load_folder_file': ('/dev/models/8x100x50', 'best.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
@@ -208,6 +208,7 @@ def test_heuristics():
 
 def main():
     train_alpha_zero()
+    #test_alpha_zero()
 
 
 main()

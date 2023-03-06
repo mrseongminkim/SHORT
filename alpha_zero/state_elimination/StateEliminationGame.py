@@ -70,7 +70,7 @@ class StateEliminationGame(Game):
         
         if board[1:self.n - 1, 1:self.n - 1].sum() != 0:
             return -1
-        return (1 / board[0][self.n - 1]) * 2 - 1
+        return - np.log(board[0][self.n - 1])
 
     def getCanonicalForm(self, board, player):
         return board

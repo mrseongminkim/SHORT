@@ -12,9 +12,9 @@ from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateElimi
 
 args = dotdict({
     'lr': 0.001,
-    'dropout': 0.3,
+    'dropout': 0.2,
     'epochs': 10,
-    'batch_size': 64,
+    'batch_size': 32,
     'cuda': torch.cuda.is_available(),
     'num_channels': 512,
 })
