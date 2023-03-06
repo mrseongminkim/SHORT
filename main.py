@@ -2,6 +2,7 @@ import time
 import logging
 import os
 import random
+import csv
 
 import numpy as np
 import coloredlogs
@@ -61,6 +62,11 @@ def test_alpha_zero():
     if os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
+        with open('./result/c7.csv', 'w', newline = '') as fp:
+            writer = csv.writer(fp)
+            for n in range(5 - 3, 11 - 3):
+                size_value = exp[n][1][0][1] / 100
+                writer.writerow([size_value])
     else:
         data = load_data()
         exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
@@ -181,6 +187,6 @@ def test_heuristics():
             dump(exp, fp)
 
 def main():
-    train_alpha_zero()
+    test_alpha_zero()
 
 main()
