@@ -19,6 +19,7 @@ args = dotdict({
     'num_channels': 512,
 })
 
+
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
         self.nnet = sennet(game, args)
@@ -40,13 +41,15 @@ class NNetWrapper(NeuralNet):
             batch_count = int(len(examples) / args.batch_size)
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
-                sample_ids = np.random.randint(len(examples), size=args.batch_size)
+                sample_ids = np.random.randint(
+                    len(examples), size=args.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
                 if args.cuda:
-                    boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                    boards, target_pis, target_vs = boards.contiguous().cuda(
+                    ), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
                 out_pi, out_v = self.nnet(boards)
                 l_pi = self.loss_pi(target_pis, out_pi)
                 l_v = self.loss_v(target_vs, out_v)
@@ -83,7 +86,8 @@ class NNetWrapper(NeuralNet):
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(folder):
-            print("Checkpoint Directory does not exist! Making directory {}".format(folder))
+            print(
+                "Checkpoint Directory does not exist! Making directory {}".format(folder))
             os.mkdir(folder)
         else:
             print("Checkpoint Directory exists! ")

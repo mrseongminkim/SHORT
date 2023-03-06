@@ -5,10 +5,12 @@ from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
+
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
     """
+
     def __init__(self, player1, player2, game, display=None):
         """
         Input:
@@ -26,7 +28,7 @@ class Arena():
         self.game = game
         self.display = display
 
-    def playGame(self, verbose = False):
+    def playGame(self, verbose=False):
         """
         Executes one episode of a game.
 
@@ -40,24 +42,30 @@ class Arena():
         board_x = self.game.getInitBoard()
         board_y = copy.deepcopy(board_x)
         while self.game.getGameEnded(board_x, curPlayer) == -1:
-            action = self.player1(self.game.getCanonicalForm(board_x, curPlayer))
-            valids = self.game.getValidMoves(self.game.getCanonicalForm(board_x, curPlayer), 1)
+            action = self.player1(
+                self.game.getCanonicalForm(board_x, curPlayer))
+            valids = self.game.getValidMoves(
+                self.game.getCanonicalForm(board_x, curPlayer), 1)
             if valids[action] == 0:
                 log.error(f'Action {action} is not valid!')
                 log.debug(f'valids = {valids}')
                 assert valids[action] > 0
-            board_x, curPlayer = self.game.getNextState(board_x, curPlayer, action)
+            board_x, curPlayer = self.game.getNextState(
+                board_x, curPlayer, action)
         while self.game.getGameEnded(board_y, curPlayer) == -1:
-            action = self.player2(self.game.getCanonicalForm(board_y, curPlayer))
-            valids = self.game.getValidMoves(self.game.getCanonicalForm(board_y, curPlayer), 1)
+            action = self.player2(
+                self.game.getCanonicalForm(board_y, curPlayer))
+            valids = self.game.getValidMoves(
+                self.game.getCanonicalForm(board_y, curPlayer), 1)
             if valids[action] == 0:
                 log.error(f'Action {action} is not valid!')
                 log.debug(f'valids = {valids}')
                 assert valids[action] > 0
-            board_y, curPlayer = self.game.getNextState(board_y, curPlayer, action)
-        if board_x[0][self.game.n + 1] < board_y[0][self.game.n + 1]:
+            board_y, curPlayer = self.game.getNextState(
+                board_y, curPlayer, action)
+        if board_x[0][self.game.n - 1] < board_y[0][self.game.n - 1]:
             return 1
-        elif board_x[0][self.game.n + 1] == board_y[0][self.game.n + 1]:
+        elif board_x[0][self.game.n - 1] == board_y[0][self.game.n - 1]:
             return 0
         else:
             return -1
@@ -75,7 +83,7 @@ class Arena():
         oneWon = 0
         twoWon = 0
         draws = 0
-        for _ in tqdm(range(num), desc = "Arena.playGames"):
+        for _ in tqdm(range(num), desc="Arena.playGames"):
             gameResult = self.playGame(verbose=verbose)
             if gameResult == 1:
                 oneWon += 1
