@@ -52,4 +52,4 @@ class StateEliminationNNet(nn.Module):
         pi = self.fc3(s)
         # batch_size x 1
         v = self.fc4(s)
-        return F.softmax(pi, dim=1), torch.tanh(v)
+        return F.log_softmax(pi, dim=1), torch.tanh(v)

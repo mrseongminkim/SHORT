@@ -18,20 +18,24 @@ from alpha_zero.state_elimination.StateEliminationGame import StateEliminationGa
 from alpha_zero.state_elimination.pytorch.NNet import NNetWrapper as nn
 
 log = logging.getLogger(__name__)
-coloredlogs.install(level = 'INFO')
+coloredlogs.install(level='INFO')
 args = dotdict({
-    'numIters' : 1000,
-    'numEps' : 100,              # Number of complete self-play games to simulate during a new iteration.
-    'tempThreshold' : 15,        # temperature hyperparameters
-    'updateThreshold' : 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
-    'maxlenOfQueue' : 200000,    # Number of game examples to train the neural networks.
-    'numMCTSSims' : 25,          # Number of games moves for MCTS to simulate.
-    'arenaCompare' : 40,         # Number of games to play during arena play to determine if new net will be accepted.
-    'cpuct' : 1,
-    'checkpoint' : './alpha_zero/models/',
-    'load_model' : False,
-    'load_folder_file' : ('/dev/models/8x100x50','best.pth.tar'),
-    'numItersForTrainExamplesHistory' : 20,
+    'numIters': 2000,
+    # Number of complete self-play games to simulate during a new iteration.
+    'numEps': 100,
+    'tempThreshold': 15,        # temperature hyperparameters
+    # During arena playoff, new neural net will be accepted if threshold or more of games are won.
+    'updateThreshold': 0.6,
+    # Number of game examples to train the neural networks.
+    'maxlenOfQueue': 200000,
+    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
+    # Number of games to play during arena play to determine if new net will be accepted.
+    'arenaCompare': 40,
+    'cpuct': 1,
+    'checkpoint': './alpha_zero/models/',
+    'load_model': False,
+    'load_folder_file': ('/dev/models/8x100x50', 'best.pth.tar'),
+    'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
 max_n = 10
@@ -40,14 +44,17 @@ alphabet = [2, 5, 10]
 density = [0.2, 0.5]
 sample_size = 100
 
+
 def train_alpha_zero():
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
     if args.load_model:
-        log.info('Loading checkpoint "%s/%s"...', args.load_folder_file[0], args.load_folder_file[1])
-        nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
+        log.info('Loading checkpoint "%s/%s"...',
+                 args.load_folder_file[0], args.load_folder_file[1])
+        nnet.load_checkpoint(
+            args.load_folder_file[0], args.load_folder_file[1])
     else:
         log.warning('Not loading a checkpoint!')
     log.info('Loading the Coach...')
@@ -58,22 +65,24 @@ def train_alpha_zero():
     log.info('Starting the learning process')
     c.learn()
 
+
 def test_alpha_zero():
     if os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/c7.csv', 'w', newline = '') as fp:
+        with open('./result/c7.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5 - 3, 11 - 3):
                 size_value = exp[n][1][0][1] / 100
                 writer.writerow([size_value])
     else:
         data = load_data()
-        exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
+        exp = [[[[0, 0] for d in range(len(density))] for k in range(
+            len(alphabet))] for n in range(n_range)]
         g = Game()
         nnet = nn(g)
         mcts = MCTS(g, nnet, args)
-        player = lambda x: np.argmax(mcts.getActionProb(x, temp = 0))
+        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
         curPlayer = 1
         if args.load_model:
             nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
@@ -84,17 +93,22 @@ def test_alpha_zero():
             for k in range(len(alphabet)):
                 for d in range(len(density)):
                     for i in range(sample_size):
-                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
+                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + (
+                            's' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
                         gfa = data[n][k][d][i].dup()
-                        board = g.getInitBoard(gfa, n + min_n, alphabet[k], density[d])
+                        board = g.getInitBoard(
+                            gfa, n + min_n, alphabet[k], density[d])
                         order = []
                         start_time = time.time()
                         while g.getGameEnded(board, curPlayer) == -1:
-                            action = player(g.getCanonicalForm(board, curPlayer))
-                            valids = g.getValidMoves(g.getCanonicalForm(board, curPlayer), 1)
+                            action = player(
+                                g.getCanonicalForm(board, curPlayer))
+                            valids = g.getValidMoves(
+                                g.getCanonicalForm(board, curPlayer), 1)
                             if valids[action] == 0:
                                 assert valids[action] > 0
-                            board, curPlayer = g.getNextState(board, curPlayer, action)
+                            board, curPlayer = g.getNextState(
+                                board, curPlayer, action)
                             order.append(action + 1)
                         result = board[0][n + min_n + 1]
                         end_time = time.time()
@@ -102,7 +116,8 @@ def test_alpha_zero():
                         if (result != gfa.delta[0][n + min_n + 1].treeLength()):
                             print('order', order)
                             print('result length', result)
-                            print('valid length', gfa.delta[0][n + min_n + 1].treeLength())
+                            print('valid length',
+                                  gfa.delta[0][n + min_n + 1].treeLength())
                             print('Something is wrong')
                             exit()
                         result_time = end_time - start_time
@@ -111,20 +126,23 @@ def test_alpha_zero():
         with open('./result/alpha_zero_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
+
 def test_heuristics():
     if os.path.isfile('./result/heuristics_experiment_result.pkl'):
         with open('./result/heuristics_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
     else:
         data = load_data()
-        exp = [[[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)] for c in range(6)]
+        exp = [[[[[0, 0] for d in range(len(density))] for k in range(
+            len(alphabet))] for n in range(n_range)] for c in range(6)]
         for n in range(n_range):
             for k in range(len(alphabet)):
                 for d in range(len(density)):
                     for i in range(sample_size):
                         random.seed(i)
-                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
-                        #eliminate_randomly
+                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + (
+                            's' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
+                        # eliminate_randomly
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
                         result = eliminate_randomly(gfa)
@@ -134,7 +152,7 @@ def test_heuristics():
                         exp[0][n][k][d][0] += result_time
                         exp[0][n][k][d][1] += result_size
 
-                        #decompose with eliminate_randomly
+                        # decompose with eliminate_randomly
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
                         result = decompose(gfa, False, False)
@@ -144,7 +162,7 @@ def test_heuristics():
                         exp[1][n][k][d][0] += result_time
                         exp[1][n][k][d][1] += result_size
 
-                        #eliminate_by_state_weight_heuristic
+                        # eliminate_by_state_weight_heuristic
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
                         result = eliminate_by_state_weight_heuristic(gfa)
@@ -154,7 +172,7 @@ def test_heuristics():
                         exp[2][n][k][d][0] += result_time
                         exp[2][n][k][d][1] += result_size
 
-                        #decompose + eliminate_by_state_weight_heuristic
+                        # decompose + eliminate_by_state_weight_heuristic
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
                         result = decompose(gfa, True, False)
@@ -164,17 +182,18 @@ def test_heuristics():
                         exp[3][n][k][d][0] += result_time
                         exp[3][n][k][d][1] += result_size
 
-                        #eliminate_by_repeated_state_weight_heuristic
+                        # eliminate_by_repeated_state_weight_heuristic
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
-                        result = eliminate_by_repeated_state_weight_heuristic(gfa)
+                        result = eliminate_by_repeated_state_weight_heuristic(
+                            gfa)
                         end_time = time.time()
                         result_time = end_time - start_time
                         result_size = result.treeLength()
                         exp[4][n][k][d][0] += result_time
                         exp[4][n][k][d][1] += result_size
 
-                        #decompose + eliminate_by_repeated_state_weight_heuristic
+                        # decompose + eliminate_by_repeated_state_weight_heuristic
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
                         result = decompose(gfa, True, True)
@@ -186,7 +205,9 @@ def test_heuristics():
         with open('./result/heuristics_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
+
 def main():
     train_alpha_zero()
+
 
 main()
