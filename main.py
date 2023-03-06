@@ -187,6 +187,6 @@ def test_heuristics():
             dump(exp, fp)
 
 def main():
-    test_alpha_zero()
+    train_alpha_zero()
 
 main()
