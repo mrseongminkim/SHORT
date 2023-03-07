@@ -3,6 +3,8 @@ import numpy as np
 from alpha_zero.Game import Game
 from utils.random_nfa_generator import generate
 
+EPS = 1e-8
+
 
 class StateEliminationGame(Game):
     def __init__(self, maxN=18):
@@ -70,7 +72,7 @@ class StateEliminationGame(Game):
         
         if board[1:self.n - 1, 1:self.n - 1].sum() != 0:
             return -1
-        return - np.log(board[0][self.n - 1])
+        return np.tanh(- board[0][self.n - 1] + 4 ** (self.n - 2)) + EPS
 
     def getCanonicalForm(self, board, player):
         return board

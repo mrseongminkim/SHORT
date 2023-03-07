@@ -23,7 +23,7 @@ args = dotdict({
     'numIters': 1000,
     # Number of complete self-play games to simulate during a new iteration.
     'numEps': 100,
-    'tempThreshold': 15,        # temperature hyperparameters
+    'tempThreshold': 0,        # temperature hyperparameters
     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'updateThreshold': 0.6,
     # Number of game examples to train the neural networks.
@@ -31,7 +31,7 @@ args = dotdict({
     'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
-    'cpuct': 2,
+    'cpuct': 1,
     'checkpoint': './alpha_zero/models/',
     'load_model': False,
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
