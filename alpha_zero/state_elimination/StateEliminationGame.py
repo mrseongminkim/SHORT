@@ -70,7 +70,7 @@ class StateEliminationGame(Game):
         
         # print(board[1:self.n - 1, 1:self.n - 1].sum())
         
-        if board[1:self.n - 1, 1:self.n - 1].sum() != 0:
+        if board[1:self.n - 1, :].sum() != 0:
             return -1
         return np.tanh(- board[0][self.n - 1] + 4 ** (self.n - 2)) + EPS
 
