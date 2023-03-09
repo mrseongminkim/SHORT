@@ -23,7 +23,7 @@ args = dotdict({
     'numIters': 1000,
     # Number of complete self-play games to simulate during a new iteration.
     'numEps': 100,
-    'tempThreshold': 0,        # temperature hyperparameters
+    'tempThreshold': 15,        # temperature hyperparameters
     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'updateThreshold': 0.6,
     # Number of game examples to train the neural networks.
@@ -208,7 +208,7 @@ def test_heuristics():
 
 def main():
     train_alpha_zero()
-    #test_alpha_zero()
+    # test_alpha_zero()
 
 
 main()

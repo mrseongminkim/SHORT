@@ -12,7 +12,7 @@ class StateEliminationGame(Game):
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n = np.random.randint(5, 11)  # np.random.randint(3, maxN)
+            n = np.random.randint(3, 11)  # np.random.randint(3, maxN)
             k = 5  # np.random.choice([2, 5, 10])
             d = 0.2  # np.random.choice([0.2, 0.5])
             gfa = generate(n, k, d, 'in-memory')
@@ -68,11 +68,9 @@ class StateEliminationGame(Game):
     def getGameEnded(self, board, player):
         # -1 as not finished, value for transition
         
-        # print(board[1:self.n - 1, 1:self.n - 1].sum())
-        
         if board[1:self.n - 1, :].sum() != 0:
             return -1
-        return np.tanh(- board[0][self.n - 1] + 4 ** (self.n - 2)) + EPS
+        return - board[0][self.n - 1] / (4) ** (self.n - 2) + EPS
 
     def getCanonicalForm(self, board, player):
         return board
