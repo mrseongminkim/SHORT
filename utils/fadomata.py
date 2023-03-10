@@ -29,7 +29,7 @@ def convert_nfa_to_gfa(nfa: NFA) -> GFA:
     for i in range(len(gfa.States)):
         gfa.predecessors[i] = set([])
     for s in nfa.delta:
-        for c in nfa.delta[s]:
+        for c in sorted(nfa.delta[s].keys(), reverse=False):
             for s1 in nfa.delta[s][c]:
                 gfa.addTransition(s, c, s1)
     for i in range(len(gfa.States)):

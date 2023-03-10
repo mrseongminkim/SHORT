@@ -14,7 +14,7 @@ class StateEliminationGame(Game):
         if gfa is None:
             n = np.random.randint(3, 11)  # np.random.randint(3, maxN)
             k = 5  # np.random.choice([2, 5, 10])
-            d = 0.2  # np.random.choice([0.2, 0.5])
+            d = np.random.choice([0.2, 0.5])
             gfa = generate(n, k, d, 'in-memory')
         self.n = n + 2
         self.k = k

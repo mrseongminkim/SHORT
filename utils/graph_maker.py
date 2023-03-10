@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
-n = 6
+n = 7
 r = np.arange(n)
 width = 0.10
 x = []
@@ -14,6 +14,7 @@ for c in range(1, 8):
         temp.append(row[0])
     temp = [float(i) for i in temp]
     x.append(temp)
+
 
 plt.bar(r, x[0], color = 'r',
         width = width, edgecolor = 'black',
