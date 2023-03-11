@@ -35,9 +35,36 @@ def minimize_regular_expression(regex: RegExp) -> tuple:
     elif isinstance(regex, CConcat):
         first, first_items = minimize_regular_expression(regex.arg1)
         second, second_items = minimize_regular_expression(regex.arg2)
+        print(first_items, second_items)
         #Case: (R1 ⋅ R2) ⋅ R3 = R1 ⋅ (R2 ⋅ R3)
+        #Can't distinguish between 0 + 1 and 01
+        #Error - fix it
         return CConcat(first, second), first_items + second_items
 
     else:
         print('further improvement?')
         return regex, [regex]
+
+def main():
+    result = str(CStar(CStar(CDisj(CConcat(CAtom(0), CConcat(CAtom(1), CAtom(2))), CConcat(CConcat(CAtom(0), CAtom(1)), CAtom(2))))))
+    if isinstance(result, RegExp):
+        print('not string')
+    elif isinstance(result, str):
+        print('string')
+    print(result)
+
+    result = '(0 1 2 + 4)*'
+    x = str2regexp(result)
+    print(x)
+    print(repr(x))
+    exit()
+    print(result)
+    print(repr(result))
+    print()
+    result = minimize_regular_expression(result)[0]
+    print(result)
+    print(repr(result))
+
+
+if __name__ == '__main__':
+    main()
