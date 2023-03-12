@@ -22,23 +22,37 @@ def minimize_regular_expression(regex: RegExp) -> tuple:
     elif isinstance(regex, CDisj):
         first, first_items = minimize_regular_expression(regex.arg1)
         second, second_items = minimize_regular_expression(regex.arg2)
+
+        if isinstance(first, CConcat):
+            new_first = first_items[0]
+            for i in range(1, len(first_items)):
+                new_first = CConcat(new_first, first_items[i])
+            first = new_first
+            first_items = [first]
+        
+        if isinstance(second, CConcat):
+            new_second = second_items[0]
+            for i in range(1, len(second_items)):
+                new_second = CConcat(new_second, second_items[i])
+            second = new_second
+            second_items = [second]
+
         #Case: R + R = R and hopefully catches (R1 + R2) + R3 = R1 + (R2 + R3)
         if set(first_items) == set(second_items):
             return first, first_items
         else:
-            if isinstance(first, CConcat):
-                first_items = [first]
-            if isinstance(second, CConcat):
-                second_items = [second]
-            return CDisj(first, second), first_items + second_items
+            first_items += second_items
+            return CDisj(first, second), first_items
 
     elif isinstance(regex, CConcat):
         first, first_items = minimize_regular_expression(regex.arg1)
         second, second_items = minimize_regular_expression(regex.arg2)
-        print(first_items, second_items)
-        #Case: (R1 ⋅ R2) ⋅ R3 = R1 ⋅ (R2 ⋅ R3)
-        #Can't distinguish between 0 + 1 and 01
-        #Error - fix it
+
+        if isinstance(first, CDisj):
+            first_items = [first]
+        if isinstance(second, CDisj):
+            second_items = [second]
+
         return CConcat(first, second), first_items + second_items
 
     else:
@@ -46,24 +60,23 @@ def minimize_regular_expression(regex: RegExp) -> tuple:
         return regex, [regex]
 
 def main():
-    result = str(CStar(CStar(CDisj(CConcat(CAtom(0), CConcat(CAtom(1), CAtom(2))), CConcat(CConcat(CAtom(0), CAtom(1)), CAtom(2))))))
-    if isinstance(result, RegExp):
-        print('not string')
-    elif isinstance(result, str):
-        print('string')
-    print(result)
 
-    result = '(0 1 2 + 4)*'
-    x = str2regexp(result)
-    print(x)
-    print(repr(x))
-    exit()
+    '(0 1) + (0 + 1)'
+    '((0 (1 2)) + ((0 1) 2))**'
+    '(0 (1 (2 3))) + ((0 1)(2 3))'
+
+    '(0 ((1 + 2) 3)) + ((0 (1 + 2)) 3)'
+    result = str2regexp(result)
+
+    #((0 (1 2)) + ((0 1) 2))**
+    #result = CStar(CStar(CDisj(CConcat(CAtom(0), CConcat(CAtom(1), CAtom(2))), CConcat(CConcat(CAtom(0), CAtom(1)), CAtom(2)))))
     print(result)
     print(repr(result))
-    print()
-    result = minimize_regular_expression(result)[0]
+    print('before/after')
+    result, temp = minimize_regular_expression(result)
     print(result)
     print(repr(result))
+    print(temp)
 
 
 if __name__ == '__main__':
