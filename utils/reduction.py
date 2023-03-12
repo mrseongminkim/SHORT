@@ -77,43 +77,49 @@ def concat_list(waiting_list: list) -> RegExp:
     else:
         result = CAtom(waiting_list[0])
     for i in range(1, len(waiting_list)):
+        if not isinstance(waiting_list[i], RegExp):
+            waiting_list[i] = CAtom(waiting_list[i])
         result = CConcat(result, waiting_list[i])
     return result
 
 def rpn_to_str(rpn: str) -> RegExp:
-    waiting_list = []
     stack = []
     for c in rpn:
         if c == '.':
             arg2 = stack.pop()
             arg1 = stack.pop()
-            if arg1 != 'dummy':
-                waiting_list.append(arg1)
-            if arg2 != 'dummy':
-                waiting_list.append(arg2)
-            stack.append('dummy')
+            if type(arg1) == list:
+                arg1 += arg2
+                stack.append(arg1)
+            elif type(arg2) == list:
+                arg2 = [arg1] + arg2
+                stack.append(arg2)
+            else:
+                stack.append([arg1, arg2])
         elif c == '+':
             arg2 = stack.pop()
             arg1 = stack.pop()
-            #arg1 and arg2 can not be both dummy i hope
-            if arg1 == 'dummy':
-                arg1 = concat_list(waiting_list)
-            elif arg2 == 'dummy':
-                arg2 = concat_list(waiting_list)
-#########won't work as you intended.
-            pass
-    if waiting_list:
-        pass
-
-
+            if type(arg1) == list:
+                arg1 = concat_list(arg1)
+            if type(arg2) == list:
+                arg2 = concat_list(arg2)
+            stack.append(CDisj(arg1, arg2))
+        elif c == '*':
+            arg1 = stack.pop()
+            if type(arg1) == list:
+                arg1 = concat_list(arg1)
+            stack.append(CStar(arg1))
+        else:
+            stack.append(c)
+    return stack.pop()
 
 def main():
     #result = '0 (1 2) + 3'
     #result = '(0 1) + (0 + 1)'
     #'((0 (1 2)) + ((0 1) 2))**'
     #'(0 (1 (2 3))) + ((0 1)(2 3))'
-    result = '(0 (1 2))'
-    result = '(0 1) 2'
+    #result = '(0 (1 2))'
+    #result = '(0 1) 2'
     #result = '0 (1 + 2) 3'
     #result = '(0 (1 + 2)) 3'
     #result = '(0 ((1 + 2) 3)) + ((0 (1 + 2)) 3)'
@@ -121,9 +127,12 @@ def main():
     result = str2regexp(result)
     print(result)
     print(repr(result))
-    #rpn2regexp()
+    print('before/after')
     result = rpn(result)
     print(result)
+    result = rpn_to_str(result)
+    print(result)
+    print(repr(result))
     exit()
 
     #((0 (1 2)) + ((0 1) 2))**
