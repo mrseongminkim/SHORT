@@ -11,7 +11,16 @@ class StateEliminationNNet(nn.Module):
         self.action_size = game.getActionSize()
         self.args = args
         super(StateEliminationNNet, self).__init__()
-        self.conv1 = nn.Conv2d(1, args.num_channels, 3, stride=1, padding=0)
+        
+        self.embedding_dim = args.embedding_dim
+        
+        self.embed = nn.Embedding(args.vocab_size, args.embedding_dim)
+        
+        self.lstm = nn.LSTM(args.embedding_dim,
+                            args.num_channels, batch_first=True)
+        
+        self.conv1 = nn.Conv2d(
+            args.num_channels, args.num_channels, 3, stride=1, padding=0)
         self.conv2 = nn.Conv2d(
             args.num_channels, args.num_channels, 3, stride=1, padding=0)
         self.conv3 = nn.Conv2d(
@@ -39,8 +48,15 @@ class StateEliminationNNet(nn.Module):
 
     def forward(self, s):
         #                                                           s: batch_size x board_x x board_y
-        # batch_size x 1 x board_x x board_y
-        s = s.view(-1, 1, self.board_x, self.board_y)
+        # (batch_size x board_x x board_y) x 20
+        s = s.view(-1, 20)
+        # (batch_size x board_x x board_y) x 20 x embedding_dim
+        s = self.embed(s)
+        # (batch_size x board_x x board_y) x 20 x num_channels
+        s, _ = self.lstm(s)
+        
+        s = s[:, -1].view(-1, self.board_x, self.board_y, self.args.num_channels).transpose(1, 3).transpose(2, 3)
+        
         # batch_size x num_channels x board_x x board_y
         s = F.relu((self.conv1(s)))
         # batch_size x num_channels x board_x x board_y
@@ -50,7 +66,7 @@ class StateEliminationNNet(nn.Module):
         # batch_size x num_channels x (board_x-4) x (board_y-4)
         s = F.relu((self.conv4(s)))
         
-        s = s.view(-1, self.args.num_channels *
+        s = s.reshape(-1, self.args.num_channels *
                    (self.board_x - 8)*(self.board_y - 8))
         s = F.dropout(F.relu((self.fc1(s))), p=self.args.dropout,
                       training=self.training)  # batch_size x 1024

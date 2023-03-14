@@ -63,9 +63,15 @@ class Arena():
                 assert valids[action] > 0
             board_y, curPlayer = self.game.getNextState(
                 board_y, curPlayer, action)
-        if board_x[0][self.game.n - 1] < board_y[0][self.game.n - 1]:
+            
+        board_x = self.game.gfaToBoard(board_x)
+        board_y = self.game.gfaToBoard(board_y)
+
+            
+            
+        if board_x[0][self.game.n - 1].treeLength() < board_y[0][self.game.n - 1].treeLength():
             return 1
-        elif board_x[0][self.game.n - 1] == board_y[0][self.game.n - 1]:
+        elif board_x[0][self.game.n - 1].treeLength() == board_y[0][self.game.n - 1].treeLength():
             return 0
         else:
             return -1

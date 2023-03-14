@@ -109,7 +109,7 @@ class MCTS():
                     cur_best = u
                     best_act = a
                     
-        #print(valids, self.game.getActionSize(), u, cur_best)
+        # print(valids, self.game.getActionSize(), u, cur_best)
         a = best_act
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)

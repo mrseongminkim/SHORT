@@ -33,7 +33,7 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/',
-    'load_model': False,
+    'load_model': True,
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
@@ -96,21 +96,21 @@ def test_alpha_zero():
                         print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + (
                             's' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
                         gfa = data[n][k][d][i].dup()
-                        board = g.getInitBoard(
+                        gfa = g.getInitBoard(
                             gfa, n + min_n, alphabet[k], density[d])
                         order = []
                         start_time = time.time()
-                        while g.getGameEnded(board, curPlayer) == -1:
+                        while g.getGameEnded(gfa, curPlayer) == -1:
                             action = player(
-                                g.getCanonicalForm(board, curPlayer))
+                                g.getCanonicalForm(gfa, curPlayer))
                             valids = g.getValidMoves(
-                                g.getCanonicalForm(board, curPlayer), 1)
+                                g.getCanonicalForm(gfa, curPlayer), 1)
                             if valids[action] == 0:
                                 assert valids[action] > 0
-                            board, curPlayer = g.getNextState(
-                                board, curPlayer, action)
+                            gfa, curPlayer = g.getNextState(
+                                gfa, curPlayer, action)
                             order.append(action + 1)
-                        result = board[0][n + min_n + 1]
+                        result = g.gfaToBoard(gfa)[0][n + min_n + 1]
                         end_time = time.time()
                         gfa.eliminateAll(order)
                         if (result != gfa.delta[0][n + min_n + 1].treeLength()):
