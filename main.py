@@ -33,7 +33,7 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/',
-    'load_model': True,
+    'load_model': False,
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })

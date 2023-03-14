@@ -18,7 +18,7 @@ args = dotdict({
     'epochs': 10,
     'batch_size': 64,
     'cuda': torch.cuda.is_available(),
-    'num_channels': 32,
+    'num_channels': 128,
     'vocab_size': 16,
     'embedding_dim': 4
 })
@@ -79,8 +79,7 @@ class NNetWrapper(NeuralNet):
                 optimizer.step()
                         
     def board_to_tensor(self, board, max_len=20):
-        new_board = [[None] * self.board_x] * self.board_x
-
+        new_board = [[None for i in range(self.board_x)] for j in range(self.board_y)]
         for i in range(len(board)):
             for j in range(len(board[i])):
                 new_board[i][j] = [word_to_ix[word] for word in list(
