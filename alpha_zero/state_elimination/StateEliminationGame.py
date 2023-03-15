@@ -83,6 +83,7 @@ class StateEliminationGame(Game):
         
         if sum_length != 0:
             return -1
+        
         return - board[0][self.n - 1].treeLength() / (4) ** (self.n - 2) + EPS
 
     def getCanonicalForm(self, gfa, player):
@@ -95,6 +96,6 @@ class StateEliminationGame(Game):
         
         board = self.gfaToBoard(gfa)
         
-        len_board = [[len(str(re)) for re in line]for line in board]
+        len_board = [[re.treeLength() if re else 0 for re in line] for line in board]
         # ' '.join([' '.join([str(re) for re in line]) for line in board])
         return np.array(len_board).tostring()

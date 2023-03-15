@@ -1,26 +1,23 @@
 import os
-import time
-
 import torch
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 
-import copy
-
-from alpha_zero.utils import *
+from alpha_zero.utils import AverageMeter, dotdict
 from alpha_zero.NeuralNet import NeuralNet
 from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.0,
-    'epochs': 10,
-    'batch_size': 64,
+    'epochs': 20,
+    'batch_size': 32,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
     'vocab_size': 16,
-    'embedding_dim': 4
+    'embedding_dim': 2,
+    're_len': 50
 })
 
 word_to_ix = {'(': 1, ')': 2, '*': 3, '+': 4, '@': 5}
@@ -53,14 +50,13 @@ class NNetWrapper(NeuralNet):
             for _ in t:
                 sample_ids = np.random.randint(
                     len(examples), size=args.batch_size)
-                boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                
+                gfas, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+
                 # print([self.board_to_tensor(board) for board in boards])
-                boards = [self.game.gfaToBoard(board) for board in boards]
-                
+
                 boards = torch.stack(
-                    [self.board_to_tensor(board) for board in boards], dim=0)
-                
+                    [self.board_to_tensor(board) for board in gfas], dim=0)
+
                 # boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
@@ -77,13 +73,22 @@ class NNetWrapper(NeuralNet):
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
-                        
-    def board_to_tensor(self, board, max_len=20):
-        new_board = [[None for i in range(self.board_x)] for j in range(self.board_y)]
+
+    def board_to_tensor(self, gfa, max_len=50):
+        
+        board = self.game.gfaToBoard(gfa)
+
+        len_tensor = torch.tensor([[re.treeLength() if re else 0 for re in line]
+                                   for line in board])
+        if args.cuda:
+            len_tensor = len_tensor.cuda()
+        
+        new_board = [[None for i in range(self.board_x)]
+                     for j in range(self.board_y)]
         for i in range(len(board)):
             for j in range(len(board[i])):
                 new_board[i][j] = [word_to_ix[word] for word in list(
-                    str(board[i][j]).replace('@epsilon', '@').replace(' ', ''))]
+                    str(board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
 
                 if len(new_board[i][j]) > max_len:
                     new_board[i][j] = new_board[i][j][:max_len]
@@ -92,25 +97,27 @@ class NNetWrapper(NeuralNet):
                         [0]*(max_len-len(new_board[i][j]))
 
                 assert len(new_board[i][j]) == max_len
-                
+
+        new_board_tensor = torch.LongTensor(new_board).contiguous()
+
         if args.cuda:
-            new_board = torch.LongTensor(new_board).contiguous().cuda()
-                
+            new_board_tensor = new_board_tensor.cuda()
+            
+        new_board = torch.cat((len_tensor.unsqueeze(2), new_board_tensor), dim=2)
+
         return new_board
 
-    def predict(self, board):
+    def predict(self, gfa):
         """
         board: np array with board
         """
         # timing
-        # start = time.time()
-        
-        board = self.game.gfaToBoard(board)
-        
-        board = self.board_to_tensor(board)
-                
-        # new_board = np.zeros(self.board_x*self.board_y*max_len).reshape(self.board_x, self.board_y, max_len)       
-        
+        # start = time.time()        
+
+        board = self.board_to_tensor(gfa)
+
+        # new_board = np.zeros(self.board_x*self.board_y*max_len).reshape(self.board_x, self.board_y, max_len)
+
         board = board.view(self.board_x, self.board_y, -1)
         self.nnet.eval()
         with torch.no_grad():

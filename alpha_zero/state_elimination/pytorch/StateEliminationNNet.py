@@ -20,7 +20,7 @@ class StateEliminationNNet(nn.Module):
                             args.num_channels, batch_first=True)
         
         self.conv1 = nn.Conv2d(
-            args.num_channels, args.num_channels, 3, stride=1, padding=0)
+            args.num_channels + 1, args.num_channels, 3, stride=1, padding=0)
         self.conv2 = nn.Conv2d(
             args.num_channels, args.num_channels, 3, stride=1, padding=0)
         self.conv3 = nn.Conv2d(
@@ -49,13 +49,20 @@ class StateEliminationNNet(nn.Module):
     def forward(self, s):
         #                                                           s: batch_size x board_x x board_y
         # (batch_size x board_x x board_y) x 20
-        s = s.view(-1, 20)
-        # (batch_size x board_x x board_y) x 20 x embedding_dim
-        s = self.embed(s)
-        # (batch_size x board_x x board_y) x 20 x num_channels
-        s, _ = self.lstm(s)
         
-        s = s[:, -1].view(-1, self.board_x, self.board_y, self.args.num_channels).transpose(1, 3).transpose(2, 3)
+        s = s.view(-1, self.board_x, self.board_y, self.args.re_len + 1)
+                
+        s_re = s[:, :, :, 1:].view(-1, self.args.re_len)
+        s_len = s[:, :, :, 0].view(-1, 1, self.board_x, self.board_y)
+        # (batch_size x board_x x board_y) x 20 x embedding_dim
+        s_re = self.embed(s_re)
+        # (batch_size x board_x x board_y) x 20 x num_channels
+        s_re, _ = self.lstm(s_re)
+        
+        s_re = s_re[:, -1].view(-1, self.board_x, self.board_y,
+                             self.args.num_channels).transpose(1, 3).transpose(2, 3)
+        
+        s = torch.cat([s_re, s_len], dim=1)
         
         # batch_size x num_channels x board_x x board_y
         s = F.relu((self.conv1(s)))
