@@ -209,6 +209,7 @@ def test_heuristics():
 def main():
     train_alpha_zero()
     # test_alpha_zero()
+    print(3)
 
 
 main()
