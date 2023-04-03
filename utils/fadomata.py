@@ -1,30 +1,38 @@
 import copy
-from random import shuffle
 
 from FAdo.conversions import *
 from FAdo.reex import *
 
-#str(re) is costly operation
 def is_epsilon(regex: RegExp):
     return isinstance(regex, CEpsilon)
 
-
 '''
-    typo: in_included -> is_included
-    elif is_epsilon(re1) and is_epsilon(re2):
+방향을 좀 잘못잡은 것 같다.
+왜 is_included를 쓰는지 eliminate new부터 분석
+def is_included(re1: RegExp, re2: RegExp):
+    #same as re1 == re2
+    if is_epsilon(re1) and is_epsilon(re2):
         return 0
-        -> same as re1 == re2
-    elif isinstance(re1, CConcat) and isinstance(re2, CConcat):
-        if (re1.arg1 == re2.arg1) and (re1.arg2 == re2.arg2):
-            return 0
-        -> same as re1 == re2
+    elif is_epsilon(re1) and isinstance(re2, CDisj):
+        left = is_included(re1, re2.arg1)
+        right = is_included(re1, re2.arg2)
+        if left != 2 or right != 2:
+            return 1
+    elif is_epsilon(re1) and isinstance(re2, CConcat):
+        pass
 '''
+    
+
 def is_included(re1: RegExp, re2: RegExp):
     """
-    if re1 is included in re2, return 1
-    if re1 is equivalent to re2, return 0
-    if re2 is included in re1, return -1
-    if not, return 2
+    if re1 ⊆ re2:
+        return 1
+    if re1 == re2:
+        return 0
+    if re2 ⊆ re1:
+        return -1
+    else:
+        return 2
     """
     if re1 == re2:
         return 0
@@ -186,7 +194,7 @@ def eliminate_with_minimization(gfa: GFA, st: int):
 class CToken(RegExp):
     #Static class variable
     token_to_regex = dict()
-    threshold = 1
+    threshold = 100
 
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)
