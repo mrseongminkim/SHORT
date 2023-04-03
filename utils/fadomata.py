@@ -3,6 +3,129 @@ import copy
 from FAdo.conversions import *
 from FAdo.reex import *
 
+#str(re) is costly operation
+def is_epsilon(regex: RegExp):
+    return isinstance(regex, CEpsilon)
+
+
+'''
+    typo: in_included -> is_included
+    elif is_epsilon(re1) and is_epsilon(re2):
+        return 0
+        -> same as re1 == re2
+    elif isinstance(re1, CConcat) and isinstance(re2, CConcat):
+        if (re1.arg1 == re2.arg1) and (re1.arg2 == re2.arg2):
+            return 0
+        -> same as re1 == re2
+'''
+def is_included(re1: RegExp, re2: RegExp):
+    """
+    if re1 is included in re2, return 1
+    if re1 is equivalent to re2, return 0
+    if re2 is included in re1, return -1
+    if not, return 2
+    """
+    if re1 == re2:
+        return 0
+    elif is_epsilon(re1) and isinstance(re2, CStar):
+        return 1
+    elif is_epsilon(re2) and isinstance(re1, CStar):
+        return -1
+    elif isinstance(re2, CDisj) and (re2.arg1 == re1 or re2.arg2 == re1):
+        return 1
+    elif isinstance(re1, CDisj) and (re1.arg1 == re2 or re1.arg2 == re2):
+        return -1
+    elif isinstance(re1, CDisj) and isinstance(re2, CDisj):
+        if (is_included(re1.arg1, re2.arg2) == 0) and (is_included(re1.arg2, re2.arg1) == 0):
+            return 0
+    elif isinstance(re1, CStar) and isinstance(re2, CStar):
+        return is_included(re1.arg, re2.arg)
+    return 2
+
+
+save_count_star = 0
+save_count_concat = 0
+save_count_disj = 0
+all_count_star = 0
+all_count_concat = 0
+all_count_disj = 0
+
+def eliminate_new(gfa: GFA, st: int):
+    """Eliminate a state.
+
+    :param int st: state to be eliminated"""
+    global save_count_concat, save_count_disj, save_count_star, all_count_concat, all_count_disj, all_count_star
+
+    if st in gfa.delta and st in gfa.delta[st]:
+        if isinstance(gfa.delta[st][st], CStar) or is_epsilon(gfa.delta[st][st]):
+            save_count_star += 1
+            r2 = copy.copy(gfa.delta[st][st])
+        else:
+            r2 = copy.copy(CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
+        del gfa.delta[st][st]
+        all_count_star += 1
+    else:
+        r2 = None
+    for s in gfa.delta:
+        if st not in gfa.delta[s]:
+            continue
+        r1 = copy.copy(gfa.delta[s][st])
+
+        del gfa.delta[s][st]
+        for s1 in gfa.delta[st]:
+            r3 = copy.copy(gfa.delta[st][s1])
+            if r2 is not None:
+                if in_included(r2, r1) == 1 or in_included(r2, r3) == 1:
+                    save_count_concat += 1
+                    r = CConcat(
+                        r1, r3, copy.copy(gfa.Sigma))
+                elif is_epsilon(r1):
+                    save_count_concat += 1
+                    if is_epsilon(r3):
+                        r = r2
+                    else:
+                        r = CConcat(r2, r3, copy.copy(gfa.Sigma))
+                elif is_epsilon(r3):
+                    save_count_concat += 1
+                    r = CConcat(r1, r2, copy.copy(gfa.Sigma))
+                else:
+                    r = CConcat(r1, CConcat(
+                        r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
+            else:
+                if is_epsilon(r1):
+                    save_count_concat += 1
+                    r = r3
+                elif is_epsilon(r3):
+                    save_count_concat += 1
+                    r = r1
+                else:
+                    r = CConcat(
+                        r1, r3, copy.copy(gfa.Sigma))
+
+            all_count_concat += 1
+
+            if s1 in gfa.delta[s]:
+                # print(f"R1: {r}, R2: {gfa.delta[s][s1]}")
+                check_included = in_included(r, gfa.delta[s][s1])
+                if check_included == 1 or check_included == 0:
+                    save_count_disj += 1
+                    gfa.delta[s][s1] = r
+                elif check_included == -1:
+                    save_count_disj += 1
+                    gfa.delta[s][s1] = gfa.delta[s][s1]
+                else:
+                    if str(gfa.delta[s][s1]) > str(r):
+                        gfa.delta[s][s1] = CDisj(
+                            r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
+                    else:
+                        gfa.delta[s][s1] = CDisj(
+                            gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+                all_count_disj += 1
+            else:
+                gfa.delta[s][s1] = r
+    del gfa.delta[st]
+    return gfa
+
 class CToken(RegExp):
     #Static class variable
     token_to_regex = dict()
@@ -23,7 +146,6 @@ class CToken(RegExp):
 
     def treeLength(self):
         return CToken.token_to_regex[self.hashed_value].treeLength()
-
 
 #Counterpart of GFA.weight method
 def get_weight(gfa: GFA, state: int) -> int:
@@ -71,3 +193,8 @@ def add_transition(gfa: GFA, sti1: int, sym: RegExp, sti2: int):
         gfa.predecessors[sti2].add(sti1)
     except KeyError:
         pass
+
+regex = str2regexp("(3 + @epsilon)*")
+print(repr(regex))
+x = is_epsilon(regex)
+print(x)
