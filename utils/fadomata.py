@@ -3,6 +3,28 @@ import copy
 from FAdo.conversions import *
 from FAdo.reex import *
 
+class CToken(RegExp):
+    #Static class variable
+    token_to_regex = dict()
+
+    def __init__(self, regex: RegExp):
+        self.hashed_value = hash(regex)
+        #Sanity Check
+        if self.hashed_value in CToken.token_to_regex:
+            assert CToken.token_to_regex[self.hashed_value] == regex
+        #Sanity Check
+        CToken.token_to_regex[self.hashed_value] = regex
+    
+    def __str__(self):
+        return str(CToken.token_to_regex[self.hashed_value])
+    
+    def __repr__(self):
+        return repr(CToken.token_to_regex[self.hashed_value])
+
+    def treeLength(self):
+        return CToken.token_to_regex[self.hashed_value].treeLength()
+
+
 #Counterpart of GFA.weight method
 def get_weight(gfa: GFA, state: int) -> int:
     weight = 0
