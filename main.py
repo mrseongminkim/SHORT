@@ -277,14 +277,47 @@ def check_result():
     for n in range(3, 8):
         print(data[n - 3][0][0])
 
+def test_CToken():
+    time_value = [0 for i in range(100)]
+    length_value = [0 for i in range(100)]
+    data = load_data()
+    for i in range(100):
+        print(i)
+        gfa = data[7][2][1][i]
+        start = time.time()
+        result = eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa, True)
+        end = time.time()
+        time_value[i] = end - start
+        length_value[i] = result.treeLength()
+        #print(time_value[i])
+    with open('./result/true_time.pkl', 'wb') as fp:
+        dump(time_value, fp)
+    with open('./result/true_length.pkl', 'wb') as fp:
+        dump(length_value, fp)
+
+def check_CToken():
+    with open('./result/' + "true_time" + '.pkl', 'rb') as fp:
+        time_value = load(fp)
+    with open('./result/' + "true_length" + '.pkl', 'rb') as fp:
+        length_value = load(fp)
+    with open('./result/true_time.csv', 'w', newline='') as fp:
+        writer = csv.writer(fp)
+        avg_time = 0
+        for n in range(100):
+            avg_time += time_value[n]
+            writer.writerow([time_value[n]])
+        print(avg_time / 100)
+    with open('./result/true_length.csv', 'w', newline='') as fp:
+        writer = csv.writer(fp)
+        avg_time = 0
+        for n in range(100):
+            avg_time += length_value[n]
+            writer.writerow([length_value[n]])
+        print(avg_time / 100)
+    
 
 def main():
-    train_alpha_zero()
+    test_CToken()
+    check_CToken()
 
-
-regex = "0 (0 + 1)"
-hi = str2regexp(regex)
-hi2 = deepcopy(hi)
-print("", regex, "\n", hi)
-test = CToken(hi)
-test2 = CToken(hi2)
+main()
