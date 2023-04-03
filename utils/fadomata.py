@@ -55,7 +55,7 @@ def eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa: GFA, tok
     victim = [i + 1 for i in range(len(gfa.States) - 2)]
     for i in range(n):
         if (len(victim) == 1):
-            eliminate_with_tokenization(victim[0], tokenize)
+            eliminate_with_tokenization(gfa, victim[0], tokenize)
             continue
         min_val = get_weight(gfa, victim[0])
         min_idx = 0
@@ -74,24 +74,24 @@ def eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa: GFA, tok
 
 def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=False):
     if st in gfa.delta and st in gfa.delta[st]:
-        r2 = copy(reex.CStar(gfa.delta[st][st], copy(gfa.Sigma)))
+        r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
         del gfa.delta[st][st]
     else:
         r2 = None
     for s in gfa.delta:
         if st not in gfa.delta[s]:
             continue
-        r1 = copy(gfa.delta[s][st])
+        r1 = copy.copy(gfa.delta[s][st])
         del gfa.delta[s][st]
         for s1 in gfa.delta[st]:
-            r3 = copy(gfa.delta[st][s1])
+            r3 = copy.copy(gfa.delta[st][s1])
             if r2 is not None:
-                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy(gfa.Sigma)), copy(gfa.Sigma))
+                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
             else:
-                r = reex.CConcat(r1, r3, copy(gfa.Sigma))
+                r = reex.CConcat(r1, r3, copy.copy(gfa.Sigma))
             if s1 in gfa.delta[s]:
-                r = reex.CDisj(gfa.delta[s][s1], r, copy(gfa.Sigma))
-            if tokenize:
+                r = reex.CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+            if tokenize and r.treeLength() > CToken.threshold:
                 gfa.delta[s][s1] = CToken(r)
             else:
                 gfa.delta[s][s1] = r
@@ -192,7 +192,7 @@ def eliminate_with_minimization(gfa: GFA, st: int):
 class CToken(RegExp):
     #Static class variable
     token_to_regex = dict()
-    threshold = 1_000
+    threshold = 1
 
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)
@@ -210,6 +210,9 @@ class CToken(RegExp):
 
     def treeLength(self):
         return CToken.token_to_regex[self.hashed_value].treeLength()
+    
+    def __copy__(self):
+        return CToken(CToken.token_to_regex[self.hashed_value])
 
 #Counterpart of GFA.weight method
 def get_weight(gfa: GFA, state: int) -> int:
@@ -257,8 +260,3 @@ def add_transition(gfa: GFA, sti1: int, sym: RegExp, sti2: int):
         gfa.predecessors[sti2].add(sti1)
     except KeyError:
         pass
-
-regex = str2regexp("(3 + @epsilon)*")
-print(repr(regex))
-x = is_epsilon(regex)
-print(x)
