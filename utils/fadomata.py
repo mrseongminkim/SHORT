@@ -1,4 +1,5 @@
 import copy
+from random import shuffle
 
 from FAdo.conversions import *
 from FAdo.reex import *
@@ -42,6 +43,59 @@ def is_included(re1: RegExp, re2: RegExp):
         return is_included(re1.arg, re2.arg)
     return 2
 
+
+#앞으로 실험해야 하는 것
+#1. 그냥 리피티드 스테이트 웨이트로 했을 때의 시간/길이
+#2. 토크나이즈 안 한 리피티드 스테이트 웨이트로 했을 때 시간/길이
+#3. 토크나이즈 한 리피티드 스테이트 웨이트로 했을 때의 시간/길이
+
+def eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa: GFA, tokenize: bool=False) -> RegExp:
+    n = len(gfa.States) - 2
+    victim = [i + 1 for i in range(len(gfa.States) - 2)]
+    for i in range(n):
+        if (len(victim) == 1):
+            eliminate_with_tokenization(victim[0], tokenize)
+            continue
+        min_val = get_weight(gfa, victim[0])
+        min_idx = 0
+        for j in range(1, len(victim)):
+            curr_val = get_weight(gfa, victim[j])
+            if min_val > curr_val:
+                min_val = curr_val
+                min_idx = j
+        eliminate_with_tokenization(gfa, victim[min_idx], tokenize)
+        del victim[min_idx]
+    if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
+        return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
+    else:
+        return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
+
+
+def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=False):
+    if st in gfa.delta and st in gfa.delta[st]:
+        r2 = copy(reex.CStar(gfa.delta[st][st], copy(gfa.Sigma)))
+        del gfa.delta[st][st]
+    else:
+        r2 = None
+    for s in gfa.delta:
+        if st not in gfa.delta[s]:
+            continue
+        r1 = copy(gfa.delta[s][st])
+        del gfa.delta[s][st]
+        for s1 in gfa.delta[st]:
+            r3 = copy(gfa.delta[st][s1])
+            if r2 is not None:
+                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy(gfa.Sigma)), copy(gfa.Sigma))
+            else:
+                r = reex.CConcat(r1, r3, copy(gfa.Sigma))
+            if s1 in gfa.delta[s]:
+                r = reex.CDisj(gfa.delta[s][s1], r, copy(gfa.Sigma))
+            if tokenize:
+                gfa.delta[s][s1] = CToken(r)
+            else:
+                gfa.delta[s][s1] = r
+    del gfa.delta[st]
+
 #Trace Values
 save_count_star = 0
 save_count_concat = 0
@@ -49,9 +103,7 @@ save_count_disj = 0
 all_count_star = 0
 all_count_concat = 0
 all_count_disj = 0
-
-#Counterpart of GFA.eliminate method
-def eliminate(gfa: GFA, st: int):
+def eliminate_with_minimization(gfa: GFA, st: int):
     global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
     #Finiding r1 r2* r3
     #r2
@@ -139,6 +191,7 @@ def eliminate(gfa: GFA, st: int):
 class CToken(RegExp):
     #Static class variable
     token_to_regex = dict()
+    threshold = 1_000
 
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)
