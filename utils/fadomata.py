@@ -44,12 +44,6 @@ def is_included(re1: RegExp, re2: RegExp):
     return 2
 
 
-#앞으로 실험해야 하는 것
-#1. 그냥 리피티드 스테이트 웨이트로 했을 때의 시간/길이
-#2. 토크나이즈 안 한 리피티드 스테이트 웨이트로 했을 때 시간/길이
-#3. 토크나이즈 한 리피티드 스테이트 웨이트로 했을 때의 시간/길이
-#기존에 몇 초 걸리던게 이 정도만 걸린다로 보이면 될 것 같음
-
 def eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa: GFA, tokenize: bool=False) -> RegExp:
     n = len(gfa.States) - 2
     victim = [i + 1 for i in range(len(gfa.States) - 2)]
