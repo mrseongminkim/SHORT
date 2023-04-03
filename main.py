@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import csv
+import itertools
 
 import numpy as np
 import coloredlogs
@@ -28,7 +29,7 @@ args = dotdict({
     'updateThreshold': 0.6,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
     'cpuct': 1,
@@ -67,7 +68,8 @@ def train_alpha_zero():
 
 
 def test_alpha_zero():
-    if os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
+    '''
+    if not os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
         with open('./result/c7.csv', 'w', newline='') as fp:
@@ -75,7 +77,8 @@ def test_alpha_zero():
             for n in range(5 - 3, 11 - 3):
                 size_value = exp[n][1][0][1] / 100
                 writer.writerow([size_value])
-    else:
+    '''
+    if(1):
         data = load_data()
         exp = [[[[0, 0] for d in range(len(density))] for k in range(
             len(alphabet))] for n in range(n_range)]
@@ -206,9 +209,40 @@ def test_heuristics():
             dump(exp, fp)
 
 
+def test_brute_force():
+    data = load_data()
+    exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
+    for n in range(3 - 3, 8 - 3):
+        permutations = [x for x in range(1, n + 4)]
+        for i in range(sample_size):
+            print('n' + str(n + min_n) + '\'s' + str(i + 1) + 'sample')
+            min_length = float('inf')
+            start_time = time.time()
+            for perm in itertools.permutations(permutations):
+                gfa = data[n][1][0][i].dup()
+                for state in perm:
+                    gfa.eliminate(state)
+                if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
+                    length = CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]]).treeLength()
+                    print('This will never run, since i specifically made GFA to not have returnining transition')
+                else:
+                    length = gfa.delta[gfa.Initial][list(gfa.Final)[0]].treeLength()
+                min_length = min(min_length, length)
+            end_time = time.time()
+            exp[n][1][0][0] += end_time - start_time
+            exp[n][1][0][1] += min_length
+    with open('./result/brute_force_experiment_result.pkl', 'wb') as fp:
+        dump(exp, fp)
+
+def quicky():
+    with open('./result/brute_force_experiment_result.pkl', 'rb') as fp:
+        exp = load(fp)
+    for n in range(3 - 3, 8 - 3):
+        print(n + 3, exp[n][1][0][1] / 100)
+
+
 def main():
     train_alpha_zero()
-    # test_alpha_zero()
 
 
 main()
