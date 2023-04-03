@@ -42,7 +42,7 @@ def is_included(re1: RegExp, re2: RegExp):
         return is_included(re1.arg, re2.arg)
     return 2
 
-
+#Trace Values
 save_count_star = 0
 save_count_concat = 0
 save_count_disj = 0
@@ -50,70 +50,79 @@ all_count_star = 0
 all_count_concat = 0
 all_count_disj = 0
 
-def eliminate_new(gfa: GFA, st: int):
-    """Eliminate a state.
-
-    :param int st: state to be eliminated"""
-    global save_count_concat, save_count_disj, save_count_star, all_count_concat, all_count_disj, all_count_star
-
+#Counterpart of GFA.eliminate method
+def eliminate(gfa: GFA, st: int):
+    global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
+    #Finiding r1 r2* r3
+    #r2
     if st in gfa.delta and st in gfa.delta[st]:
         if isinstance(gfa.delta[st][st], CStar) or is_epsilon(gfa.delta[st][st]):
+            #Trace
             save_count_star += 1
             r2 = copy.copy(gfa.delta[st][st])
         else:
             r2 = copy.copy(CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
         del gfa.delta[st][st]
+        #Trace
         all_count_star += 1
     else:
         r2 = None
+
     for s in gfa.delta:
         if st not in gfa.delta[s]:
             continue
         r1 = copy.copy(gfa.delta[s][st])
-
         del gfa.delta[s][st]
         for s1 in gfa.delta[st]:
             r3 = copy.copy(gfa.delta[st][s1])
             if r2 is not None:
-                if in_included(r2, r1) == 1 or in_included(r2, r3) == 1:
+                #???????????????????????????????????????////////??????????????????????????????
+                if is_included(r2, r1) == 1 or is_included(r2, r3) == 1:
                     save_count_concat += 1
-                    r = CConcat(
-                        r1, r3, copy.copy(gfa.Sigma))
+                    #Change it to token
+                    r = CConcat(r1, r3, copy.copy(gfa.Sigma))
                 elif is_epsilon(r1):
                     save_count_concat += 1
                     if is_epsilon(r3):
                         r = r2
                     else:
+                        #Change it to token
                         r = CConcat(r2, r3, copy.copy(gfa.Sigma))
                 elif is_epsilon(r3):
                     save_count_concat += 1
+                    #Change it to token
                     r = CConcat(r1, r2, copy.copy(gfa.Sigma))
                 else:
-                    r = CConcat(r1, CConcat(
-                        r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
+                    #Change it to token
+                    r = CConcat(r1, CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
             else:
-                if is_epsilon(r1):
+                if (is_epsilon(r1) and is_epsilon(r3)):
+                    save_count_concat += 2
+                    r = CEpsilon()
+                elif is_epsilon(r1):
                     save_count_concat += 1
                     r = r3
                 elif is_epsilon(r3):
                     save_count_concat += 1
                     r = r1
                 else:
-                    r = CConcat(
-                        r1, r3, copy.copy(gfa.Sigma))
-
+                    #Change it to token
+                    r = CConcat(r1, r3, copy.copy(gfa.Sigma))
             all_count_concat += 1
 
+            #s as source state, s1 as target state
+            #basically, transition label already exsits
             if s1 in gfa.delta[s]:
                 # print(f"R1: {r}, R2: {gfa.delta[s][s1]}")
-                check_included = in_included(r, gfa.delta[s][s1])
+                check_included = is_included(r, gfa.delta[s][s1])
                 if check_included == 1 or check_included == 0:
                     save_count_disj += 1
-                    gfa.delta[s][s1] = r
+                    gfa.delta[s][s1] = r #?????gfa.delta[s][s1]이 되어야 하는거 아닌가?
                 elif check_included == -1:
                     save_count_disj += 1
-                    gfa.delta[s][s1] = gfa.delta[s][s1]
+                    gfa.delta[s][s1] = gfa.delta[s][s1] #불필요
                 else:
+                    #Change it to token
                     if str(gfa.delta[s][s1]) > str(r):
                         gfa.delta[s][s1] = CDisj(
                             r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
@@ -122,6 +131,7 @@ def eliminate_new(gfa: GFA, st: int):
                             gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
                 all_count_disj += 1
             else:
+                #Change it to toekn
                 gfa.delta[s][s1] = r
     del gfa.delta[st]
     return gfa
