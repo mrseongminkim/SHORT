@@ -23,7 +23,7 @@ class StateEliminationGame(Game):
         self.n = n + 2
         self.k = k
         self.d = d
-        self.gfa = gfa.dup()  # it could be overhead
+        #self.gfa = gfa.dup() # I don't think it's necessary
         return gfa
     
     def gfaToBoard(self, gfa):
@@ -48,8 +48,8 @@ class StateEliminationGame(Game):
     def getNextState(self, gfa, player, action):
         # new_board = np.copy(board)
         # action += 1
-        
-        assert action < self.n - 1 and action > 0
+        final_state = list(gfa.Final)[0]
+        assert action < final_state and action > 0
         #    return (new_board, player)
         # self_loop = new_board[action][action]
         # punct = 3 if self_loop else 1
@@ -62,29 +62,28 @@ class StateEliminationGame(Game):
         return (gfa_eliminated, player)
 
     def getValidMoves(self, gfa, player):
-        
+        final_state = list(gfa.Final)[0]
         board = self.gfaToBoard(gfa)
         
         validMoves = [0 for i in range(self.maxN)]
-        for i in range(1, self.n-1):
+        for i in range(1, final_state):
             validMoves[i] = int(sum([len(str(word)) for word in board[i]]) > 0)
-            
         return validMoves
 
     def getGameEnded(self, gfa, player):
         # -1 as not finished, value for transition
-        
+        final_state = list(gfa.Final)[0]
         board = self.gfaToBoard(gfa)
         
         sum_length = 0
-        for i in range(1, self.n - 1):
+        for i in range(1, final_state):
             for j in range(self.maxN + 2):
                 sum_length += board[i][j].treeLength() if board[i][j] else 0
         
         if sum_length != 0:
             return -1
         
-        return - board[0][self.n - 1].treeLength() / (4) ** (self.n - 2) + EPS
+        return - board[0][final_state].treeLength() / (4) ** (self.n - 2) + EPS
 
     def getCanonicalForm(self, gfa, player):
         return gfa

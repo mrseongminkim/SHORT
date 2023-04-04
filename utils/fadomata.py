@@ -52,53 +52,6 @@ def is_included(re1: RegExp, re2: RegExp):
     return 2
 
 
-def eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa: GFA, tokenize: bool=False) -> RegExp:
-    n = len(gfa.States) - 2
-    victim = [i + 1 for i in range(len(gfa.States) - 2)]
-    for i in range(n):
-        if (len(victim) == 1):
-            eliminate_with_tokenization(gfa, victim[0], tokenize)
-            continue
-        min_val = get_weight(gfa, victim[0])
-        min_idx = 0
-        for j in range(1, len(victim)):
-            curr_val = get_weight(gfa, victim[j])
-            if min_val > curr_val:
-                min_val = curr_val
-                min_idx = j
-        eliminate_with_tokenization(gfa, victim[min_idx], tokenize)
-        del victim[min_idx]
-    if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
-        return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
-    else:
-        return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
-
-
-def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=False):
-    if st in gfa.delta and st in gfa.delta[st]:
-        r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
-        del gfa.delta[st][st]
-    else:
-        r2 = None
-    for s in gfa.delta:
-        if st not in gfa.delta[s]:
-            continue
-        r1 = copy.copy(gfa.delta[s][st])
-        del gfa.delta[s][st]
-        for s1 in gfa.delta[st]:
-            r3 = copy.copy(gfa.delta[st][s1])
-            if r2 is not None:
-                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
-            else:
-                r = reex.CConcat(r1, r3, copy.copy(gfa.Sigma))
-            if s1 in gfa.delta[s]:
-                r = reex.CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
-            if tokenize and r.treeLength() > CToken.threshold:
-                gfa.delta[s][s1] = CToken(r)
-            else:
-                gfa.delta[s][s1] = r
-    del gfa.delta[st]
-
 #Trace Values
 save_count_star = 0
 save_count_concat = 0
@@ -106,7 +59,14 @@ save_count_disj = 0
 all_count_star = 0
 all_count_concat = 0
 all_count_disj = 0
-def eliminate_with_minimization(gfa: GFA, st: int):
+def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True):
+
+    print(gfa.States)
+    print(gfa.delta)
+    print(gfa.Initial)
+    
+    #ensures index == state number
+    st = gfa.States.index(str(st))
     global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
     #Finiding r1 r2* r3
     #r2
@@ -188,7 +148,10 @@ def eliminate_with_minimization(gfa: GFA, st: int):
             else:
                 #Change it to toekn
                 gfa.delta[s][s1] = r
-    del gfa.delta[st]
+    if delete_state:
+        gfa.deleteState(st)
+    else:
+        del gfa.delta[st]
     return gfa
 
 class CToken(RegExp):

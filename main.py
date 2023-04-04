@@ -19,6 +19,8 @@ from alpha_zero.utils import *
 from alpha_zero.state_elimination.StateEliminationGame import StateEliminationGame as Game
 from alpha_zero.state_elimination.pytorch.NNet import NNetWrapper as nn
 
+from test import *
+
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
 args = dotdict({
@@ -317,7 +319,22 @@ def check_CToken():
     
 
 def main():
-    test_CToken()
-    check_CToken()
+    train_alpha_zero()
 
 main()
+'''
+data = load_data()
+gfa = data[0][0][0][0]
+print(gfa.States)
+print(gfa.delta)
+print(gfa.Initial)
+print(list(gfa.Final)[0])
+
+while (len(gfa.States) > 2):
+    st = int(input('지울 스테이트 입력: '))
+    eliminate_with_minimization(gfa, st)
+    print(gfa.States)
+    print(gfa.delta)
+    print(gfa.Initial)
+    print(gfa.Final)
+'''
