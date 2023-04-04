@@ -78,7 +78,7 @@ class StateEliminationGame(Game):
             return -1
 
     def getCanonicalForm(self, gfa, player):
-        return gfa
+        return gfa.dup()
 
     def getSymmetries(self, gfa, pi):
         return [(gfa, pi)]
