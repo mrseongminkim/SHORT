@@ -27,9 +27,16 @@ class StateEliminationGame(Game):
         return gfa
     
     def gfaToBoard(self, gfa):
-        
+        self.alphabet = copy(gfa.Sigma)
+        board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
+        re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
+        for source in gfa.delta:
+            for target in gfa.delta[source]:
+                board[source][target] = gfa.delta[source][target].treeLength()
+                re_board[source][target] = gfa.delta[source][target]
+        return re_board
+        '''
         gfa_dup = gfa.dup()
-        
         self.alphabet = copy(gfa_dup.Sigma)
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
         re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
@@ -38,6 +45,7 @@ class StateEliminationGame(Game):
                 board[source][target] = gfa_dup.delta[source][target].treeLength()
                 re_board[source][target] = gfa_dup.delta[source][target]
         return re_board
+        '''
 
     def getBoardSize(self):
         return (self.maxN + 2, self.maxN + 2)
@@ -47,7 +55,7 @@ class StateEliminationGame(Game):
         return self.maxN + 2
         #return self.maxN
 
-    def getNextState(self, gfa, player, action):
+    def getNextState(self, gfa, player, action, duplicate=False):
         # new_board = np.copy(board)
         # action += 1
         final_state = list(gfa.Final)[0]
@@ -56,7 +64,10 @@ class StateEliminationGame(Game):
         #    return (new_board, player)
         # self_loop = new_board[action][action]
         # punct = 3 if self_loop else 1
-        gfa_eliminated = eliminate_with_minimization(gfa.dup(), action)
+        if duplicate:
+            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action)
+        else:
+            gfa_eliminated = eliminate_with_minimization(gfa, action)
         
         # assert sum(new_board[action]) == 0
         # assert sum(new_board[:, action] == 0)
@@ -78,7 +89,8 @@ class StateEliminationGame(Game):
             return -1
 
     def getCanonicalForm(self, gfa, player):
-        return gfa.dup()
+        return gfa
+        #return gfa.dup()
 
     def getSymmetries(self, gfa, pi):
         return [(gfa, pi)]
