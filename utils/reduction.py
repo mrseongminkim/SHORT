@@ -1,3 +1,5 @@
+#deprecated -> utils.fadomata.eliminate_with_minimization
+'''
 from FAdo.reex import *
 
 
@@ -44,3 +46,4 @@ def minimize_regular_expression(regex: RegExp) -> tuple:
     else:
         print('further improvement?')
         return regex, [regex]
+'''
