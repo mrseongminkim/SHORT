@@ -60,13 +60,23 @@ all_count_star = 0
 all_count_concat = 0
 all_count_disj = 0
 def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True):
-
-    print(gfa.States)
-    print(gfa.delta)
-    print(gfa.Initial)
-    
     #ensures index == state number
-    st = gfa.States.index(str(st))
+    #st = gfa.States.index(str(st))
+    '''
+    try:
+        st = gfa.States.index(str(st))
+    except:
+        print()
+        print()
+        print('problem:', st)
+        print(gfa.States)
+        print(gfa.delta)
+        print(gfa.Initial)
+        print(list(gfa.Final)[0])
+        print()
+        print()
+        exit()
+    '''
     global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
     #Finiding r1 r2* r3
     #r2

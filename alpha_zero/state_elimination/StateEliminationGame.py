@@ -43,17 +43,19 @@ class StateEliminationGame(Game):
         return (self.maxN + 2, self.maxN + 2)
 
     def getActionSize(self):
-        return self.maxN
+        #so we can use it directly
+        return self.maxN + 2
+        #return self.maxN
 
     def getNextState(self, gfa, player, action):
         # new_board = np.copy(board)
         # action += 1
         final_state = list(gfa.Final)[0]
-        assert action < final_state and action > 0
+        assert 0 < action and action < final_state
+        #assert action < self.n + 1 and action > 0 and str(action) in gfa.States
         #    return (new_board, player)
         # self_loop = new_board[action][action]
         # punct = 3 if self_loop else 1
-        
         gfa_eliminated = eliminate_with_minimization(gfa.dup(), action)
         
         # assert sum(new_board[action]) == 0
@@ -63,27 +65,17 @@ class StateEliminationGame(Game):
 
     def getValidMoves(self, gfa, player):
         final_state = list(gfa.Final)[0]
-        board = self.gfaToBoard(gfa)
-        
-        validMoves = [0 for i in range(self.maxN)]
+        validMoves = [0 for i in range(self.maxN + 2)]
         for i in range(1, final_state):
-            validMoves[i] = int(sum([len(str(word)) for word in board[i]]) > 0)
+            validMoves[i] = 1
         return validMoves
 
     def getGameEnded(self, gfa, player):
         # -1 as not finished, value for transition
-        final_state = list(gfa.Final)[0]
-        board = self.gfaToBoard(gfa)
-        
-        sum_length = 0
-        for i in range(1, final_state):
-            for j in range(self.maxN + 2):
-                sum_length += board[i][j].treeLength() if board[i][j] else 0
-        
-        if sum_length != 0:
+        if len(gfa.States) == 2:
+            return - gfa.delta[0][1].treeLength() / (4) ** (self.n - 2) + EPS
+        else:
             return -1
-        
-        return - board[0][final_state].treeLength() / (4) ** (self.n - 2) + EPS
 
     def getCanonicalForm(self, gfa, player):
         return gfa
