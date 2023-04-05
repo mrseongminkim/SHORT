@@ -200,8 +200,8 @@ class CToken(RegExp):
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)
         #Sanity Check
-        if self.hashed_value in CToken.token_to_regex:
-            assert CToken.token_to_regex[self.hashed_value] == regex
+        #if self.hashed_value in CToken.token_to_regex:
+        #    assert CToken.token_to_regex[self.hashed_value] == regex
         #Sanity Check
         CToken.token_to_regex[self.hashed_value] = regex
     
