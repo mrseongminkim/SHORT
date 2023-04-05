@@ -199,6 +199,7 @@ class CToken(RegExp):
 
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)
+        self.tree_length = regex.treeLength()
         #Sanity Check
         #if self.hashed_value in CToken.token_to_regex:
         #    assert CToken.token_to_regex[self.hashed_value] == regex
@@ -214,7 +215,7 @@ class CToken(RegExp):
         return repr(CToken.token_to_regex[self.hashed_value])
 
     def treeLength(self):
-        return CToken.token_to_regex[self.hashed_value].treeLength()
+        return self.tree_length
     
     def __copy__(self):
         return CToken(CToken.token_to_regex[self.hashed_value])
