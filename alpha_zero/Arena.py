@@ -69,9 +69,9 @@ class Arena():
 
             
         #board self.n dependency issues
-        if board_x[0][1].treeLength() < board_y[0][1].treeLength():
+        if board_x[0][1] < board_y[0][1]:
             return 1
-        elif board_x[0][1].treeLength() == board_y[0][1].treeLength():
+        elif board_x[0][1] == board_y[0][1]:
             return 0
         else:
             return -1

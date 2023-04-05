@@ -54,7 +54,7 @@ class NNetWrapper(NeuralNet):
                 # print([self.board_to_tensor(board) for board in boards])
 
                 #not sure it will work but this is symentically equivalent
-                boards = torch.stack([self.board_to_tensor(length_board, regex_board) for length_board, regex_board in (length_boards, regex_boards)], dim=0)
+                boards = torch.stack([self.board_to_tensor(length_board, regex_board) for length_board, regex_board in zip(length_boards, regex_boards)], dim=0)
                 #boards = torch.stack(
                 #    [self.board_to_tensor(board) for board in gfas], dim=0)
 
@@ -81,16 +81,17 @@ class NNetWrapper(NeuralNet):
         if args.cuda:
             length_tensor = length_tensor.cuda()
         #tailer regex board to fit in RNN
+        new_board = [[None for i in range(self.board_x)] for j in range(self.board_y)]
         for i in range(len(regex_board)):
             for j in range(len(regex_board[i])):
-                regex_board[i][j] = [word_to_ix[word] for word in list(str(regex_board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
-                if len(regex_board[i][j]) > max_len:
-                    regex_board[i][j] = regex_board[i][j][:max_len]
+                new_board[i][j] = [word_to_ix[word] for word in list(str(regex_board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
+                if len(new_board[i][j]) > max_len:
+                    new_board[i][j] = new_board[i][j][:max_len]
                 else:
-                    regex_board[i][j] = regex_board[i][j] + [0] * (max_len - len(regex_board[i][j]))
-                assert len(regex_board[i][j]) == max_len
+                    new_board[i][j] = new_board[i][j] + [0] * (max_len - len(new_board[i][j]))
+                assert len(new_board[i][j]) == max_len
         #concat two boards
-        new_board_tensor = torch.LongTensor(regex_board).contiguous()
+        new_board_tensor = torch.LongTensor(new_board).contiguous()
         if args.cuda:
             new_board_tensor = new_board_tensor.cuda()
         new_board = torch.cat((length_tensor.unsqueeze(2), new_board_tensor), dim=2)
@@ -102,6 +103,8 @@ class NNetWrapper(NeuralNet):
         #    len_tensor = len_tensor.cuda()
         #new_board = [[None for i in range(self.board_x)]
         #             for j in range(self.board_y)]
+
+
         #for i in range(len(board)):
         #    for j in range(len(board[i])):
         #        new_board[i][j] = [word_to_ix[word] for word in list(
@@ -115,6 +118,7 @@ class NNetWrapper(NeuralNet):
         #
         #        assert len(new_board[i][j]) == max_len
         #
+
         #new_board_tensor = torch.LongTensor(new_board).contiguous()
         #
         #if args.cuda:
