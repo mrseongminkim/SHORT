@@ -64,8 +64,8 @@ class Arena():
             board_y, curPlayer = self.game.getNextState(
                 board_y, curPlayer, action)
             
-        board_x = self.game.gfaToBoard(board_x)
-        board_y = self.game.gfaToBoard(board_y)
+        board_x, discard_x = self.game.gfaToBoard(board_x)
+        board_y, discard_x = self.game.gfaToBoard(board_y)
 
             
         #board self.n dependency issues
