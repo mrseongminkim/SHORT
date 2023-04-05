@@ -12,12 +12,12 @@ class StateEliminationNNet(nn.Module):
         self.args = args
         super(StateEliminationNNet, self).__init__()
         
+        #regex_board
         self.embedding_dim = args.embedding_dim
-        
         self.embed = nn.Embedding(args.vocab_size, args.embedding_dim)
         
-        self.lstm = nn.LSTM(args.embedding_dim,
-                            args.num_channels, batch_first=True)
+        #regex_board
+        self.lstm = nn.LSTM(args.embedding_dim, args.num_channels, batch_first=True)
         
         self.conv1 = nn.Conv2d(
             args.num_channels + 1, args.num_channels, 3, stride=1, padding=0)

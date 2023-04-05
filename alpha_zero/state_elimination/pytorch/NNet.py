@@ -20,11 +20,10 @@ args = dotdict({
     're_len': 50
 })
 
+#word_to_index
 word_to_ix = {'(': 1, ')': 2, '*': 3, '+': 4, '@': 5}
-
 for i in range(10):
     word_to_ix[str(i)] = i + 6
-
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
@@ -37,7 +36,7 @@ class NNetWrapper(NeuralNet):
 
     def train(self, examples):
         """
-        examples: list of examples, each example is of form (board, pi, v)
+        examples: list of examples, each example is of form (length_board, regex_board, post_priority, reward)
         """
         optimizer = optim.AdamW(self.nnet.parameters())
         for epoch in range(args.epochs):
@@ -50,12 +49,14 @@ class NNetWrapper(NeuralNet):
             for _ in t:
                 sample_ids = np.random.randint(
                     len(examples), size=args.batch_size)
-                gfas, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-
+                length_boards, regex_boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+                #gfas, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 # print([self.board_to_tensor(board) for board in boards])
 
-                boards = torch.stack(
-                    [self.board_to_tensor(board) for board in gfas], dim=0)
+                #not sure it will work but this is symentically equivalent
+                boards = torch.stack([self.board_to_tensor(length_board, regex_board) for length_board, regex_board in (length_boards, regex_boards)], dim=0)
+                #boards = torch.stack(
+                #    [self.board_to_tensor(board) for board in gfas], dim=0)
 
                 # boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
@@ -74,47 +75,63 @@ class NNetWrapper(NeuralNet):
                 total_loss.backward()
                 optimizer.step()
 
-    def board_to_tensor(self, gfa, max_len=50):
-        
-        board = self.game.gfaToBoard(gfa)
 
-        len_tensor = torch.tensor([[re.treeLength() if re else 0 for re in line]
-                                   for line in board])
+    def board_to_tensor(self, length_board, regex_board, max_len=50):
+        length_tensor = torch.tensor(length_board)
         if args.cuda:
-            len_tensor = len_tensor.cuda()
-        
-        new_board = [[None for i in range(self.board_x)]
-                     for j in range(self.board_y)]
-        for i in range(len(board)):
-            for j in range(len(board[i])):
-                new_board[i][j] = [word_to_ix[word] for word in list(
-                    str(board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
-
-                if len(new_board[i][j]) > max_len:
-                    new_board[i][j] = new_board[i][j][:max_len]
+            length_tensor = length_tensor.cuda()
+        #tailer regex board to fit in RNN
+        for i in range(len(regex_board)):
+            for j in range(len(regex_board[i])):
+                regex_board[i][j] = [word_to_ix[word] for word in list(str(regex_board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
+                if len(regex_board[i][j]) > max_len:
+                    regex_board[i][j] = regex_board[i][j][:max_len]
                 else:
-                    new_board[i][j] = new_board[i][j] + \
-                        [0]*(max_len-len(new_board[i][j]))
-
-                assert len(new_board[i][j]) == max_len
-
-        new_board_tensor = torch.LongTensor(new_board).contiguous()
-
+                    regex_board[i][j] = regex_board[i][j] + [0] * (max_len - len(regex_board[i][j]))
+                assert len(regex_board[i][j]) == max_len
+        #concat two boards
+        new_board_tensor = torch.LongTensor(regex_board).contiguous()
         if args.cuda:
             new_board_tensor = new_board_tensor.cuda()
-            
-        new_board = torch.cat((len_tensor.unsqueeze(2), new_board_tensor), dim=2)
-
+        new_board = torch.cat((length_tensor.unsqueeze(2), new_board_tensor), dim=2)
         return new_board
 
-    def predict(self, gfa):
+        #board = self.game.gfaToBoard(gfa)
+        #len_tensor = torch.tensor([[re.treeLength() if re else 0 for re in line] for line in board])
+        #if args.cuda:
+        #    len_tensor = len_tensor.cuda()
+        #new_board = [[None for i in range(self.board_x)]
+        #             for j in range(self.board_y)]
+        #for i in range(len(board)):
+        #    for j in range(len(board[i])):
+        #        new_board[i][j] = [word_to_ix[word] for word in list(
+        #            str(board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
+        #
+        #        if len(new_board[i][j]) > max_len:
+        #            new_board[i][j] = new_board[i][j][:max_len]
+        #        else:
+        #            new_board[i][j] = new_board[i][j] + \
+        #                [0]*(max_len-len(new_board[i][j]))
+        #
+        #        assert len(new_board[i][j]) == max_len
+        #
+        #new_board_tensor = torch.LongTensor(new_board).contiguous()
+        #
+        #if args.cuda:
+        #    new_board_tensor = new_board_tensor.cuda()
+            
+        #new_board = torch.cat((len_tensor.unsqueeze(2), new_board_tensor), dim=2)
+        #
+        #return new_board
+
+    def predict(self, length_board, regex_board):
         """
         board: np array with board
         """
         # timing
         # start = time.time()        
 
-        board = self.board_to_tensor(gfa)
+        board = self.board_to_tensor(length_board, regex_board)
 
         # new_board = np.zeros(self.board_x*self.board_y*max_len).reshape(self.board_x, self.board_y, max_len)
 

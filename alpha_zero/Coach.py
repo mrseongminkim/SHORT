@@ -56,7 +56,7 @@ class Coach():
             canonicalBoard: GFA = self.game.getCanonicalForm(board, self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            length_board, regex_board = self.game.gfaToBoard()
+            length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
             trainExamples.append([length_board, regex_board, pi])
             #sym = self.game.getSymmetries(canonicalBoard, pi)
             #for b, p in sym:
