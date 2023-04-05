@@ -49,6 +49,7 @@ class Coach():
         """
         trainExamples = []
         board: GFA = self.game.getInitBoard()
+        print(" Initial States: ", board.States)
         self.curPlayer = 1
         episodeStep = 0
         while True:
@@ -62,6 +63,7 @@ class Coach():
             action = np.random.choice(len(pi), p=pi)
             board, self.curPlayer = self.game.getNextState(
                 board, self.curPlayer, action)
+            print(episodeStep, "'s states: ", canonicalBoard.States)
             r = self.game.getGameEnded(board, self.curPlayer)
             if r != -1:
                 return [(x[0], x[2], r) for x in trainExamples]

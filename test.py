@@ -24,7 +24,7 @@ def eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa: GFA, tok
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
 
-def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=False):
+def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True):
     if st in gfa.delta and st in gfa.delta[st]:
         r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
         del gfa.delta[st][st]

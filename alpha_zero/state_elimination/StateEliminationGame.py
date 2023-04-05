@@ -5,7 +5,7 @@ from utils.random_nfa_generator import generate
 from FAdo.reex import *
 from copy import copy, deepcopy
 
-from utils.heuristics import eliminate_with_minimization
+from utils.heuristics import eliminate_with_minimization, eliminate_with_tokenization
 
 EPS = 1e-8
 
@@ -65,9 +65,9 @@ class StateEliminationGame(Game):
         # self_loop = new_board[action][action]
         # punct = 3 if self_loop else 1
         if duplicate:
-            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action)
+            gfa_eliminated = eliminate_with_tokenization(gfa.dup(), action)
         else:
-            gfa_eliminated = eliminate_with_minimization(gfa, action)
+            gfa_eliminated = eliminate_with_tokenization(gfa, action)
         
         # assert sum(new_board[action]) == 0
         # assert sum(new_board[:, action] == 0)

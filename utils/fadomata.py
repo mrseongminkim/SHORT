@@ -51,6 +51,34 @@ def is_included(re1: RegExp, re2: RegExp):
         return is_included(re1.arg, re2.arg)
     return 2
 
+def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True, delete_state=True):
+    if st in gfa.delta and st in gfa.delta[st]:
+        r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
+        del gfa.delta[st][st]
+    else:
+        r2 = None
+    for s in gfa.delta:
+        if st not in gfa.delta[s]:
+            continue
+        r1 = copy.copy(gfa.delta[s][st])
+        del gfa.delta[s][st]
+        for s1 in gfa.delta[st]:
+            r3 = copy.copy(gfa.delta[st][s1])
+            if r2 is not None:
+                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
+            else:
+                r = reex.CConcat(r1, r3, copy.copy(gfa.Sigma))
+            if s1 in gfa.delta[s]:
+                r = reex.CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+            if tokenize and r.treeLength() > CToken.threshold:
+                gfa.delta[s][s1] = CToken(r)
+            else:
+                gfa.delta[s][s1] = r
+    if delete_state:
+        gfa.deleteState(st)
+    else:
+        del gfa.delta[st]
+    return gfa
 
 #Trace Values
 save_count_star = 0
@@ -180,6 +208,8 @@ class CToken(RegExp):
     def __str__(self):
         return str(CToken.token_to_regex[self.hashed_value])
     
+    _strP = __str__
+
     def __repr__(self):
         return repr(CToken.token_to_regex[self.hashed_value])
 
