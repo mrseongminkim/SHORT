@@ -7,7 +7,7 @@ r = np.arange(n)
 width = 0.10
 x = []
 
-for c in range(1, 9):
+for c in range(1, 8):
     file = open("./result/c" + str(c) + ".csv")
     temp = []
     for row in csv.reader(file):
@@ -43,16 +43,17 @@ plt.bar(r + width * 6, x[6], color = 'black',
         width = width, edgecolor = 'black',
         label='C_7')
 
+'''
 plt.bar(r + width * 7, x[7], color = 'white',
         width = width, edgecolor = 'black',
         label='C_8')
-
+'''
 plt.xlabel("k = 5, d = 0.2")
 plt.ylabel("Size of Regular Expressions")
 plt.title("Average size of resulting regular expressions of state elimination")
 
 plt.xticks(r + width / 2, ['n = 3','n = 4','n = 5','n = 6', 'n = 7'])
-#plt.yscale('log', base=10)
+plt.yscale('log', base=10)
 
 plt.legend()
   

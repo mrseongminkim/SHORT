@@ -71,17 +71,17 @@ def train_alpha_zero():
 
 
 def test_alpha_zero():
-    '''
-    if not os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
+    #'''
+    if os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
         with open('./result/c7.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
-            for n in range(5 - 3, 11 - 3):
+            for n in range(5):
                 size_value = exp[n][1][0][1] / 100
                 writer.writerow([size_value])
-    '''
-    if(1):
+    #'''
+    else:
         data = load_data()
         exp = [[[[0, 0] for d in range(len(density))] for k in range(
             len(alphabet))] for n in range(n_range)]
@@ -99,12 +99,14 @@ def test_alpha_zero():
             for k in range(len(alphabet)):
                 for d in range(len(density)):
                     for i in range(sample_size):
+                        if d == 1 or k != 1 or n > 4:
+                            continue
                         print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + (
                             's' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
-                        gfa = data[n][k][d][i].dup()
+                        gfa = data[n][k][d][i]
                         gfa = g.getInitBoard(
                             gfa, n + min_n, alphabet[k], density[d])
-                        order = []
+                        #order = []
                         start_time = time.time()
                         while g.getGameEnded(gfa, curPlayer) == -1:
                             action = player(
@@ -115,10 +117,12 @@ def test_alpha_zero():
                                 assert valids[action] > 0
                             gfa, curPlayer = g.getNextState(
                                 gfa, curPlayer, action)
-                            order.append(action + 1)
-                        result = g.gfaToBoard(gfa)[0][n + min_n + 1]
+                            #order.append(action + 1)
+                        #result = g.gfaToBoard(gfa)[0][n + min_n + 1]
                         end_time = time.time()
-                        gfa.eliminateAll(order)
+                        result = gfa.delta[0][1].treeLength()
+                        #gfa.eliminateAll(order)
+                        """
                         if (result != gfa.delta[0][n + min_n + 1].treeLength()):
                             print('order', order)
                             print('result length', result)
@@ -126,6 +130,7 @@ def test_alpha_zero():
                                   gfa.delta[0][n + min_n + 1].treeLength())
                             print('Something is wrong')
                             exit()
+                        """
                         result_time = end_time - start_time
                         exp[n][k][d][0] += result_time
                         exp[n][k][d][1] += result

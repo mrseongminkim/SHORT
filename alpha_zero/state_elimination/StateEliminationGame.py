@@ -16,8 +16,8 @@ class StateEliminationGame(Game):
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n = np.random.randint(3, 8)  # np.random.randint(3, maxN)
-            k = 2  # np.random.choice([2, 5, 10])
+            n = np.random.randint(3, 4)  # np.random.randint(3, maxN)
+            k = 5  # np.random.choice([2, 5, 10])
             d = np.random.choice([0.2])
             gfa = generate(n, k, d, 'in-memory')
         self.n = n + 2

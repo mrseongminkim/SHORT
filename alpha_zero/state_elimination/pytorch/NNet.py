@@ -9,7 +9,8 @@ from alpha_zero.NeuralNet import NeuralNet
 from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
-    'lr': 0.001,
+    #0.001
+    'lr': 0.01,
     'dropout': 0.0,
     'epochs': 20,
     'batch_size': 32,
