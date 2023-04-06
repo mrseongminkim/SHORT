@@ -53,8 +53,9 @@ alphabet = [2, 5, 10]
 density = [0.2, 0.5]
 sample_size = 100
 
-
 def train_alpha_zero():
+    print("Let's briefly check the important hyperparameters.")
+    print("\tnumMCTSSims: ", args.numMCTSSims)
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
@@ -76,20 +77,19 @@ def train_alpha_zero():
 
 
 def test_alpha_zero():
-    #'''
-    if os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
+    model_updated = True
+    if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
         with open('./result/c7.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
+                #k = 5, d = 0.2
                 size_value = exp[n][1][0][1] / 100
                 writer.writerow([size_value])
-    #'''
     else:
         data = load_data()
-        exp = [[[[0, 0] for d in range(len(density))] for k in range(
-            len(alphabet))] for n in range(n_range)]
+        exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
         g = Game()
         nnet = nn(g)
         mcts = MCTS(g, nnet, args)
@@ -106,58 +106,44 @@ def test_alpha_zero():
                     for i in range(sample_size):
                         if d == 1 or k != 1 or n > 4:
                             continue
-                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + (
-                            's' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
+                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
                         gfa = data[n][k][d][i]
-                        gfa = g.getInitBoard(
-                            gfa, n + min_n, alphabet[k], density[d])
-                        #order = []
+                        gfa = g.getInitBoard(gfa, n + min_n, alphabet[k], density[d])
                         start_time = time.time()
                         while g.getGameEnded(gfa, curPlayer) == -1:
-                            action = player(
-                                g.getCanonicalForm(gfa, curPlayer))
-                            valids = g.getValidMoves(
-                                g.getCanonicalForm(gfa, curPlayer), 1)
+                            action = player(g.getCanonicalForm(gfa, curPlayer))
+                            valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
                             if valids[action] == 0:
                                 assert valids[action] > 0
-                            gfa, curPlayer = g.getNextState(
-                                gfa, curPlayer, action)
-                            #order.append(action + 1)
-                        #result = g.gfaToBoard(gfa)[0][n + min_n + 1]
+                            gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
                         end_time = time.time()
-                        result = gfa.delta[0][1].treeLength()
-                        #gfa.eliminateAll(order)
-                        """
-                        if (result != gfa.delta[0][n + min_n + 1].treeLength()):
-                            print('order', order)
-                            print('result length', result)
-                            print('valid length',
-                                  gfa.delta[0][n + min_n + 1].treeLength())
-                            print('Something is wrong')
-                            exit()
-                        """
+                        result_length = gfa.delta[0][1].treeLength()
                         result_time = end_time - start_time
                         exp[n][k][d][0] += result_time
-                        exp[n][k][d][1] += result
+                        exp[n][k][d][1] += result_length
         with open('./result/alpha_zero_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
 
 def test_heuristics():
-    if os.path.isfile('./result/heuristics_experiment_result.pkl'):
+    model_updated = True
+    if not model_updated and os.path.isfile('./result/heuristics_experiment_result.pkl'):
         with open('./result/heuristics_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
+        for c in range(6):
+            with open('./result/c' + str(c + 1) + '.csv', 'w', newline='') as fp:
+                writer = csv.writer(fp)
+                for n in range(5):
+                    size_value = exp[c][n][1][0][1] / 100
+                    writer.writerow([size_value])
     else:
         data = load_data()
-        exp = [[[[[0, 0] for d in range(len(density))] for k in range(
-            len(alphabet))] for n in range(n_range)] for c in range(6)]
+        exp = [[[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)] for c in range(6)]
         for n in range(n_range):
             for k in range(len(alphabet)):
                 for d in range(len(density)):
                     for i in range(sample_size):
-                        random.seed(i)
-                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + (
-                            's' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
+                        print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
                         # eliminate_randomly
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
@@ -201,8 +187,7 @@ def test_heuristics():
                         # eliminate_by_repeated_state_weight_heuristic
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
-                        result = eliminate_by_repeated_state_weight_heuristic(
-                            gfa)
+                        result = eliminate_by_repeated_state_weight_heuristic(gfa)
                         end_time = time.time()
                         result_time = end_time - start_time
                         result_size = result.treeLength()
@@ -223,128 +208,76 @@ def test_heuristics():
 
 
 def test_brute_force():
-    data = load_data()
-    exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
-    for n in range(3 - 3, 8 - 3):
-        permutations = [x for x in range(1, n + 4)]
-        for i in range(sample_size):
-            print('n' + str(n + min_n) + '\'s' + str(i + 1) + 'sample')
-            min_length = float('inf')
-            start_time = time.time()
-            for perm in itertools.permutations(permutations):
-                gfa = data[n][1][0][i].dup()
-                for state in perm:
-                    gfa.eliminate(state)
-                if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
-                    length = CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]]).treeLength()
-                    print('This will never run, since i specifically made GFA to not have returnining transition')
-                else:
-                    length = gfa.delta[gfa.Initial][list(gfa.Final)[0]].treeLength()
-                min_length = min(min_length, length)
-            end_time = time.time()
-            exp[n][1][0][0] += end_time - start_time
-            exp[n][1][0][1] += min_length
-    with open('./result/brute_force_experiment_result.pkl', 'wb') as fp:
-        dump(exp, fp)
+    model_updated = True
+    if not model_updated and os.path.isfile('./result/brute_force_experiment_result.pkl'):
+        with open('./result/brute_force_experiment_result.pkl', 'rb') as fp:
+            exp = load(fp)
+        with open('./result/c8.csv', 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            for n in range(5):
+                #k = 5, d = 0.2
+                size_value = exp[n][1][0][1] / 100
+                writer.writerow([size_value])
+    else:
+        data = load_data()
+        exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
+        for n in range(3 - 3, 8 - 3):
+            permutations = [x for x in range(1, n + 4)]
+            for i in range(sample_size):
+                print('n' + str(n + min_n) + '\'s' + str(i + 1) + 'sample')
+                min_length = float('inf')
+                start_time = time.time()
+                for perm in itertools.permutations(permutations):
+                    gfa = data[n][1][0][i].dup()
+                    for state in perm:
+                        gfa.eliminate(state)
+                    if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
+                        length = CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]]).treeLength()
+                        print('This will never run, since i specifically made GFA to not have returnining transition')
+                    else:
+                        length = gfa.delta[gfa.Initial][list(gfa.Final)[0]].treeLength()
+                    min_length = min(min_length, length)
+                end_time = time.time()
+                exp[n][1][0][0] += end_time - start_time
+                exp[n][1][0][1] += min_length
+        with open('./result/brute_force_experiment_result.pkl', 'wb') as fp:
+            dump(exp, fp)
 
-def quicky():
-    with open('./result/brute_force_experiment_result.pkl', 'rb') as fp:
-        exp = load(fp)
-    for n in range(3 - 3, 8 - 3):
-        print(n + 3, exp[n][1][0][1] / 100)
 
-def test_reduction() -> list:
-    alphabet_list = [5]
-    density_list = ['s']
+def test_reduction():
+    model_updated = True
+    if not model_updated and os.path.isfile('data/reduction.pkl'):
+        with open('data/reduction.pkl', 'rb') as fp:
+            data = load(fp)
+        for n in range(3, 8):
+            print(data[n - 3][0][0])
+    else:
+        alphabet_list = [5]
+        density_list = ['s']
+        data = [[[[0, 0, 0] for d in range(1)] for k in range(1)] for n in range(5)]
+        for n in range(3, 8):
+            for k in alphabet_list:
+                for d in density_list:
+                    file_name = 'n' + str(n) + 'k' + str(5) + "s"
+                    content = readFromFile('data/raw/' + file_name + '.txt')
+                    for i in range(len(content)):
+                        print(n, k, d, i)
+                        nfa = content[i].dup()
+                        nfa.reorder({(content[i].States).index(x) : int(x) for x in content[i].States})
 
-    data = [[[[0, 0, 0] for d in range(1)] for k in range(1)] for n in range(5)]
-    for n in range(3, 8):
-        for k in alphabet_list:
-            for d in density_list:
-                file_name = 'n' + str(n) + 'k' + str(5) + "s"
-                content = readFromFile('data/raw/' + file_name + '.txt')
-                for i in range(len(content)):
-                    print(n, k, d, i)
-                    nfa = content[i].dup()
-                    nfa.reorder({(content[i].States).index(x) : int(x) for x in content[i].States})
+                        temp = nfa.dup()
+                        data[n - 3][0][0][0] += len(temp.rEquivNFA().States)
 
-                    temp = nfa.dup()
-                    data[n - 3][0][0][0] += len(temp.rEquivNFA().States)
+                        temp = nfa.dup()
+                        data[n - 3][0][0][1] += len(temp.lEquivNFA().States)
 
-                    temp = nfa.dup()
-                    data[n - 3][0][0][1] += len(temp.lEquivNFA().States)
+                        temp = nfa.dup()
+                        data[n - 3][0][0][2] += len(temp.lrEquivNFA().States)
+        with open('data/reduction.pkl', 'wb') as fp:
+            dump(data, fp)
 
-                    temp = nfa.dup()
-                    data[n - 3][0][0][2] += len(temp.lrEquivNFA().States)
-                    for q in range(3):
-                        print(data[n - 3][0][0][q], end = "\t")
-
-    with open('data/' + "reduction" + '.pkl', 'wb') as fp:
-        dump(data, fp)
-
-def check_result():
-    data = list()
-    with open('data/' + "reduction" + '.pkl', 'rb') as fp:
-        data = load(fp)
-    for n in range(3, 8):
-        print(data[n - 3][0][0])
-
-def test_CToken():
-    time_value = [0 for i in range(100)]
-    length_value = [0 for i in range(100)]
-    data = load_data()
-    for i in range(100):
-        print(i)
-        gfa = data[7][2][1][i]
-        start = time.time()
-        result = eliminate_by_repeated_state_weight_heuristic_with_tokenization(gfa, True)
-        end = time.time()
-        time_value[i] = end - start
-        length_value[i] = result.treeLength()
-        #print(time_value[i])
-    with open('./result/true_time.pkl', 'wb') as fp:
-        dump(time_value, fp)
-    with open('./result/true_length.pkl', 'wb') as fp:
-        dump(length_value, fp)
-
-def check_CToken():
-    with open('./result/' + "true_time" + '.pkl', 'rb') as fp:
-        time_value = load(fp)
-    with open('./result/' + "true_length" + '.pkl', 'rb') as fp:
-        length_value = load(fp)
-    with open('./result/true_time.csv', 'w', newline='') as fp:
-        writer = csv.writer(fp)
-        avg_time = 0
-        for n in range(100):
-            avg_time += time_value[n]
-            writer.writerow([time_value[n]])
-        print(avg_time / 100)
-    with open('./result/true_length.csv', 'w', newline='') as fp:
-        writer = csv.writer(fp)
-        avg_time = 0
-        for n in range(100):
-            avg_time += length_value[n]
-            writer.writerow([length_value[n]])
-        print(avg_time / 100)
-    
 
 def main():
     train_alpha_zero()
 
 main()
-'''
-data = load_data()
-gfa = data[0][0][0][0]
-print(gfa.States)
-print(gfa.delta)
-print(gfa.Initial)
-print(list(gfa.Final)[0])
-
-while (len(gfa.States) > 2):
-    st = int(input('지울 스테이트 입력: '))
-    eliminate_with_minimization(gfa, st)
-    print(gfa.States)
-    print(gfa.delta)
-    print(gfa.Initial)
-    print(gfa.Final)
-'''
