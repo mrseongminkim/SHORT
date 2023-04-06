@@ -1,3 +1,8 @@
+"""
+To do
+1. do sth about all the abomination functions
+"""
+
 import time
 import logging
 import os

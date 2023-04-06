@@ -1,3 +1,5 @@
+# Test code for CToken
+# Delete it after update all the eliminate-variant codes
 from FAdo.reex import *
 
 from utils.heuristics import *
