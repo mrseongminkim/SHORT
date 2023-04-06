@@ -6,12 +6,10 @@ import numpy as np
 EPS = 1e-8
 log = logging.getLogger(__name__)
 
-
 class MCTS():
     """
     This class handles the MCTS tree.
     """
-
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
@@ -35,16 +33,15 @@ class MCTS():
         for i in range(self.args.numMCTSSims):
             self.search(canonicalBoard)
         s = self.game.stringRepresentation(canonicalBoard)
-        counts = [self.Nsa[(s, a)] if (
-            s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-        #print("prior priority: ", counts)
-        #greedy
+        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+        #only the best
         if temp == 0:
             bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
             bestA = np.random.choice(bestAs)
             probs = [0] * len(counts)
             probs[bestA] = 1
             return probs
+        #all valids node can be selected
         counts = [x ** (1. / temp) for x in counts]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
@@ -72,15 +69,12 @@ class MCTS():
         s = self.game.stringRepresentation(canonicalBoard)
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
-        # Changed from here
         if self.Es[s] != -1:
             return self.Es[s]
-        # Changed to here
         if s not in self.Ps:
             # leaf node
             length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
             self.Ps[s], v = self.nnet.predict(length_board, regex_board)
-            #self.Ps[s], v = self.nnet.predict(canonicalBoard)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = np.exp(self.Ps[s]) * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
