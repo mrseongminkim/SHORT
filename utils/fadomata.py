@@ -3,23 +3,87 @@ import copy
 from FAdo.conversions import *
 from FAdo.reex import *
 
-from CToken import *
+from utils.CToken import *
 
-'''
-방향을 좀 잘못잡은 것 같다.
-왜 is_included를 쓰는지 eliminate new부터 분석
-def is_included(re1: RegExp, re2: RegExp):
-    #same as re1 == re2
-    if is_epsilon(re1) and is_epsilon(re2):
-        return 0
-    elif is_epsilon(re1) and isinstance(re2, CDisj):
-        left = is_included(re1, re2.arg1)
-        right = is_included(re1, re2.arg2)
-        if left != 2 or right != 2:
+
+
+
+
+
+
+
+
+
+
+
+
+
+#'''
+def is_included(re1: RegExp, re2: RegExp, depth=0):
+    MAX_RECURSION_DEPTH = 5
+    depth += 1
+    if depth > MAX_RECURSION_DEPTH:
+        return 2
+    if is_epsilon(re1):
+        #this is same as re1 == re2
+        if is_epsilon(re2):
+            return 0
+        elif isinstance(re2, CDisj):
+            left = is_included(re1, re2.arg1, depth)
+            right = is_included(re1, re2.arg2, depth)
+            if left != 2 or right != 2:
+                return 1
+            else:
+                return 2
+        #CConcat can't include anything
+        elif isinstance(re2, CConcat):
+            return 2
+        #star of any regex always includes epsilon
+        elif isinstance(re2, CStar):
             return 1
-    elif is_epsilon(re1) and isinstance(re2, CConcat):
-        pass
-'''
+        elif isinstance(re2, CToken):
+            return isinstance(re1, CToken.token_to_regex[re2.hashed_value], depth)
+    elif is_epsilon(re2):
+        val = - is_included(re2, re1, depth - 1)
+        return 2 if val == -2 else val
+
+    if isinstance(re1, CDisj):
+        #if is_epsilon(re2); this is done by: elif is_epsilon(re2):
+        if isinstance(re2, CDisj):
+            first_argument = is_included(re1.arg1, re2.arg1, depth) == 1 or is_included(re1.arg1, re2.arg2, depth) == 1
+            second_argument = is_included(re1.arg2, re2.arg1, depth) == 1 or is_included(re1.arg2, re2.arg2, depth) == 1
+            if first_argument and second_argument:
+                return 1
+            else:
+                return 2
+        elif isinstance(re2, CConcat) or isinstance(re2, CStar):
+            first_argument = is_included(re1.arg1, re2, depth)
+            second_argument = is_included(re1.arg2, re2, depth)
+            if first_argument == 1 or second_argument ==  1:
+                return 1
+            else:
+                return 2
+        elif isinstance(re2, CToken):
+            first_argument = isinstance(re1.arg1, CToken.token_to_regex[re2.hashed_value], depth)
+
+#'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def is_epsilon(regex: RegExp):
@@ -55,7 +119,7 @@ def is_included(re1: RegExp, re2: RegExp):
         return is_included(re1.arg, re2.arg)
     return 2
 
-#will be deleted
+
 def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True, delete_state=True):
     if st in gfa.delta and st in gfa.delta[st]:
         r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
@@ -162,25 +226,30 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
                     else:
                         del gfa.delta[st]
                     all_count_disj += 1
-                    print_counter()
+                    #print_counter()
                     return gfa
                 elif check_included == -1:
                     save_count_disj += 1
-                    gfa.delta[s][s1] = r
+                    new_regex = r
                 elif str(gfa.delta[s][s1]) > str(r):
-                    gfa.delta[s][s1] = CDisj(r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
+                    new_regex = CDisj(r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
                 else:
-                    gfa.delta[s][s1] = CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+                    new_regex = CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+                if tokenize and new_regex.treeLength() > CToken.threshold:
+                    gfa.delta[s][s1] = CToken(new_regex)
+                else:
+                    gfa.delta[s][s1] = new_regex
                 all_count_disj += 1
             else:
-                gfa.delta[s][s1] = r
-    if tokenize and gfa.delta[s][s1].treeLength() > CToken.threshold:
-        gfa.delta[s][s1] = CToken(gfa.delta[s][s1])
+                if tokenize and r.treeLength() > CToken.threshold:
+                    gfa.delta[s][s1] = CToken(r)
+                else:
+                    gfa.delta[s][s1] = r
     if delete_state:
         gfa.deleteState(st)
     else:
         del gfa.delta[st]
-    print_counter()
+    #print_counter()
     return gfa
 
 

@@ -1,11 +1,11 @@
 from FAdo.reex import *
 
 class CToken(RegExp):
-    #Static class variable
     token_to_regex = dict()
     threshold = 10
 
     def __init__(self, regex: RegExp):
+        self.Sigma = regex.Sigma
         self.hashed_value = hash(regex)
         self.tree_length = regex.treeLength()
         #Sanity Check
@@ -16,11 +16,11 @@ class CToken(RegExp):
     
     def __str__(self):
         return str(CToken.token_to_regex[self.hashed_value])
-    
+
     _strP = __str__
 
     def __repr__(self):
-        return repr(CToken.token_to_regex[self.hashed_value])
+        return "CToken(%d)" % self.hashed_value
 
     def treeLength(self):
         return self.tree_length

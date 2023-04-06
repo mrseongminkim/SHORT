@@ -4,10 +4,9 @@ from utils.random_nfa_generator import generate
 from FAdo.reex import *
 from copy import copy, deepcopy
 
-from utils.heuristics import eliminate_with_minimization, eliminate_with_tokenization
+from utils.heuristics import eliminate_with_minimization
 
 EPS = 1e-8
-
 
 class StateEliminationGame():
     def __init__(self, maxN=10):
@@ -44,9 +43,9 @@ class StateEliminationGame():
         final_state = list(gfa.Final)[0]
         assert 0 < action and action < final_state
         if duplicate:
-            gfa_eliminated = eliminate_with_tokenization(gfa.dup(), action)
+            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action)
         else:
-            gfa_eliminated = eliminate_with_tokenization(gfa, action)
+            gfa_eliminated = eliminate_with_minimization(gfa, action)
         return (gfa_eliminated, player)
 
     def getValidMoves(self, gfa, player):
