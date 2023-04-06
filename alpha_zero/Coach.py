@@ -49,17 +49,14 @@ class Coach():
         """
         trainExamples = []
         board: GFA = self.game.getInitBoard()
+        total_step = len(board.States) - 2
         self.curPlayer = 1
         episodeStep = 0
-        #print(" len: ", len(board.States))
         while True:
             episodeStep += 1
             canonicalBoard: GFA = self.game.getCanonicalForm(board, self.curPlayer)
-            #temp = int(episodeStep < self.args.tempThreshold)
-            temp = 0
+            temp = int(episodeStep < (total_step // self.args.tempThreshold))
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            #print("post priority: ", pi)
-            #print()
             length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
             trainExamples.append([length_board, regex_board, pi])
             #sym = self.game.getSymmetries(canonicalBoard, pi)
