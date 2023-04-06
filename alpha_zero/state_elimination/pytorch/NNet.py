@@ -5,7 +5,6 @@ import numpy as np
 from tqdm import tqdm
 
 from alpha_zero.utils import AverageMeter, dotdict
-from alpha_zero.NeuralNet import NeuralNet
 from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
@@ -26,7 +25,7 @@ word_to_ix = {'(': 1, ')': 2, '*': 3, '+': 4, '@': 5}
 for i in range(10):
     word_to_ix[str(i)] = i + 6
 
-class NNetWrapper(NeuralNet):
+class NNetWrapper():
     def __init__(self, game):
         self.nnet = sennet(game, args)
         self.board_x, self.board_y = game.getBoardSize()

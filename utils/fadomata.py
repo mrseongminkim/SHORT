@@ -3,8 +3,7 @@ import copy
 from FAdo.conversions import *
 from FAdo.reex import *
 
-def is_epsilon(regex: RegExp):
-    return isinstance(regex, CEpsilon)
+from CToken import *
 
 '''
 방향을 좀 잘못잡은 것 같다.
@@ -21,8 +20,13 @@ def is_included(re1: RegExp, re2: RegExp):
     elif is_epsilon(re1) and isinstance(re2, CConcat):
         pass
 '''
-    
 
+
+def is_epsilon(regex: RegExp):
+    return isinstance(regex, CEpsilon)
+
+
+#will be replaced by better(i hope, i pray) function
 def is_included(re1: RegExp, re2: RegExp):
     """
     if re1 ⊆ re2:
@@ -51,6 +55,7 @@ def is_included(re1: RegExp, re2: RegExp):
         return is_included(re1.arg, re2.arg)
     return 2
 
+#will be deleted
 def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True, delete_state=True):
     if st in gfa.delta and st in gfa.delta[st]:
         r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
@@ -80,47 +85,38 @@ def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True, delete_s
         del gfa.delta[st]
     return gfa
 
-#Trace Values
+
 save_count_star = 0
 save_count_concat = 0
 save_count_disj = 0
 all_count_star = 0
 all_count_concat = 0
 all_count_disj = 0
-def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True):
-    #ensures index == state number
-    #st = gfa.States.index(str(st))
-    '''
-    try:
-        st = gfa.States.index(str(st))
-    except:
-        print()
-        print()
-        print('problem:', st)
-        print(gfa.States)
-        print(gfa.delta)
-        print(gfa.Initial)
-        print(list(gfa.Final)[0])
-        print()
-        print()
-        exit()
-    '''
+def print_counter():
     global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
-    #Finiding r1 r2* r3
-    #r2
+    print("saved star: ", all_count_star - save_count_star)
+    print("saved concat: ", all_count_concat - save_count_concat)
+    print("saved disj: ", all_count_disj - save_count_disj)
+    save_count_star = 0
+    save_count_concat = 0
+    save_count_disj = 0
+    all_count_star = 0
+    all_count_concat = 0
+    all_count_disj = 0
+
+
+def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
+    global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
     if st in gfa.delta and st in gfa.delta[st]:
         if isinstance(gfa.delta[st][st], CStar) or is_epsilon(gfa.delta[st][st]):
-            #Trace
             save_count_star += 1
             r2 = copy.copy(gfa.delta[st][st])
         else:
             r2 = copy.copy(CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
         del gfa.delta[st][st]
-        #Trace
         all_count_star += 1
     else:
         r2 = None
-
     for s in gfa.delta:
         if st not in gfa.delta[s]:
             continue
@@ -129,96 +125,64 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True):
         for s1 in gfa.delta[st]:
             r3 = copy.copy(gfa.delta[st][s1])
             if r2 is not None:
-                #???????????????????????????????????????////////??????????????????????????????
                 if is_included(r2, r1) == 1 or is_included(r2, r3) == 1:
-                    save_count_concat += 1
-                    #Change it to token
+                    save_count_concat += 2
                     r = CConcat(r1, r3, copy.copy(gfa.Sigma))
+                elif is_epsilon(r1) and is_epsilon(r3):
+                    save_count_concat += 2
+                    r = r2
                 elif is_epsilon(r1):
                     save_count_concat += 1
-                    if is_epsilon(r3):
-                        r = r2
-                    else:
-                        #Change it to token
-                        r = CConcat(r2, r3, copy.copy(gfa.Sigma))
+                    r = CConcat(r2, r3, copy.copy(gfa.Sigma))
                 elif is_epsilon(r3):
                     save_count_concat += 1
-                    #Change it to token
                     r = CConcat(r1, r2, copy.copy(gfa.Sigma))
                 else:
-                    #Change it to token
                     r = CConcat(r1, CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
             else:
                 if (is_epsilon(r1) and is_epsilon(r3)):
                     save_count_concat += 2
                     r = CEpsilon()
                 elif is_epsilon(r1):
-                    save_count_concat += 1
+                    save_count_concat += 2
                     r = r3
                 elif is_epsilon(r3):
-                    save_count_concat += 1
+                    save_count_concat += 2
                     r = r1
                 else:
-                    #Change it to token
+                    save_count_concat += 1
                     r = CConcat(r1, r3, copy.copy(gfa.Sigma))
-            all_count_concat += 1
-
-            #s as source state, s1 as target state
-            #basically, transition label already exsits
+            all_count_concat += 2
             if s1 in gfa.delta[s]:
-                # print(f"R1: {r}, R2: {gfa.delta[s][s1]}")
                 check_included = is_included(r, gfa.delta[s][s1])
                 if check_included == 1 or check_included == 0:
                     save_count_disj += 1
-                    gfa.delta[s][s1] = r #?????gfa.delta[s][s1]이 되어야 하는거 아닌가?
+                    if delete_state:
+                        gfa.deleteState(st)
+                    else:
+                        del gfa.delta[st]
+                    all_count_disj += 1
+                    print_counter()
+                    return gfa
                 elif check_included == -1:
                     save_count_disj += 1
-                    gfa.delta[s][s1] = gfa.delta[s][s1] #불필요
+                    gfa.delta[s][s1] = r
+                elif str(gfa.delta[s][s1]) > str(r):
+                    gfa.delta[s][s1] = CDisj(r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
                 else:
-                    #Change it to token
-                    if str(gfa.delta[s][s1]) > str(r):
-                        gfa.delta[s][s1] = CDisj(
-                            r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
-                    else:
-                        gfa.delta[s][s1] = CDisj(
-                            gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+                    gfa.delta[s][s1] = CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
                 all_count_disj += 1
             else:
-                #Change it to toekn
                 gfa.delta[s][s1] = r
+    if tokenize and gfa.delta[s][s1].treeLength() > CToken.threshold:
+        gfa.delta[s][s1] = CToken(gfa.delta[s][s1])
     if delete_state:
         gfa.deleteState(st)
     else:
         del gfa.delta[st]
+    print_counter()
     return gfa
 
-class CToken(RegExp):
-    #Static class variable
-    token_to_regex = dict()
-    threshold = 100
-
-    def __init__(self, regex: RegExp):
-        self.hashed_value = hash(regex)
-        self.tree_length = regex.treeLength()
-        #Sanity Check
-        #if self.hashed_value in CToken.token_to_regex:
-        #    assert CToken.token_to_regex[self.hashed_value] == regex
-        #Sanity Check
-        CToken.token_to_regex[self.hashed_value] = regex
-    
-    def __str__(self):
-        return str(CToken.token_to_regex[self.hashed_value])
-    
-    _strP = __str__
-
-    def __repr__(self):
-        return repr(CToken.token_to_regex[self.hashed_value])
-
-    def treeLength(self):
-        return self.tree_length
-    
-    def __copy__(self):
-        return CToken(CToken.token_to_regex[self.hashed_value])
 
 #Counterpart of GFA.weight method
 def get_weight(gfa: GFA, state: int) -> int:
@@ -234,6 +198,7 @@ def get_weight(gfa: GFA, state: int) -> int:
         if i != state:
             weight += gfa.delta[state][i].treeLength() * (len(gfa.predecessors[state]) - self_loop)
     return weight
+
 
 #Counterpart of FA2GFA function
 def convert_nfa_to_gfa(nfa: NFA) -> GFA:
@@ -253,6 +218,7 @@ def convert_nfa_to_gfa(nfa: NFA) -> GFA:
         if i not in gfa.delta:
             gfa.delta[i] = {}
     return gfa
+
 
 #Counterpart of GFA.addTransition
 def add_transition(gfa: GFA, sti1: int, sym: RegExp, sti2: int):

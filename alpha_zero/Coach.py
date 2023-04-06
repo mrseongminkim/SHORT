@@ -59,16 +59,12 @@ class Coach():
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
             trainExamples.append([length_board, regex_board, pi])
-            #sym = self.game.getSymmetries(canonicalBoard, pi)
-            #for b, p in sym:
-            #    trainExamples.append([b, self.curPlayer, p, None])
             action = np.random.choice(len(pi), p=pi)
             board, self.curPlayer = self.game.getNextState(
                 board, self.curPlayer, action)
             r = self.game.getGameEnded(board, self.curPlayer)
             if r != -1:
                 return [(x[0], x[1], x[2], r) for x in trainExamples]
-                #return [(x[0], x[2], r) for x in trainExamples]
 
     def learn(self):
         """

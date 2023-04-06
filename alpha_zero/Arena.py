@@ -40,9 +40,7 @@ class Arena():
         """
         curPlayer = 1
         board_x = self.game.getInitBoard()
-        board_y = copy.deepcopy(board_x)
-
-        num_of_states = len(board_x.States)
+        board_y = board_x.dup()
 
         while self.game.getGameEnded(board_x, curPlayer) == -1:
             action = self.player1(
@@ -75,8 +73,6 @@ class Arena():
         if board_x[0][1] < board_y[0][1]:
             return 1
         elif board_x[0][1] == board_y[0][1]:
-            print()
-            print(num_of_states)
             return 0
         else:
             return -1

@@ -42,7 +42,7 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/',
-    'load_model': False,
+    'load_model': True,
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
@@ -77,7 +77,7 @@ def train_alpha_zero():
 
 
 def test_alpha_zero():
-    model_updated = True
+    model_updated = False
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
@@ -278,6 +278,6 @@ def test_reduction():
 
 
 def main():
-    train_alpha_zero()
+    test_alpha_zero()
 
 main()

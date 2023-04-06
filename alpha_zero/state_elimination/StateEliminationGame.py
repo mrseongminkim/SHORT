@@ -1,6 +1,5 @@
 import numpy as np
 
-from alpha_zero.Game import Game
 from utils.random_nfa_generator import generate
 from FAdo.reex import *
 from copy import copy, deepcopy
@@ -10,13 +9,13 @@ from utils.heuristics import eliminate_with_minimization, eliminate_with_tokeniz
 EPS = 1e-8
 
 
-class StateEliminationGame(Game):
+class StateEliminationGame():
     def __init__(self, maxN=10):
         self.maxN = maxN
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n = np.random.randint(3, 4)  # np.random.randint(3, maxN)
+            n = 7 # np.random.randint(3, 4)  # np.random.randint(3, maxN)
             k = 5  # np.random.choice([2, 5, 10])
             d = np.random.choice([0.2])
             gfa = generate(n, k, d, 'in-memory')
