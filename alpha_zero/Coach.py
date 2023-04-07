@@ -50,13 +50,13 @@ class Coach():
         """
         trainExamples = []
         board: GFA = self.game.getInitBoard(n=curr_iter)
-        total_step = len(board.States) - 2
+        temperature_threshold = min(curr_iter - 1, 4)
         self.curPlayer = 1
         episodeStep = 0
         while True:
             episodeStep += 1
             canonicalBoard: GFA = self.game.getCanonicalForm(board, self.curPlayer)
-            temp = int(episodeStep < (total_step // self.args.tempThreshold))
+            temp = int(episodeStep < temperature_threshold)
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
             trainExamples.append([length_board, regex_board, pi])
