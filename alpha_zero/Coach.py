@@ -14,6 +14,7 @@ from alpha_zero.MCTS import MCTS
 
 log = logging.getLogger(__name__)
 
+curr_iter = 0
 
 class Coach():
     """
@@ -31,7 +32,7 @@ class Coach():
         self.trainExamplesHistory = []
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
 
-    def executeEpisode(self):
+    def executeEpisode(self, curr_iter):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -48,7 +49,7 @@ class Coach():
                            the player eventually won the game, else -1.
         """
         trainExamples = []
-        board: GFA = self.game.getInitBoard()
+        board: GFA = self.game.getInitBoard(n=curr_iter)
         total_step = len(board.States) - 2
         self.curPlayer = 1
         episodeStep = 0
@@ -74,7 +75,9 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        global curr_iter
         for i in range(1, self.args.numIters + 1):
+            curr_iter = i
             # bookkeeping
             log.info(f'Starting Iter #{i} ...')
             # examples of the iteration
@@ -84,7 +87,7 @@ class Coach():
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     # reset search tree
                     self.mcts = MCTS(self.game, self.nnet, self.args)
-                    iterationTrainExamples += self.executeEpisode()
+                    iterationTrainExamples += self.executeEpisode(curr_iter)
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
@@ -110,7 +113,7 @@ class Coach():
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
+            pwins, nwins, draws = arena.playGames(self.args.arenaCompare, curr_iter)
             log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                      (nwins, pwins, draws))
             if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args.updateThreshold:

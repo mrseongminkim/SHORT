@@ -28,7 +28,7 @@ class Arena():
         self.game = game
         self.display = display
 
-    def playGame(self, verbose=False):
+    def playGame(self, curr_iter, verbose=False):
         """
         Executes one episode of a game.
 
@@ -39,7 +39,7 @@ class Arena():
                 draw result returned from the game that is neither 1, -1, nor 0.
         """
         curPlayer = 1
-        board_x = self.game.getInitBoard()
+        board_x = self.game.getInitBoard(n=curr_iter)
         board_y = board_x.dup()
 
         while self.game.getGameEnded(board_x, curPlayer) == -1:
@@ -77,7 +77,7 @@ class Arena():
         else:
             return -1
 
-    def playGames(self, num, verbose=False):
+    def playGames(self, num, curr_iter, verbose=False):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
@@ -91,7 +91,7 @@ class Arena():
         twoWon = 0
         draws = 0
         for _ in tqdm(range(num), desc="Arena.playGames"):
-            gameResult = self.playGame(verbose=verbose)
+            gameResult = self.playGame(curr_iter, verbose=verbose)
             if gameResult == 1:
                 oneWon += 1
             elif gameResult == -1:

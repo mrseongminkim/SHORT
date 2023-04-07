@@ -1,9 +1,10 @@
+from copy import copy
+import sys
+
 import numpy as np
+from FAdo.reex import *
 
 from utils.random_nfa_generator import generate
-from FAdo.reex import *
-from copy import copy, deepcopy
-
 from utils.heuristics import eliminate_with_minimization
 
 EPS = 1e-8
@@ -14,6 +15,10 @@ class StateEliminationGame():
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
+            if n is None:
+                n = 7
+            else:
+                n = min(7, n + 2)
             n = 7 # np.random.randint(3, 4)  # np.random.randint(3, maxN)
             k = 5  # np.random.choice([2, 5, 10])
             d = np.random.choice([0.2])
@@ -24,7 +29,7 @@ class StateEliminationGame():
         return gfa
     
     def gfaToBoard(self, gfa):
-        self.alphabet = copy(gfa.Sigma)
+        self.alphabet = copy.copy(gfa.Sigma)
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
         re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
         for source in gfa.delta:

@@ -7,6 +7,55 @@ r = np.arange(n)
 width = 0.10
 x = []
 
+file = open("./result/c6.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
+
+file = open("./result/c6_reduction.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
+
+file = open("./result/c7_reduction.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
+
+file = open("./result/c8.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
+
+plt.bar(r, x[0], color = 'r',
+        width = width, edgecolor = 'black',
+        label='C6')
+
+plt.bar(r + width, x[1], color = 'g',
+        width = width, edgecolor = 'black',
+        label='C6 with reduction')
+
+plt.bar(r + width * 2, x[2], color = 'b',
+        width = width, edgecolor = 'black',
+        label='c7')
+
+plt.bar(r + width * 3, x[3], color = 'm',
+        width = width, edgecolor = 'black',
+        label='Optimal')
+
+'''
 for c in range(1, 8):
     file = open("./result/c" + str(c) + ".csv")
     temp = []
@@ -14,7 +63,8 @@ for c in range(1, 8):
         temp.append(row[0])
     temp = [float(i) for i in temp]
     x.append(temp)
-
+'''
+'''
 plt.bar(r, x[0], color = 'r',
         width = width, edgecolor = 'black',
         label='C_1')
@@ -42,7 +92,7 @@ plt.bar(r + width * 5, x[5], color = 'y',
 plt.bar(r + width * 6, x[6], color = 'black',
         width = width, edgecolor = 'black',
         label='C_7')
-
+'''
 '''
 plt.bar(r + width * 7, x[7], color = 'white',
         width = width, edgecolor = 'black',

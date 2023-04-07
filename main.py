@@ -127,7 +127,7 @@ def test_alpha_zero():
 
 
 def test_heuristics():
-    model_updated = True
+    model_updated = False
     if not model_updated and os.path.isfile('./result/heuristics_experiment_result.pkl'):
         with open('./result/heuristics_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
@@ -144,7 +144,10 @@ def test_heuristics():
             for k in range(len(alphabet)):
                 for d in range(len(density)):
                     for i in range(sample_size):
+                        if d == 1 or k != 1 or n > 4:
+                            continue
                         print('n' + str(n + min_n) + 'k' + ('2' if not k else ('5' if k == 1 else '10')) + ('s' if not d else 'd') + '\'s ' + str(i + 1) + ' sample')
+                        '''
                         # eliminate_randomly
                         gfa = data[n][k][d][i].dup()
                         start_time = time.time()
@@ -194,6 +197,7 @@ def test_heuristics():
                         result_size = result.treeLength()
                         exp[4][n][k][d][0] += result_time
                         exp[4][n][k][d][1] += result_size
+                        '''
 
                         # decompose + eliminate_by_repeated_state_weight_heuristic
                         gfa = data[n][k][d][i].dup()
