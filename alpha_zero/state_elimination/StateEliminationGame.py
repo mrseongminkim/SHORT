@@ -15,13 +15,15 @@ class StateEliminationGame():
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            if n is None:
-                n = 7
+            #Arena
+            if n == -1:
+                n = np.random.ranint(3, 8)
+            #Training
             else:
-                n = min(7, n + 2)
-            n = 7 # np.random.randint(3, 4)  # np.random.randint(3, maxN)
+                n = 7
+            #n = 7 # np.random.randint(3, 4)  # np.random.randint(3, maxN)
             k = 5  # np.random.choice([2, 5, 10])
-            d = np.random.choice([0.2])
+            d = 0.2 #np.random.choice([0.2])
             gfa = generate(n, k, d, 'in-memory')
         self.n = n + 2
         self.k = k

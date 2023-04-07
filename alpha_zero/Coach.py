@@ -50,7 +50,7 @@ class Coach():
         """
         trainExamples = []
         board: GFA = self.game.getInitBoard(n=curr_iter)
-        temperature_threshold = min(curr_iter - 1, 4)
+        temperature_threshold = 4 #min(curr_iter - 1, 4)
         self.curPlayer = 1
         episodeStep = 0
         while True:
