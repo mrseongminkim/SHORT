@@ -143,6 +143,8 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
                 check_included = is_included(r, gfa.delta[s][s1])
                 if check_included == 1 or check_included == 0:
                     save_count_disj += 1
+                    all_count_disj += 1
+                    continue
                 elif check_included == -1:
                     save_count_disj += 1
                     new_regex = r
@@ -164,7 +166,7 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
         gfa.deleteState(st)
     else:
         del gfa.delta[st]
-    print_counter()
+    #print_counter()
     return gfa
 
 
