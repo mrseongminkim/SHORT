@@ -38,8 +38,7 @@ def decompose(gfa: GFA, state_weight: bool = False, repeated: bool = False) -> R
     subautomata = decompose_vertically(gfa)
     for subautomaton in subautomata:
         result = decompose_horizontally(subautomaton, state_weight, repeated)
-        final_result = result if final_result == None else CConcat(
-            final_result, result)
+        final_result = result if final_result == None else CConcat(final_result, result)
     return final_result
 
 
@@ -173,6 +172,18 @@ def eliminate_by_state_weight_heuristic(gfa: GFA) -> RegExp:
 
 def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
     n = len(gfa.States) - 2
+    for i in range(n):
+        min_val = get_weight(gfa, 1)
+        min_idx = 1
+        for j in range(2, len(gfa.States) - 1):
+            curr_val = get_weight(gfa, j)
+            if min_val > curr_val:
+                min_val = curr_val
+                min_idx = j
+        eliminate_with_minimization(gfa, min_idx)
+    return gfa.delta[0][1]
+    '''
+    n = len(gfa.States) - 2
     victim = [i + 1 for i in range(len(gfa.States) - 2)]
     for i in range(n):
         if (len(victim) == 1):
@@ -191,3 +202,4 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
+    '''
