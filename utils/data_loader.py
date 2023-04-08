@@ -5,7 +5,7 @@ from FAdo.fio import *
 
 from utils.fadomata import *
 
-def load_data() -> list:
+def load_nfa():
     alphabet_list = [2, 5, 10]
     density_list = ['s', 'd']
     data = [[[[] for d in range(2)] for k in range(3)] for n in range(8)]
@@ -16,15 +16,31 @@ def load_data() -> list:
                 b = alphabet_list.index(k)
                 c = density_list.index(d)
                 file_name = 'n' + str(n) + 'k' + str(k) + d
-                if isfile('data/pkl/' + file_name + '.pkl'):
-                    with open('data/pkl/' + file_name + '.pkl', 'rb') as fp:
+                if isfile('data/random_nfa/pkl/' + file_name + '.pkl'):
+                    with open('data/random_nfa/pkl/' + file_name + '.pkl', 'rb') as fp:
                         data[a][b][c] = load(fp)
                 else:
                     content = readFromFile('data/raw/' + file_name + '.txt')
                     for i in range(len(content)):
                         content[i] = convert_nfa_to_gfa(content[i])
                         content[i].reorder({(content[i].States).index(x) : int(x) for x in content[i].States})
-                    with open('data/pkl/' + file_name + '.pkl', 'wb') as fp:
+                    with open('data/random_nfa/pkl/' + file_name + '.pkl', 'wb') as fp:
                         dump(content, fp)
                     data[a][b][c] = content
     return data
+
+def load_position():
+    min_length = 5
+    max_length = 10 #max size = maxN - 1
+    Sigma = ['0', '1', '2', '4', '5']
+    file_name = 'n' + str(min_length) + 'to' + str(max_length - 1) + 'k' + str(len(Sigma)) + '.pkl'
+    with open('data/position_automata/' + file_name, 'rb') as fp:
+        data = load(fp)
+    return data
+
+def load_data(type):
+    if type == 'nfa':
+        return load_nfa()
+    elif type == 'position':
+        return load_position()
+    return

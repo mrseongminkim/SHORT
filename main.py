@@ -1,8 +1,3 @@
-"""
-To do
-1. do sth about all the abomination functions
-"""
-
 import time
 import logging
 import os
@@ -42,7 +37,7 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/',
-    'load_model': False,
+    'load_model': True,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
@@ -77,8 +72,8 @@ def train_alpha_zero():
     c.learn()
 
 
-def test_alpha_zero():
-    model_updated = False
+def test_alpha_zero(model_updated):
+    model_updated = model_updated
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
@@ -89,7 +84,7 @@ def test_alpha_zero():
                 size_value = exp[n][1][0][1] / 100
                 writer.writerow([size_value])
     else:
-        data = load_data()
+        data = load_data('nfa')
         exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
         g = Game()
         nnet = nn(g)
@@ -282,7 +277,61 @@ def test_reduction():
             dump(data, fp)
 
 
+def test_alpha_zero_for_position():
+    model_updated = False
+    if not model_updated and os.path.isfile('./result/alpha_zero_position_result.pkl'):
+        with open('./result/alpha_zero_position_result.pkl', 'rb') as fp:
+            exp = load(fp)
+        with open('./result/postion_original_length.pkl', 'rb') as fp:
+            average_origianl_length = load(fp)
+        with open('./result/position.csv', 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            for n in range(5):
+                size_value = exp[n]
+                writer.writerow([size_value])
+        with open('./result/original_position.csv', 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            for n in range(5):
+                size_value = average_origianl_length[n]
+                writer.writerow([size_value])
+    else:
+        data = load_data('position')
+        exp = [0] * 5
+        average_origianl_length = [0] * 5
+        g = Game()
+        nnet = nn(g)
+        mcts = MCTS(g, nnet, args)
+        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
+        curPlayer = 1
+        if args.load_model:
+            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
+        else:
+            print("Can't test without pre-trained model")
+            exit()
+        for n in range(5):
+            for i in range(100):
+                print('n', n, 'i', i)
+                gfa = data[n][i][0]
+                original_length = data[n][i][1]
+                gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
+                while g.getGameEnded(gfa, curPlayer) == -1:
+                    action = player(g.getCanonicalForm(gfa, curPlayer))
+                    valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
+                    if valids[action] == 0:
+                        assert valids[action] > 0
+                    gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
+                result_length = gfa.delta[0][1].treeLength()
+                exp[n] += result_length
+                average_origianl_length[n] += original_length
+            exp[n] /= 100
+            average_origianl_length[n] /= 100
+        with open('./result/alpha_zero_position_result.pkl', 'wb') as fp:
+            dump(exp, fp)
+        with open('./result/postion_original_length.pkl', 'wb') as fp:
+            dump(average_origianl_length, fp)
+
 def main():
-    train_alpha_zero()
+    test_alpha_zero(True)
+    test_alpha_zero(False)
 
 main()

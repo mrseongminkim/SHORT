@@ -170,6 +170,31 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
     return gfa
 
 
+
+def make_nfa_complete(nfa):
+    initial = nfa.addState()
+    for i in nfa.Initial:
+        nfa.addTransition(initial, Epsilon, i)
+    nfa.setInitial([initial])
+    final = nfa.addState()
+    for i in nfa.Final:
+        nfa.addTransition(i, Epsilon, final)
+    nfa.setFinal([final])
+
+
+#Counterpart of RegExp.nfaGlushkov
+def regular_expression_to_position_automata(regular_expression):
+    aut = fa.NFA()
+    initial = aut.addState('0')
+    aut.addInitial(initial)
+    if regular_expression.Sigma is not None:
+        aut.setSigma(regular_expression.Sigma)
+    _, final = regular_expression._nfaGlushkovStep(aut, aut.Initial, set())
+    aut.Final = final
+    aut.epsilon_transitions=  False
+    return aut
+
+
 #Counterpart of GFA.weight method
 def get_weight(gfa: GFA, state: int) -> int:
     weight = 0
