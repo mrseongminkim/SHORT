@@ -1,6 +1,7 @@
 *.pyc
 *.tar
 *.csv
-*.pkl
 *.examples
 *.zip
+
+/result
