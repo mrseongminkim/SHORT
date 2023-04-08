@@ -354,6 +354,7 @@ def test_fig10():
     print(order)
 
 def main():
+    print("deleting-states")
     test_alpha_zero(True)
     test_alpha_zero(False)
 
