@@ -354,6 +354,7 @@ def test_fig10():
     print(order)
 
 def main():
-    test_fig10()
+    test_alpha_zero(True)
+    test_alpha_zero(False)
 
 main()
