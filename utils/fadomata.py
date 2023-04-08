@@ -6,42 +6,6 @@ from FAdo.reex import *
 from utils.CToken import *
 from utils.inclusion_checker import *
 
-'''
-def is_epsilon(regex: RegExp):
-    return isinstance(regex, CEpsilon)
-'''
-
-'''
-def is_included(re1: RegExp, re2: RegExp):
-    """
-    if re1 ⊆ re2:
-        return 1
-    if re1 == re2:
-        return 0
-    if re2 ⊆ re1:
-        return -1
-    else:
-        return 2
-    """
-    if re1 == re2:
-        return 0
-    elif is_epsilon(re1) and isinstance(re2, CStar):
-        return 1
-    elif is_epsilon(re2) and isinstance(re1, CStar):
-        return -1
-    elif isinstance(re2, CDisj) and (re2.arg1 == re1 or re2.arg2 == re1):
-        return 1
-    elif isinstance(re1, CDisj) and (re1.arg1 == re2 or re1.arg2 == re2):
-        return -1
-    elif isinstance(re1, CDisj) and isinstance(re2, CDisj):
-        if (is_included(re1.arg1, re2.arg2) == 0) and (is_included(re1.arg2, re2.arg1) == 0):
-            return 0
-    elif isinstance(re1, CStar) and isinstance(re2, CStar):
-        return is_included(re1.arg, re2.arg)
-    return 2
-'''
-
-
 def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True, delete_state=True):
     if st in gfa.delta and st in gfa.delta[st]:
         r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
@@ -168,7 +132,6 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
         del gfa.delta[st]
     #print_counter()
     return gfa
-
 
 
 def make_nfa_complete(nfa):

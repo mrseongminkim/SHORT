@@ -330,8 +330,30 @@ def test_alpha_zero_for_position():
         with open('./result/postion_original_length.pkl', 'wb') as fp:
             dump(average_origianl_length, fp)
 
+def test_fig10():
+    gfa = load_data('fig10')
+    g = Game()
+    nnet = nn(g)
+    mcts = MCTS(g, nnet, args)
+    def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
+    curPlayer = 1
+    if args.load_model:
+        nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
+    else:
+        print("Can't test without pre-trained model")
+        exit()
+    order = []
+    gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
+    while g.getGameEnded(gfa, curPlayer) == -1:
+        action = player(g.getCanonicalForm(gfa, curPlayer))
+        valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
+        if valids[action] == 0:
+            assert valids[action] > 0
+        order.append(gfa.States[action])
+        gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
+    print(order)
+
 def main():
-    test_alpha_zero(True)
-    test_alpha_zero(False)
+    test_fig10()
 
 main()

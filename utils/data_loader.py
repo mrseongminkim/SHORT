@@ -29,6 +29,7 @@ def load_nfa():
                     data[a][b][c] = content
     return data
 
+
 def load_position():
     min_length = 5
     max_length = 10 #max size = maxN - 1
@@ -38,9 +39,31 @@ def load_position():
         data = load(fp)
     return data
 
+
+def load_fig10():
+    nfa = NFA()
+    for i in range(5):
+        nfa.addState(str(i))
+    nfa.setInitial([0])
+    nfa.setFinal([4])
+    nfa.addTransition(0, '0', 1)
+    nfa.addTransition(1, '1', 3)
+    nfa.addTransition(2, '1', 1)
+    nfa.addTransition(2, '0', 2)
+    nfa.addTransition(2, '1', 2)
+    nfa.addTransition(2, '2', 2)
+    nfa.addTransition(2, '1', 3)
+    nfa.addTransition(3, '2', 2)
+    nfa.addTransition(3, '1', 4)
+    #nfa.display()
+    gfa = convert_nfa_to_gfa(nfa)
+    return gfa
+
 def load_data(type):
     if type == 'nfa':
         return load_nfa()
     elif type == 'position':
         return load_position()
+    elif type == 'fig10':
+        return load_fig10()
     return
