@@ -10,7 +10,7 @@ data = [[[None, None] for i in range(100)] for size in range(0, 5)]
 
 min_length = 5
 max_length = 10 #max size = maxN - 1
-Sigma = ['0', '1', '2', '4', '5']
+Sigma = ['0', '1', '2', '3', '4']
 for size in range(min_length, max_length):
     regex_generator = REStringRGenerator(Sigma=Sigma, size=size)
     for i in range(100):
