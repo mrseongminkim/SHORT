@@ -17,7 +17,7 @@ class StateEliminationGame():
         if gfa is None:
             #Arena
             if n == -1:
-                n = np.random.ranint(3, 8)
+                n = np.random.randint(3, 8)
             #Training
             else:
                 n = 7
