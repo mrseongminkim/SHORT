@@ -8,8 +8,7 @@ from alpha_zero.utils import AverageMeter, dotdict
 from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
-    #0.001
-    'lr': 0.01,
+    'lr': 0.001,
     'dropout': 0.0,
     'epochs': 20,
     'batch_size': 32,
