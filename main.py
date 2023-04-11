@@ -6,6 +6,7 @@ import csv
 import itertools
 from pickle import load, dump
 
+import torch
 import numpy as np
 import coloredlogs
 from FAdo.conversions import *
@@ -36,10 +37,10 @@ args = dotdict({
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
     'cpuct': 1,
-    'checkpoint': './alpha_zero/models/',
-    'load_model': True,
+    'checkpoint': './alpha_zero/models/deleting/',
+    'load_model': False,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_1.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
@@ -52,6 +53,7 @@ sample_size = 100
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
     print("\tnumMCTSSims: ", args.numMCTSSims)
+    print("\tcuda: ", torch.cuda.is_available())
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
@@ -77,7 +79,7 @@ def test_alpha_zero(model_updated):
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/c7.csv', 'w', newline='') as fp:
+        with open('./result/c7_iter_10_4.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
                 #k = 5, d = 0.2
@@ -355,7 +357,8 @@ def test_fig10():
 
 def main():
     print("deleting-states")
-    test_alpha_zero(True)
-    test_alpha_zero(False)
+    train_alpha_zero()
+    #test_alpha_zero(True)
+    #test_alpha_zero(False)
 
 main()
