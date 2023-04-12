@@ -14,8 +14,6 @@ from alpha_zero.MCTS import MCTS
 
 log = logging.getLogger(__name__)
 
-curr_iter = 0
-
 class Coach():
     """
     This class executes the self-play + learning. It uses the functions defined
@@ -76,7 +74,6 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-        global curr_iter
         for i in range(1, self.args.numIters + 1):
             curr_iter = i
             # bookkeeping

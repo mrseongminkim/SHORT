@@ -69,10 +69,11 @@ class MCTS():
         s = self.game.stringRepresentation(canonicalBoard)
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        #terminal
         if self.Es[s] != -1:
             return self.Es[s]
+        #leaf node
         if s not in self.Ps:
-            # leaf node
             length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
             self.Ps[s], v = self.nnet.predict(length_board, regex_board)
             valids = self.game.getValidMoves(canonicalBoard, 1)

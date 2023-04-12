@@ -47,9 +47,8 @@ class StateEliminationNNet(nn.Module):
         self.value_fc3 = nn.Linear(32, 1)
 
     def forward(self, s):
-        #                                                           s: batch_size x board_x x board_y
+        # s: batch_size x board_x x board_y
         # (batch_size x board_x x board_y) x 20
-        
         s = s.view(-1, self.board_x, self.board_y, self.args.re_len + 1)
                 
         s_re = s[:, :, :, 1:].view(-1, self.args.re_len)

@@ -39,7 +39,7 @@ class Arena():
                 draw result returned from the game that is neither 1, -1, nor 0.
         """
         curPlayer = 1
-        board_x = self.game.getInitBoard(n=-1)
+        board_x = self.game.getInitBoard(n=curr_iter)
         board_y = board_x.dup()
 
         while self.game.getGameEnded(board_x, curPlayer) == -1:

@@ -8,7 +8,7 @@ from alpha_zero.utils import AverageMeter, dotdict
 from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
-    'lr': 0.0001,
+    'lr': 0.001,
     'dropout': 0.0,
     'epochs': 20,
     'batch_size': 4,
@@ -46,8 +46,7 @@ class NNetWrapper():
             batch_count = int(len(examples) / args.batch_size)
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
-                sample_ids = np.random.randint(
-                    len(examples), size=args.batch_size)
+                sample_ids = np.random.randint(len(examples), size=args.batch_size)
                 length_boards, regex_boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 #gfas, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 # print([self.board_to_tensor(board) for board in boards])
@@ -96,37 +95,6 @@ class NNetWrapper():
         new_board = torch.cat((length_tensor.unsqueeze(2), new_board_tensor), dim=2)
         return new_board
 
-        #board = self.game.gfaToBoard(gfa)
-        #len_tensor = torch.tensor([[re.treeLength() if re else 0 for re in line] for line in board])
-        #if args.cuda:
-        #    len_tensor = len_tensor.cuda()
-        #new_board = [[None for i in range(self.board_x)]
-        #             for j in range(self.board_y)]
-
-
-        #for i in range(len(board)):
-        #    for j in range(len(board[i])):
-        #        new_board[i][j] = [word_to_ix[word] for word in list(
-        #            str(board[i][j]).replace('@epsilon', '@').replace(' ', ''))[:max_len]]
-        #
-        #        if len(new_board[i][j]) > max_len:
-        #            new_board[i][j] = new_board[i][j][:max_len]
-        #        else:
-        #            new_board[i][j] = new_board[i][j] + \
-        #                [0]*(max_len-len(new_board[i][j]))
-        #
-        #        assert len(new_board[i][j]) == max_len
-        #
-
-        #new_board_tensor = torch.LongTensor(new_board).contiguous()
-        #
-        #if args.cuda:
-        #    new_board_tensor = new_board_tensor.cuda()
-            
-        #new_board = torch.cat((len_tensor.unsqueeze(2), new_board_tensor), dim=2)
-        #
-        #return new_board
-
     def predict(self, length_board, regex_board):
         """
         board: np array with board
@@ -139,6 +107,7 @@ class NNetWrapper():
         # new_board = np.zeros(self.board_x*self.board_y*max_len).reshape(self.board_x, self.board_y, max_len)
 
         board = board.view(self.board_x, self.board_y, -1)
+
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)

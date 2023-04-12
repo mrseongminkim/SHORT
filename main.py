@@ -40,7 +40,7 @@ args = dotdict({
     'checkpoint': './alpha_zero/models/deleting/',
     'load_model': False,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_1.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_3.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
@@ -79,7 +79,7 @@ def test_alpha_zero(model_updated):
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/c7_iter_10_4.csv', 'w', newline='') as fp:
+        with open('./result/reward_mod_3.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
                 #k = 5, d = 0.2
