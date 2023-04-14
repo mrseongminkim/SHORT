@@ -10,7 +10,7 @@ from utils.heuristics import eliminate_with_minimization
 EPS = 1e-8
 
 class StateEliminationGame():
-    def __init__(self, maxN=50):
+    def __init__(self, maxN=7):
         self.maxN = maxN
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):
@@ -68,8 +68,25 @@ class StateEliminationGame():
 
     def getGameEnded(self, gfa, player):
         # -1 as not finished, value for transition
+        # 273.3 -> 280
         if len(gfa.States) == 2:
-            return - gfa.delta[0][1].treeLength() / (4) ** (self.n - 2) + EPS
+            length = gfa.delta[0][1].treeLength()
+            AVG = 320.165
+            STD = 154.3203213543653
+            reward = (length - AVG) / STD
+            return - reward
+            '''
+            v = gfa.delta[0][1].treeLength()
+            if v <= 280:
+                return 1
+            else:
+                return 280 / v
+            '''
+            #return 280 / gfa.delta[0][1].treeLength()
+            #print(' States: ', gfa.States)
+            #print(' length: ', gfa.delta[0][1].treeLength())
+            #return - gfa.delta[0][1].treeLength()
+            #return - gfa.delta[0][1].treeLength() / 280 + EPS
         else:
             return -1
 

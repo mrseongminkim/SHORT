@@ -6,24 +6,8 @@ n = 5
 r = np.arange(n)
 width = 0.10
 x = []
-'''
-file = open("./result/c6.csv")
-temp = []
-for row in csv.reader(file):
-    temp.append(row[0])
-temp = [float(i) for i in temp]
-x.append(temp)
-file.close()
-
+#'''
 file = open("./result/c6_reduction.csv")
-temp = []
-for row in csv.reader(file):
-    temp.append(row[0])
-temp = [float(i) for i in temp]
-x.append(temp)
-file.close()
-
-file = open("./result/c7_reduction.csv")
 temp = []
 for row in csv.reader(file):
     temp.append(row[0])
@@ -39,23 +23,27 @@ temp = [float(i) for i in temp]
 x.append(temp)
 file.close()
 
-plt.bar(r, x[0], color = 'r',
-        width = width, edgecolor = 'black',
-        label='C6')
+file = open("./result/z18.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
 
-plt.bar(r + width, x[1], color = 'g',
+plt.bar(r, x[0], color = 'r',
         width = width, edgecolor = 'black',
         label='C6 with reduction')
 
+plt.bar(r + width, x[1], color = 'g',
+        width = width, edgecolor = 'black',
+        label='Optimal without reduction')
+
 plt.bar(r + width * 2, x[2], color = 'b',
         width = width, edgecolor = 'black',
-        label='c7')
-
-plt.bar(r + width * 3, x[3], color = 'm',
-        width = width, edgecolor = 'black',
-        label='Optimal')
-'''
+        label='z-score/iter 18')
 #'''
+'''
 for c in range(1, 9):
     file = open("./result/c" + str(c) + ".csv")
     temp = []
@@ -95,6 +83,7 @@ plt.bar(r + width * 6, x[6], color = 'black',
 plt.bar(r + width * 7, x[7], color = 'white',
         width = width, edgecolor = 'black',
         label='optimal')
+'''
 
 plt.xlabel("k = 5, d = 0.2")
 plt.ylabel("Size of Regular Expressions")

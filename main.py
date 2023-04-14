@@ -30,7 +30,7 @@ args = dotdict({
     'numEps': 100,
     #'tempThreshold': 4,        # temperature hyperparameters
     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
-    'updateThreshold': 0.6,
+    'updateThreshold': 0.0,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
     'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
@@ -38,10 +38,10 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/deleting/',
-    'load_model': False,
+    'load_model': True,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_3.pth.tar'),
-    'numItersForTrainExamplesHistory': 20,
+    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_18.pth.tar'),
+    'numItersForTrainExamplesHistory': 5,
 })
 min_n = 3
 max_n = 10
@@ -58,7 +58,7 @@ def train_alpha_zero():
     g = Game()
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
-    if args.load_model:
+    if not args.load_model:
         log.info('Loading checkpoint "%s/%s"...',
                  args.load_folder_file[0], args.load_folder_file[1])
         nnet.load_checkpoint(
@@ -67,7 +67,7 @@ def train_alpha_zero():
         log.warning('Not loading a checkpoint!')
     log.info('Loading the Coach...')
     c = Coach(g, nnet, args)
-    if args.load_model:
+    if not args.load_model:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
     log.info('Starting the learning process')
@@ -79,7 +79,7 @@ def test_alpha_zero(model_updated):
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/reward_mod_3.csv', 'w', newline='') as fp:
+        with open('./result/z18.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
                 #k = 5, d = 0.2
@@ -208,6 +208,42 @@ def test_heuristics():
         with open('./result/heuristics_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
+'''
+from utils.random_nfa_generator import *
+lst = []
+average_length = 0
+for i in range(200):
+    print(i)
+    permutations = [x for x in range(1, 8)]
+    gfa = generate(7, 5, 0.1, 'in-memory')
+    min_length = float('inf')
+    for perm in itertools.permutations(permutations):
+        gfa_dup = gfa.dup()
+        for state in perm:
+            eliminate_with_minimization(gfa_dup, state, delete_state=False)
+        length = gfa_dup.delta[0][8].treeLength()
+        lst.append(length)
+        min_length = min(min_length, length)
+    average_length += min_length
+with open('./result/stat.pkl', 'wb') as fp:
+    dump(lst, fp)
+'''
+'''
+import statistics
+with open('./result/stat.pkl', 'rb') as fp:
+    lst = load(fp)
+mistake = []
+for i in range(0, 1008000, 5040):
+    print(i)
+    val = min(lst[i : i + 5040])
+    mistake.append(val)
+print(mistake)
+print('len: ', len(mistake))
+print('avg: ', sum(mistake) / len(mistake))
+print('std: ', statistics.stdev(mistake))
+print('min: ', min(mistake))
+print('max: ', max(mistake))
+'''
 
 def test_brute_force():
     model_updated = True
@@ -332,6 +368,7 @@ def test_alpha_zero_for_position():
         with open('./result/postion_original_length.pkl', 'wb') as fp:
             dump(average_origianl_length, fp)
 
+
 def test_fig10():
     gfa = load_data('fig10')
     g = Game()
@@ -355,10 +392,12 @@ def test_fig10():
         gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
     print(order)
 
+
 def main():
     print("deleting-states")
-    train_alpha_zero()
-    #test_alpha_zero(True)
-    #test_alpha_zero(False)
+    #train_alpha_zero()
+    test_alpha_zero(True)
+    test_alpha_zero(False)
+
 
 main()
