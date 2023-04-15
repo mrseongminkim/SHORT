@@ -37,10 +37,10 @@ args = dotdict({
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/',
-    'load_model': True,
+    'load_model': False,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'numItersForTrainExamplesHistory': 20,
+    'numItersForTrainExamplesHistory': 5,
 })
 min_n = 3
 max_n = 10
@@ -355,6 +355,7 @@ def test_fig10():
 
 def main():
     print("deleting-states")
+    train_alpha_zero()
     test_alpha_zero(True)
     test_alpha_zero(False)
 

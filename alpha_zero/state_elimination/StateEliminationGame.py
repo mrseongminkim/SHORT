@@ -59,7 +59,12 @@ class StateEliminationGame():
     def getGameEnded(self, gfa, player):
         # -1 as not finished, value for transition
         if len(gfa.States) == 2:
-            return - gfa.delta[0][1].treeLength() / (4) ** (self.n - 2) + EPS
+            length = gfa.delta[0][1].treeLength()
+            AVG = 320.165
+            STD = 154.3203213543653
+            reward = (length - AVG) / STD
+            return - reward
+            # return - gfa.delta[0][1].treeLength() / (2) ** (self.n - 2) + EPS
         else:
             return -1
 

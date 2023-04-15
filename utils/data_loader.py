@@ -7,15 +7,16 @@ from utils.fadomata import *
 
 def load_nfa():
     alphabet_list = [2, 5, 10]
-    density_list = ['s', 'd']
-    data = [[[[] for d in range(2)] for k in range(3)] for n in range(8)]
+    density_list = [0.1, 0.2, 0.5]
+    data = [[[[] for d in range(3)] for k in range(3)] for n in range(8)]
     for n in range(3, 11):
         for k in alphabet_list:
             for d in density_list:
                 a = n - 3
                 b = alphabet_list.index(k)
                 c = density_list.index(d)
-                file_name = 'n' + str(n) + 'k' + str(k) + d
+                
+                file_name = 'n' + str(n) + 'k' + str(k) + 'd' + str(d)
                 if isfile('data/random_nfa/pkl/' + file_name + '.pkl'):
                     with open('data/random_nfa/pkl/' + file_name + '.pkl', 'rb') as fp:
                         data[a][b][c] = load(fp)
