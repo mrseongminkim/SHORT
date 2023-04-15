@@ -40,7 +40,7 @@ args = dotdict({
     'checkpoint': './alpha_zero/models/deleting/',
     'load_model': True,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_18.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/deleting/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 5,
 })
 min_n = 3
@@ -395,9 +395,9 @@ def test_fig10():
 
 def main():
     print("deleting-states")
-    #train_alpha_zero()
-    test_alpha_zero(True)
-    test_alpha_zero(False)
+    train_alpha_zero()
+    #test_alpha_zero(True)
+    #test_alpha_zero(False)
 
 
 main()

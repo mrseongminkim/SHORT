@@ -111,6 +111,7 @@ class NNetWrapper():
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
+        #print(v)
         # print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 

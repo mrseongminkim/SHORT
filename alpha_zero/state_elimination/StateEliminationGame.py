@@ -10,7 +10,7 @@ from utils.heuristics import eliminate_with_minimization
 EPS = 1e-8
 
 class StateEliminationGame():
-    def __init__(self, maxN=7):
+    def __init__(self, maxN=50):
         self.maxN = maxN
 
     def getInitBoard(self, gfa=None, n=None, k=None, d=None):

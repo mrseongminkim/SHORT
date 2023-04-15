@@ -20,25 +20,27 @@ class StateEliminationNNet(nn.Module):
         self.lstm = nn.LSTM(args.embedding_dim, args.num_channels, batch_first=True)
         
         self.conv1 = nn.Conv2d(
-            args.num_channels + 1, args.num_channels, 3, stride=1, padding=0)
+            args.num_channels + 1, args.num_channels, 5, stride=1, padding=0)
         self.conv2 = nn.Conv2d(
-            args.num_channels, args.num_channels, 3, stride=1, padding=0)
+            args.num_channels, args.num_channels, 5, stride=1, padding=0)
         self.conv3 = nn.Conv2d(
-            args.num_channels, args.num_channels, 3, stride=1, padding=0)
+            args.num_channels, args.num_channels, 5, stride=1, padding=0)
         self.conv4 = nn.Conv2d(
-            args.num_channels, args.num_channels, 3, stride=1, padding=0)
+            args.num_channels, args.num_channels, 5, stride=1, padding=0)
         
         self.bn1 = nn.BatchNorm2d(args.num_channels)
         self.bn2 = nn.BatchNorm2d(args.num_channels)
         self.bn3 = nn.BatchNorm2d(args.num_channels)
         self.bn4 = nn.BatchNorm2d(args.num_channels)
-        self.fc1 = nn.Linear(
-            args.num_channels*(self.board_x - 8)*(self.board_y - 8), 256)
-        self.fc_bn1 = nn.BatchNorm1d(256)
-        self.fc2 = nn.Linear(256, 128)
-        #self.fc3 = nn.Linear(512, 512)
+
+        new_size = 512
+        self.fc1 = nn.Linear(args.num_channels * (self.board_x - 16) * (self.board_y - 16), new_size)
+        self.fc_bn1 = nn.BatchNorm1d(new_size)
+        self.fc2 = nn.Linear(new_size, 256)
+        self.fc3 = nn.Linear(256, 128)
         #self.fc4 = nn.Linear(256, 128)
         self.fc_bn2 = nn.BatchNorm1d(128)
+
         self.policy_fc1 = nn.Linear(128, 128)
         self.policy_fc2 = nn.Linear(128, 32)
         self.policy_fc3 = nn.Linear(32, self.action_size)
@@ -62,24 +64,28 @@ class StateEliminationNNet(nn.Module):
                              self.args.num_channels).transpose(1, 3).transpose(2, 3)
         
         s = torch.cat([s_re, s_len], dim=1)
-        
+        #print(' before cnn: ', s.size())
         # batch_size x num_channels x board_x x board_y
         s = F.relu((self.conv1(s)))
+        #print('after conv1: ', s.size())
         # batch_size x num_channels x board_x x board_y
         s = F.relu((self.conv2(s)))
+        #print('after conv2: ', s.size())
         # batch_size x num_channels x (board_x-2) x (board_y-2)
         s = F.relu((self.conv3(s)))
+        #print('after conv3: ', s.size())
         # batch_size x num_channels x (board_x-4) x (board_y-4)
         s = F.relu((self.conv4(s)))
+        #print('after conv4: ', s.size())
+        #exit()
         
-        s = s.reshape(-1, self.args.num_channels *
-                   (self.board_x - 8)*(self.board_y - 8))
+        s = s.reshape(-1, self.args.num_channels * (self.board_x - 16) * (self.board_y - 16))
         s = F.dropout(F.relu((self.fc1(s))), p=self.args.dropout,
                       training=self.training)  # batch_size x 1024
         s = F.dropout(F.relu((self.fc2(s))), p=self.args.dropout,
                       training=self.training)  # batch_size x 512
-        #s = F.dropout(F.relu((self.fc3(s))), p=self.args.dropout,
-        #              training=self.training)  # batch_size x 512
+        s = F.dropout(F.relu((self.fc3(s))), p=self.args.dropout,
+                      training=self.training)  # batch_size x 512
         #s = F.dropout(F.relu((self.fc4(s))), p=self.args.dropout,
         #              training=self.training)  # batch_size x 512
         # batch_size x action_size

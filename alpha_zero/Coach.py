@@ -108,6 +108,8 @@ class Coach():
             pmcts = MCTS(self.game, self.pnet, self.args)
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.args)
+            '''
+            nmcts = MCTS(self.game, self.nnet, self.args)
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
@@ -118,7 +120,8 @@ class Coach():
                 log.info('REJECTING NEW MODEL')
                 self.nnet.load_checkpoint(
                     folder=self.args.checkpoint, filename='temp.pth.tar')
-            else:
+            '''
+            if 1:
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(
                     folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
