@@ -23,7 +23,23 @@ temp = [float(i) for i in temp]
 x.append(temp)
 file.close()
 
-file = open("./result/z18.csv")
+file = open("./result/maxn50_iter18_mcts25.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
+
+file = open("./result/maxn50_iter18_mcts50.csv")
+temp = []
+for row in csv.reader(file):
+    temp.append(row[0])
+temp = [float(i) for i in temp]
+x.append(temp)
+file.close()
+
+file = open("./result/maxn50_iter18_mcts100.csv")
 temp = []
 for row in csv.reader(file):
     temp.append(row[0])
@@ -41,7 +57,15 @@ plt.bar(r + width, x[1], color = 'g',
 
 plt.bar(r + width * 2, x[2], color = 'b',
         width = width, edgecolor = 'black',
-        label='z-score/iter 18')
+        label='mcts25')
+
+plt.bar(r + width * 3, x[3], color = 'm',
+        width = width, edgecolor = 'black',
+        label='mcts50')
+
+plt.bar(r + width * 4, x[4], color = 'c',
+        width = width, edgecolor = 'black',
+        label='mcts100')
 #'''
 '''
 for c in range(1, 9):

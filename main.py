@@ -33,14 +33,14 @@ args = dotdict({
     'updateThreshold': 0.0,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
     'cpuct': 1,
     'checkpoint': './alpha_zero/models/deleting/',
     'load_model': True,
     #'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'load_folder_file': ('./alpha_zero/models/deleting/', 'best.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_18.pth.tar'),
     'numItersForTrainExamplesHistory': 5,
 })
 min_n = 3
@@ -79,7 +79,7 @@ def test_alpha_zero(model_updated):
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/z18.csv', 'w', newline='') as fp:
+        with open('./result/maxn50_iter18_mcts100.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
                 #k = 5, d = 0.2
