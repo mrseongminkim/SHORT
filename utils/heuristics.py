@@ -71,8 +71,7 @@ def check_all_reachable_states(gfa: GFA, state: int, final_state: int, reachable
             return
         if state in gfa.delta:
             for dest in gfa.delta[state]:
-                check_all_reachable_states(
-                    gfa, dest, final_state, reachable_states)
+                check_all_reachable_states(gfa, dest, final_state, reachable_states)
 
 
 def make_subautomaton(gfa: GFA, reachable_states: list, initial_state: int, final_state: int) -> GFA:
@@ -142,8 +141,7 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegE
             result = eliminate_by_state_weight_heuristic(subautomaton)
         else:
             result = eliminate_randomly(subautomaton)
-        final_result = result if final_result == None else CDisj(
-            final_result, result)
+        final_result = result if final_result == None else CDisj(final_result, result)
     return final_result
 
 
@@ -151,7 +149,7 @@ def eliminate_randomly(gfa: GFA) -> RegExp:
     random_order = [i for i in range(1, len(gfa.States) - 1)]
     shuffle(random_order)
     for i in random_order:
-        gfa.eliminate(i)
+        eliminate_with_minimization(gfa, i, delete_state=False)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
@@ -163,7 +161,7 @@ def eliminate_by_state_weight_heuristic(gfa: GFA) -> RegExp:
     for i in range(1, len(gfa.States) - 1):
         pq.put((get_weight(gfa, i), i))
     while not pq.empty():
-        gfa.eliminate(pq.get()[1])
+        eliminate_with_minimization(gfa, pq.get()[1], delete_state=False)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
@@ -182,24 +180,3 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
                 min_idx = j
         eliminate_with_minimization(gfa, min_idx)
     return gfa.delta[0][1]
-    '''
-    n = len(gfa.States) - 2
-    victim = [i + 1 for i in range(len(gfa.States) - 2)]
-    for i in range(n):
-        if (len(victim) == 1):
-            gfa.eliminate(victim[0])
-            continue
-        min_val = get_weight(gfa, victim[0])
-        min_idx = 0
-        for j in range(1, len(victim)):
-            curr_val = get_weight(gfa, victim[j])
-            if min_val > curr_val:
-                min_val = curr_val
-                min_idx = j
-        gfa.eliminate(victim[min_idx])
-        del victim[min_idx]
-    if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
-        return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
-    else:
-        return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
-    '''

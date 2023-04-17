@@ -6,6 +6,22 @@ from FAdo.fio import *
 from utils.fadomata import *
 
 def load_nfa():
+    data = [[] for n in range(8)]
+    for n in range(8):
+        file_name = 'n' + str(n + 3) + 'k5s'
+        if isfile('data/random_nfa/pkl/' + file_name + '.pkl'):
+            with open('data/random_nfa/pkl/' + file_name + '.pkl', 'rb') as fp:
+                data[n] = load(fp)
+        else:
+            content = readFromFile('data/random_nfa/raw/' + file_name + '.txt')
+            for i in range(len(content)):
+                content[i] = convert_nfa_to_gfa(content[i])
+                content[i].reorder({(content[i].States).index(x) : int(x) for x in content[i].States})
+            with open('data/random_nfa/pkl/' + file_name + '.pkl', 'wb') as fp:
+                dump(content, fp)
+            data[n] = content
+    return data
+    '''
     alphabet_list = [2, 5, 10]
     density_list = ['s', 'd']
     data = [[[[] for d in range(2)] for k in range(3)] for n in range(8)]
@@ -28,6 +44,7 @@ def load_nfa():
                         dump(content, fp)
                     data[a][b][c] = content
     return data
+    '''
 
 
 def load_position():
