@@ -2,6 +2,7 @@ from FAdo.reex import *
 
 class CToken(RegExp):
     token_to_regex = dict()
+    token_to_string = dict()
     threshold = 10
 
     def __init__(self, regex: RegExp):
@@ -13,9 +14,11 @@ class CToken(RegExp):
         #    assert CToken.token_to_regex[self.hashed_value] == regex
         #Sanity Check
         CToken.token_to_regex[self.hashed_value] = regex
+        CToken.token_to_string[self.hashed_value] = str(regex)
     
     def __str__(self):
-        return str(CToken.token_to_regex[self.hashed_value])
+        return CToken.token_to_string[self.hashed_value]
+        #return str(CToken.token_to_regex[self.hashed_value])
 
     _strP = __str__
 
