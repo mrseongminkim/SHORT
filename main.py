@@ -361,7 +361,7 @@ def main():
     #test_heuristics(False)
 
 
-main()
+#main()
 
 #'''
 from utils.random_nfa_generator import *
@@ -383,13 +383,13 @@ def divide_and_conquer(n):
     with open('./result/length_list_' + str(n) + '.pkl', 'wb') as fp:
         dump(length_list, fp)
 
-'''
-for i in range(8, 51):
+#'''
+for i in range(15, 21):
     print("i:", i)
     divide_and_conquer(i)
 
-exit()
-'''
+#exit()
+#'''
 '''
 import statistics
 with open('./result/length_list_1.pkl', 'rb') as fp:
@@ -400,6 +400,7 @@ print('avg: ', sum(length_list) / len(length_list))
 print('std: ', statistics.stdev(length_list))
 print('min: ', min(length_list))
 print('max: ', max(length_list))
-#'''
+'''
 
+#import utils.random_trie_generator
 #import utils.random_position_automata_generator
