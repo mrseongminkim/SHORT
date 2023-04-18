@@ -14,7 +14,7 @@ class CToken(RegExp):
         #    assert CToken.token_to_regex[self.hashed_value] == regex
         #Sanity Check
         CToken.token_to_regex[self.hashed_value] = regex
-        CToken.token_to_string[self.hashed_value] = str(regex)
+        CToken.token_to_string[self.hashed_value] = regex._strP()
     
     def __str__(self):
         return CToken.token_to_string[self.hashed_value]
