@@ -48,11 +48,7 @@ def load_nfa():
 
 
 def load_position():
-    min_length = 5
-    max_length = 10 #max size = maxN - 1
-    Sigma = ['0', '1', '2', '4', '5']
-    file_name = 'n' + str(min_length) + 'to' + str(max_length - 1) + 'k' + str(len(Sigma)) + '.pkl'
-    with open('data/position_automata/' + file_name, 'rb') as fp:
+    with open('data/position_automata.pkl', 'rb') as fp:
         data = load(fp)
     return data
 
