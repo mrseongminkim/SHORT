@@ -351,9 +351,9 @@ def test_fig10():
 
 def main():
     print("deleting-states")
-    test_alpha_zero_for_position_automata(True)
-    test_alpha_zero_for_position_automata(False)
-    #train_alpha_zero()
+    train_alpha_zero()
+    #test_alpha_zero_for_position_automata(True)
+    #test_alpha_zero_for_position_automata(False)
     #test_alpha_zero(True)
     #test_alpha_zero(False)
     #print("test-heuristics")
@@ -361,46 +361,4 @@ def main():
     #test_heuristics(False)
 
 
-#main()
-
-#'''
-from utils.random_nfa_generator import *
-import time
-
-def divide_and_conquer(n):
-    length_list = []
-    for i in range(100):
-        permutations = [x for x in range(1, 8)]
-        gfa = generate(7, 5, 0.1, 'in-memory')
-        min_length = float('inf')
-        for perm in itertools.permutations(permutations):
-            gfa_dup = gfa.dup()
-            for state in perm:
-                eliminate_with_minimization(gfa_dup, state, delete_state=False)
-            length = gfa_dup.delta[0][8].treeLength()
-            min_length = min(min_length, length)
-        length_list.append(min_length)
-    with open('./result/length_list_' + str(n) + '.pkl', 'wb') as fp:
-        dump(length_list, fp)
-
-#'''
-for i in range(15, 21):
-    print("i:", i)
-    divide_and_conquer(i)
-
-#exit()
-#'''
-'''
-import statistics
-with open('./result/length_list_1.pkl', 'rb') as fp:
-    length_list = load(fp)
-
-print('len: ', len(length_list))
-print('avg: ', sum(length_list) / len(length_list))
-print('std: ', statistics.stdev(length_list))
-print('min: ', min(length_list))
-print('max: ', max(length_list))
-'''
-
-#import utils.random_trie_generator
-#import utils.random_position_automata_generator
+main()
