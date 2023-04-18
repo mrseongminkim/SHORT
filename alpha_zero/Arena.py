@@ -42,7 +42,7 @@ class Arena():
         board_x = self.game.getInitBoard(n=curr_iter)
         board_y = board_x.dup()
 
-        while self.game.getGameEnded(board_x, curPlayer) == -1:
+        while self.game.getGameEnded(board_x, curPlayer) == None:
             action = self.player1(
                 self.game.getCanonicalForm(board_x, curPlayer))
             valids = self.game.getValidMoves(
@@ -53,7 +53,7 @@ class Arena():
                 assert valids[action] > 0
             board_x, curPlayer = self.game.getNextState(
                 board_x, curPlayer, action)
-        while self.game.getGameEnded(board_y, curPlayer) == -1:
+        while self.game.getGameEnded(board_y, curPlayer) == None:
             action = self.player2(
                 self.game.getCanonicalForm(board_y, curPlayer))
             valids = self.game.getValidMoves(

@@ -70,7 +70,7 @@ class MCTS():
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
         #terminal
-        if self.Es[s] != -1:
+        if self.Es[s] != None:
             return self.Es[s]
         #leaf node
         if s not in self.Ps:

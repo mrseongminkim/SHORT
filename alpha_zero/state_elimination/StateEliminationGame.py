@@ -88,7 +88,7 @@ class StateEliminationGame():
             #return - gfa.delta[0][1].treeLength()
             #return - gfa.delta[0][1].treeLength() / 280 + EPS
         else:
-            return -1
+            return None
 
     def getCanonicalForm(self, gfa, player):
         return gfa
