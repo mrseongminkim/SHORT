@@ -4,6 +4,7 @@ from FAdo.cfg import *
 from FAdo.reex import *
 
 from utils.fadomata import *
+from utils.heuristics import *
 
 data = [[None, None] for i in range(100)]
 
@@ -29,7 +30,6 @@ while count < 100:
     position_automata.reorder(order)
     position_automata.renameStates()
     gfa = convert_nfa_to_gfa(position_automata)
-    print("count:", count)
     data[count][0] = gfa
     data[count][1] = regular_expression.treeLength()
     count += 1
