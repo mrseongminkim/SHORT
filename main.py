@@ -104,7 +104,7 @@ def test_alpha_zero(model_updated):
                 gfa = data[n][i]
                 gfa = g.getInitBoard(gfa, n + min_n, 5, 0.2)
                 start_time = time.time()
-                while g.getGameEnded(gfa, curPlayer) == -1:
+                while g.getGameEnded(gfa, curPlayer) == None:
                     action = player(g.getCanonicalForm(gfa, curPlayer))
                     valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
                     if valids[action] == 0:
@@ -204,6 +204,54 @@ def test_heuristics(model_updated):
             dump(exp, fp)
 
 
+def test_alpha_zero_for_position_automata(model_updated):
+    model_updated = model_updated
+    if not model_updated and os.path.isfile('./result/alpha_zero_position_result.pkl'):
+        with open('./result/alpha_zero_position_result.pkl', 'rb') as fp:
+            exp = load(fp)
+        with open('./result/rl_position.csv', 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            writer.writerow([exp])
+        with open('./result/postion_original_length.pkl', 'rb') as fp:
+            original = load(fp)
+        with open('./result/original_position.csv', 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            writer.writerow([original])
+    else:
+        data = load_data('position')
+        exp = 0
+        original = 0
+        g = Game()
+        nnet = nn(g)
+        mcts = MCTS(g, nnet, args)
+        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
+        curPlayer = 1
+        if args.load_model:
+            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
+        else:
+            print("Can't test without pre-trained model")
+            exit()
+        for i in range(100):
+            print("i:", i)
+            gfa = data[i][0]
+            original_length = data[i][1]
+            gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
+            while g.getGameEnded(gfa, curPlayer) == None:
+                action = player(g.getCanonicalForm(gfa, curPlayer))
+                valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
+                if valids[action] == 0:
+                    assert valids[action] > 0
+                gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
+            exp += gfa.delta[0][1].treeLength()
+            original += original_length
+        exp /= 100
+        original /= 100
+        with open('./result/alpha_zero_position_result.pkl', 'wb') as fp:
+            dump(exp, fp)
+        with open('./result/postion_original_length.pkl', 'wb') as fp:
+            dump(original, fp)
+
+
 #not working
 def test_brute_force():
     model_updated = True
@@ -277,61 +325,6 @@ def test_reduction():
 
 
 #not working
-def test_alpha_zero_for_position():
-    model_updated = False
-    if not model_updated and os.path.isfile('./result/alpha_zero_position_result.pkl'):
-        with open('./result/alpha_zero_position_result.pkl', 'rb') as fp:
-            exp = load(fp)
-        with open('./result/postion_original_length.pkl', 'rb') as fp:
-            average_origianl_length = load(fp)
-        with open('./result/position.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            for n in range(5):
-                size_value = exp[n]
-                writer.writerow([size_value])
-        with open('./result/original_position.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            for n in range(5):
-                size_value = average_origianl_length[n]
-                writer.writerow([size_value])
-    else:
-        data = load_data('position')
-        exp = [0] * 5
-        average_origianl_length = [0] * 5
-        g = Game()
-        nnet = nn(g)
-        mcts = MCTS(g, nnet, args)
-        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
-        curPlayer = 1
-        if args.load_model:
-            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
-        else:
-            print("Can't test without pre-trained model")
-            exit()
-        for n in range(5):
-            for i in range(100):
-                print('n', n, 'i', i)
-                gfa = data[n][i][0]
-                original_length = data[n][i][1]
-                gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
-                while g.getGameEnded(gfa, curPlayer) == -1:
-                    action = player(g.getCanonicalForm(gfa, curPlayer))
-                    valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-                    if valids[action] == 0:
-                        assert valids[action] > 0
-                    gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
-                result_length = gfa.delta[0][1].treeLength()
-                exp[n] += result_length
-                average_origianl_length[n] += original_length
-            exp[n] /= 100
-            average_origianl_length[n] /= 100
-        with open('./result/alpha_zero_position_result.pkl', 'wb') as fp:
-            dump(exp, fp)
-        with open('./result/postion_original_length.pkl', 'wb') as fp:
-            dump(average_origianl_length, fp)
-
-
-#not working
 def test_fig10():
     gfa = load_data('fig10')
     g = Game()
@@ -346,7 +339,7 @@ def test_fig10():
         exit()
     order = []
     gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
-    while g.getGameEnded(gfa, curPlayer) == -1:
+    while g.getGameEnded(gfa, curPlayer) == None:
         action = player(g.getCanonicalForm(gfa, curPlayer))
         valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
         if valids[action] == 0:
@@ -358,44 +351,48 @@ def test_fig10():
 
 def main():
     print("deleting-states")
+    test_alpha_zero_for_position_automata(True)
+    test_alpha_zero_for_position_automata(False)
     #train_alpha_zero()
-    test_alpha_zero(True)
-    test_alpha_zero(False)
+    #test_alpha_zero(True)
+    #test_alpha_zero(False)
     #print("test-heuristics")
     #test_heuristics(True)
     #test_heuristics(False)
 
 
-#main()
+main()
 
 #'''
 from utils.random_nfa_generator import *
 import time
 
-length_list = []
-n = 5_000
+def divide_and_conquer(n):
+    length_list = []
+    for i in range(100):
+        permutations = [x for x in range(1, 8)]
+        gfa = generate(7, 5, 0.1, 'in-memory')
+        min_length = float('inf')
+        for perm in itertools.permutations(permutations):
+            gfa_dup = gfa.dup()
+            for state in perm:
+                eliminate_with_minimization(gfa_dup, state, delete_state=False)
+            length = gfa_dup.delta[0][8].treeLength()
+            min_length = min(min_length, length)
+        length_list.append(min_length)
+    with open('./result/length_list_' + str(n) + '.pkl', 'wb') as fp:
+        dump(length_list, fp)
 
-for i in range(n):
-    print("Iter", i + 1)
-    permutations = [x for x in range(1, 8)]
-    gfa = generate(7, 5, 0.1, 'in-memory')
-    min_length = float('inf')
-    for perm in itertools.permutations(permutations):
-        gfa_dup = gfa.dup()
-        for state in perm:
-            eliminate_with_minimization(gfa_dup, state, delete_state=False)
-        length = gfa_dup.delta[0][8].treeLength()
-        min_length = min(min_length, length)
-    length_list.append(min_length)
-    if i % 100 == 0:
-        with open('./result/length_list.pkl', 'wb') as fp:
-            dump(length_list, fp)
+'''
+for i in range(8, 51):
+    print("i:", i)
+    divide_and_conquer(i)
 
-with open('./result/length_list.pkl', 'wb') as fp:
-    dump(length_list, fp)
-
+exit()
+'''
+'''
 import statistics
-with open('./result/length_list.pkl', 'rb') as fp:
+with open('./result/length_list_1.pkl', 'rb') as fp:
     length_list = load(fp)
 
 print('len: ', len(length_list))
@@ -404,3 +401,5 @@ print('std: ', statistics.stdev(length_list))
 print('min: ', min(length_list))
 print('max: ', max(length_list))
 #'''
+
+#import utils.random_position_automata_generator
