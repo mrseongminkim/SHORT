@@ -11,7 +11,7 @@ class StateEliminationNNet(nn.Module):
         self.action_size = game.getActionSize()
         self.args = args
         super(StateEliminationNNet, self).__init__()
-        
+
         #regex_board
         self.embedding_dim = args.embedding_dim
         self.embed = nn.Embedding(args.vocab_size, args.embedding_dim)
