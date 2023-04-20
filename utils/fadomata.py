@@ -1,3 +1,4 @@
+from queue import Queue
 import copy
 
 from FAdo.conversions import *
@@ -6,34 +7,67 @@ from FAdo.reex import *
 from utils.CToken import *
 from utils.inclusion_checker import *
 
-def eliminate_with_tokenization(gfa: GFA, st: int, tokenize: bool=True, delete_state=True):
-    if st in gfa.delta and st in gfa.delta[st]:
-        r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
-        del gfa.delta[st][st]
-    else:
-        r2 = None
-    for s in gfa.delta:
-        if st not in gfa.delta[s]:
+def reorder(nfa: NFA, states: int, skip_first_sort=False):
+    if not skip_first_sort:
+        order = {}
+        for j in range(len(nfa.States)):
+            if j == len(nfa.States) - 2:
+                order[j] = 0
+            elif j == len(nfa.States) - 1:
+                order[j] = j
+            else:
+                order[j] = j + 1
+        nfa.reorder(order)
+        nfa.renameStates()
+    order = {0 : 0, states + 1 : states + 1}
+    visited = [0, 1, states + 1]
+    queue = Queue()
+    queue.put(1)
+    n = 1
+    while not queue.empty():
+        curr = queue.get()
+        order[curr] = n
+        n += 1
+        if curr not in nfa.delta:
             continue
-        r1 = copy.copy(gfa.delta[s][st])
-        del gfa.delta[s][st]
-        for s1 in gfa.delta[st]:
-            r3 = copy.copy(gfa.delta[st][s1])
-            if r2 is not None:
-                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
-            else:
-                r = reex.CConcat(r1, r3, copy.copy(gfa.Sigma))
-            if s1 in gfa.delta[s]:
-                r = reex.CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
-            if tokenize and r.treeLength() > CToken.threshold:
-                gfa.delta[s][s1] = CToken(r)
-            else:
-                gfa.delta[s][s1] = r
-    if delete_state:
-        gfa.deleteState(st)
-    else:
-        del gfa.delta[st]
-    return gfa
+        for x in list(nfa.delta[curr].values()):
+            for element in x:
+                if element not in visited:
+                    queue.put(element)
+                    visited.append(element)
+    nfa.reorder(order)
+    nfa.renameStates()
+
+
+def reorder_reverse(nfa: NFA, states: int):
+    order = {}
+    for j in range(len(nfa.States)):
+        if j == len(nfa.States) - 2:
+            order[j] = 0
+        elif j == len(nfa.States) - 1:
+            order[j] = j
+        else:
+            order[j] = j + 1
+    nfa.reorder(order)
+    nfa.renameStates()
+    order = {0 : 0, states + 1 : states + 1}
+    visited = [0, 1, states + 1]
+    queue = Queue()
+    queue.put(1)
+    n = states
+    while not queue.empty():
+        curr = queue.get()
+        order[curr] = n
+        n -= 1
+        if curr not in nfa.delta:
+            continue
+        for x in list(nfa.delta[curr].values()):
+            for element in x:
+                if element not in visited:
+                    queue.put(element)
+                    visited.append(element)
+    nfa.reorder(order)
+    nfa.renameStates()
 
 
 save_count_star = 0
