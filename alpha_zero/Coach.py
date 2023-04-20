@@ -48,13 +48,11 @@ class Coach():
         """
         trainExamples = []
         board: GFA = self.game.getInitBoard(n=curr_iter)
-        #temperature_threshold = 4 #min(curr_iter - 1, 4)
         self.curPlayer = 1
         episodeStep = 0
         while True:
             episodeStep += 1
             canonicalBoard: GFA = self.game.getCanonicalForm(board, self.curPlayer)
-            #temp = int(episodeStep < temperature_threshold)
             temp = 1
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
@@ -101,13 +99,13 @@ class Coach():
                 trainExamples.extend(e)
             shuffle(trainExamples)
             # training new network, keeping a copy of the old one
-            self.nnet.save_checkpoint(
-                folder=self.args.checkpoint, filename='temp.pth.tar')
-            self.pnet.load_checkpoint(
-                folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(self.game, self.pnet, self.args)
+            #self.nnet.save_checkpoint(
+            #    folder=self.args.checkpoint, filename='temp.pth.tar')
+            #self.pnet.load_checkpoint(
+            #    folder=self.args.checkpoint, filename='temp.pth.tar')
+            #pmcts = MCTS(self.game, self.pnet, self.args)
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args)
+            #nmcts = MCTS(self.game, self.nnet, self.args)
             '''
             nmcts = MCTS(self.game, self.nnet, self.args)
             log.info('PITTING AGAINST PREVIOUS VERSION')
@@ -125,8 +123,8 @@ class Coach():
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(
                     folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(
-                    folder=self.args.checkpoint, filename='best.pth.tar')
+                #self.nnet.save_checkpoint(
+                #    folder=self.args.checkpoint, filename='best.pth.tar')
                 #self.pnet.load_checkpoint(
                 #    folder=self.args.checkpoint, filename='best.pth.tar')
 
