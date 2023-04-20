@@ -31,8 +31,8 @@ def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gm
             gfa.addTransition(src + 1, str(lbl), dst + 1)
     gfa.setInitial({0})
     gfa.setFinal({n + 1})
+    reorder(gfa, 7, skip_first_sort=True)
     gfa = convert_nfa_to_gfa(gfa)
-    gfa.reorder({(gfa.States).index(x) : int(x) for x in gfa.States})
     return gfa
 
 #Ensures non-returning, non-exiting, initially connected and single final state

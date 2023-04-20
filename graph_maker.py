@@ -4,7 +4,6 @@ import csv
 
 def primitive():
     type = "time"
-
     n = 8
     r = np.arange(n)
     width = 0.10

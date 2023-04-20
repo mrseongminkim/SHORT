@@ -23,12 +23,6 @@ def load_nfa():
     return data
 
 
-def load_position():
-    with open('data/position_automata.pkl', 'rb') as fp:
-        data = load(fp)
-    return data
-
-
 def load_fig10():
     nfa = NFA()
     for i in range(5):
@@ -48,6 +42,16 @@ def load_fig10():
     gfa = convert_nfa_to_gfa(nfa)
     return gfa
 
+def load_trie():
+    with open('data/trie.pkl', 'rb') as fp:
+        data = load(fp)
+    return data
+
+
+def load_position():
+    with open('data/pos_s20_l30.pkl', 'rb') as fp:
+        data = load(fp)
+    return data
 
 def load_data(type):
     if type == 'nfa':
@@ -56,4 +60,6 @@ def load_data(type):
         return load_position()
     elif type == 'fig10':
         return load_fig10()
+    elif type == 'trie':
+        return load_trie()
     return
