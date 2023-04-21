@@ -37,7 +37,7 @@ args = dotdict({
     'cpuct': 3,
     'checkpoint': './alpha_zero/models/deleting/',
     'load_model': True,
-    'load_folder_file': ('./alpha_zero/models/deleting/', 'n50_iter26_sims50_cpunct2.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_32.pth.tar'),
     'numItersForTrainExamplesHistory': 10,
 })
 min_n = 3
@@ -70,7 +70,7 @@ def train_alpha_zero():
     c.learn()
 
 
-def test_alpha_zero(model_updated):
+def test_alpha_zero(model_updated, type):
     model_updated = model_updated
     if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
         with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
@@ -86,7 +86,7 @@ def test_alpha_zero(model_updated):
                 time_value = exp[n][1] / 100
                 writer.writerow([time_value])
     else:
-        data = load_data('nfa')
+        data = load_data(type)
         exp = [[0, 0] for n in range(n_range)]
         g = Game()
         nnet = nn(g)
@@ -99,6 +99,8 @@ def test_alpha_zero(model_updated):
             print("Can't test without pre-trained model")
             exit()
         for n in range(n_range):
+            if type == 'position' and n != 0:
+                break
             for i in range(sample_size):
                 mcts = MCTS(g, nnet, args)
                 print('n: ' + str(n + min_n) + ', i:', i)
@@ -120,7 +122,7 @@ def test_alpha_zero(model_updated):
             dump(exp, fp)
 
 
-def test_heuristics(model_updated):
+def test_heuristics(model_updated, type):
     model_updated = model_updated
     if not model_updated and os.path.isfile('./result/heuristics_experiment_result.pkl'):
         with open('./result/heuristics_experiment_result.pkl', 'rb') as fp:
@@ -137,9 +139,11 @@ def test_heuristics(model_updated):
                     time_value = exp[c][n][1] / 100
                     writer.writerow([time_value])
     else:
-        data = load_data('nfa')
+        data = load_data(type)
         exp = [[[0, 0] for n in range(n_range)] for c in range(6)]
         for n in range(n_range):
+            if type == 'position' and n != 0:
+                break
             for i in range(sample_size):
                 print('n: ' + str(n + min_n) + ', i:', i)
                 # eliminate_randomly
@@ -260,65 +264,6 @@ def test_alpha_zero_for_position_automata(model_updated):
             dump(original, fp)
 
 
-def test_alpha_zero_for_trie(model_updated, cpuct):
-    model_updated = model_updated
-    if not model_updated and os.path.isfile('./result/alpha_zero_trie_result_' + str(cpuct) + '.pkl'):
-        with open('./result/alpha_zero_trie_result_' + str(cpuct) + '.pkl', 'rb') as fp:
-            exp = load(fp)
-        with open('./result/rl_trie_' + str(cpuct) + '.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            writer.writerow([exp])
-        '''
-        with open('./result/postion_original_length.pkl', 'rb') as fp:
-            original = load(fp)
-        with open('./result/original_position.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            writer.writerow([original])
-        '''
-    else:
-        data = load_data('trie')
-        exp = 0
-        g = Game()
-        nnet = nn(g)
-        mcts = MCTS(g, nnet, args)
-        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
-        curPlayer = 1
-        if args.load_model:
-            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
-        else:
-            print("Can't test without pre-trained model")
-            exit()
-        for i in range(100):
-            print("i:", i)
-            gfa = data[i]
-            gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
-            #print(gfa.States, end = ' -> ')
-            action = None
-            result = eliminate_by_repeated_state_weight_heuristic(gfa.dup())
-            random = eliminate_randomly(gfa.dup())
-            while g.getGameEnded(gfa, curPlayer) == None:
-                #print(gfa.States)
-                #print(action)
-                #print(gfa.States, end = ' -> ')
-                action = player(g.getCanonicalForm(gfa, curPlayer))
-                valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-                if valids[action] == 0:
-                    assert valids[action] > 0
-                gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
-            #print('reward: ', g.getGameEnded(gfa, curPlayer))
-            print('c6:', result.treeLength())
-            print('random:', random.treeLength())
-            print('rl', gfa.delta[0][1].treeLength())
-            exp += gfa.delta[0][1].treeLength()
-        exp /= 100
-        with open('./result/alpha_zero_trie_result_' + str(cpuct) + '.pkl', 'wb') as fp:
-            dump(exp, fp)
-        '''
-        with open('./result/postion_original_length.pkl', 'wb') as fp:
-            dump(original, fp)
-        '''
-
-
 #not working
 def test_brute_force():
     model_updated = True
@@ -391,7 +336,6 @@ def test_reduction():
             dump(data, fp)
 
 
-#not working
 def test_fig10():
     gfa = load_data('fig10')
     g = Game()
@@ -419,13 +363,18 @@ def test_fig10():
 def main():
     print("deleting-states")
     train_alpha_zero()
+    #test_fig10()
+    #test_alpha_zero(True, 'position')
+    #test_alpha_zero(False, 'position')
+    #test_heuristics(True, 'position')
+    #test_heuristics(False, 'position')
+    #test_alpha_zero(True)
+    #test_alpha_zero(False)
+    #train_alpha_zero()
     #test_alpha_zero_for_position_automata(True)
     #test_alpha_zero_for_position_automata(False)
     #test_alpha_zero_for_trie(True, 2)
     #test_alpha_zero_for_trie(False, 2)
-    #train_alpha_zero()
-    #test_alpha_zero(True)
-    #test_alpha_zero(False)
     #print("test-heuristics")
     #test_heuristics(True)
     #test_heuristics(False)
