@@ -1,11 +1,21 @@
 from queue import Queue
 import copy
+import random
 
 from FAdo.conversions import *
 from FAdo.reex import *
 
 from utils.CToken import *
 from utils.inclusion_checker import *
+
+def shuffle(gfa: GFA, states: int):
+    order = {0 : 0, states + 1 : states + 1}
+    lst = [x for x in range(1, states + 1)]
+    random.shuffle(lst)
+    for idx, val in enumerate(lst):
+        order[idx + 1] = val
+    gfa.reorder(order)
+
 
 def reorder(nfa: NFA, states: int, skip_first_sort=False):
     if not skip_first_sort:

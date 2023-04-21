@@ -6,6 +6,7 @@ from FAdo.reex import *
 
 from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
+from utils.fadomata import shuffle
 
 EPS = 1e-8
 
@@ -19,6 +20,7 @@ class StateEliminationGame():
             k = 5
             d = 0.1
             gfa = generate(n, k, d, 'in-memory')
+            shuffle(gfa, n)
         self.n = n + 2
         self.k = k
         self.d = d
