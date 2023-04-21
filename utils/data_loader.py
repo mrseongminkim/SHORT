@@ -23,6 +23,38 @@ def load_nfa():
     return data
 
 
+def load_dfa():
+    data = [[] for n in range(8)]
+    for n in range(8):
+        file_name = 'n' + str(n + 3) + 'k5'
+        with open('data/random_dfa/' + file_name + '.pkl', 'rb') as fp:
+            data[n] = load(fp)
+    return data
+
+
+'''
+def load_fig10():
+    nfa = NFA()
+    for i in range(7):
+        nfa.addState(str(i))
+    nfa.setInitial([0])
+    nfa.setFinal([6])
+    nfa.addTransition(0, '@epsilon', 1)
+    nfa.addTransition(1, '0', 2)
+    nfa.addTransition(2, '1', 4)
+    nfa.addTransition(3, '1', 2)
+    nfa.addTransition(3, '0', 3)
+    nfa.addTransition(3, '1', 3)
+    nfa.addTransition(3, '2', 3)
+    nfa.addTransition(3, '1', 4)
+    nfa.addTransition(4, '2', 3)
+    nfa.addTransition(4, '1', 5)
+    nfa.addTransition(5, '@epsilon', 6)
+    gfa = convert_nfa_to_gfa(nfa)
+    return gfa
+'''
+
+
 def load_fig10():
     nfa = NFA()
     for i in range(5):
@@ -38,14 +70,8 @@ def load_fig10():
     nfa.addTransition(2, '1', 3)
     nfa.addTransition(3, '2', 2)
     nfa.addTransition(3, '1', 4)
-    #nfa.display()
     gfa = convert_nfa_to_gfa(nfa)
     return gfa
-
-def load_trie():
-    with open('data/trie.pkl', 'rb') as fp:
-        data = load(fp)
-    return data
 
 
 def load_position():
@@ -60,6 +86,6 @@ def load_data(type):
         return load_position()
     elif type == 'fig10':
         return load_fig10()
-    elif type == 'trie':
-        return load_trie()
+    elif type == 'dfa':
+        return load_dfa()
     return
