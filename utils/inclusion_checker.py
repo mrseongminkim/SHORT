@@ -3,7 +3,7 @@ from FAdo.reex import *
 from utils.CToken import *
 
 def is_included(re1: RegExp, re2: RegExp, depth=0):
-    MAX_RECURSION_DEPTH = 5
+    MAX_RECURSION_DEPTH = 10
     depth += 1
     if depth > MAX_RECURSION_DEPTH:
         return 2

@@ -38,7 +38,7 @@ args = dotdict({
     'checkpoint': './alpha_zero/models/deleting/',
     'load_model': True,
     'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_32.pth.tar'),
-    'numItersForTrainExamplesHistory': 10,
+    'numItersForTrainExamplesHistory': 5,
 })
 min_n = 3
 max_n = 10
@@ -264,76 +264,38 @@ def test_alpha_zero_for_position_automata(model_updated):
             dump(original, fp)
 
 
-#not working
-def test_brute_force():
-    model_updated = True
+def test_brute_force(model_updated, type):
+    model_updated = model_updated
     if not model_updated and os.path.isfile('./result/brute_force_experiment_result.pkl'):
-        with open('./result/brute_force_experiment_result.pkl', 'rb') as fp:
+        with open('./result/brute_force_experiment_result_minimize_10.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/c8.csv', 'w', newline='') as fp:
+        with open('./result/optimal_length_minimize_10.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
-                #k = 5, d = 0.2
-                size_value = exp[n][1][0][1] / 100
+                size_value = exp[n] / 100
                 writer.writerow([size_value])
     else:
-        data = load_data()
-        exp = [[[[0, 0] for d in range(len(density))] for k in range(len(alphabet))] for n in range(n_range)]
+        data = load_data(type)
+        exp = [0] * 5
         for n in range(3 - 3, 8 - 3):
-            permutations = [x for x in range(1, n + 4)]
             for i in range(sample_size):
+                permutations = [x for x in range(1, len(data[n][i].States) - 1)]
                 print('n' + str(n + min_n) + '\'s' + str(i + 1) + 'sample')
                 min_length = float('inf')
                 start_time = time.time()
                 for perm in itertools.permutations(permutations):
-                    gfa = data[n][1][0][i].dup()
+                    gfa = data[n][i].dup()
                     for state in perm:
-                        gfa.eliminate(state)
+                        eliminate_with_minimization(gfa, state, delete_state=False, minimize=True)
                     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
                         length = CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]]).treeLength()
                         print('This will never run, since i specifically made GFA to not have returnining transition')
                     else:
                         length = gfa.delta[gfa.Initial][list(gfa.Final)[0]].treeLength()
                     min_length = min(min_length, length)
-                end_time = time.time()
-                exp[n][1][0][0] += end_time - start_time
-                exp[n][1][0][1] += min_length
-        with open('./result/brute_force_experiment_result.pkl', 'wb') as fp:
+                exp[n] += min_length
+        with open('./result/brute_force_experiment_result_minimize_10.pkl', 'wb') as fp:
             dump(exp, fp)
-
-
-#not working
-def test_reduction():
-    model_updated = True
-    if not model_updated and os.path.isfile('data/reduction.pkl'):
-        with open('data/reduction.pkl', 'rb') as fp:
-            data = load(fp)
-        for n in range(3, 8):
-            print(data[n - 3][0][0])
-    else:
-        alphabet_list = [5]
-        density_list = ['s']
-        data = [[[[0, 0, 0] for d in range(1)] for k in range(1)] for n in range(5)]
-        for n in range(3, 8):
-            for k in alphabet_list:
-                for d in density_list:
-                    file_name = 'n' + str(n) + 'k' + str(5) + "s"
-                    content = readFromFile('data/raw/' + file_name + '.txt')
-                    for i in range(len(content)):
-                        print(n, k, d, i)
-                        nfa = content[i].dup()
-                        nfa.reorder({(content[i].States).index(x) : int(x) for x in content[i].States})
-
-                        temp = nfa.dup()
-                        data[n - 3][0][0][0] += len(temp.rEquivNFA().States)
-
-                        temp = nfa.dup()
-                        data[n - 3][0][0][1] += len(temp.lEquivNFA().States)
-
-                        temp = nfa.dup()
-                        data[n - 3][0][0][2] += len(temp.lrEquivNFA().States)
-        with open('data/reduction.pkl', 'wb') as fp:
-            dump(data, fp)
 
 
 def test_fig10():
@@ -362,7 +324,11 @@ def test_fig10():
 
 def main():
     print("deleting-states")
-    train_alpha_zero()
+    test_brute_force(True, 'nfa')
+    test_brute_force(False, 'nfa')
+    #test_heuristics(True, 'nfa')
+    #test_heuristics(False, 'nfa')
+    #train_alpha_zero()
     #test_fig10()
     #test_alpha_zero(True, 'position')
     #test_alpha_zero(False, 'position')
@@ -381,3 +347,5 @@ def main():
 
 
 main()
+
+#import utils.random_position_automata_generator
