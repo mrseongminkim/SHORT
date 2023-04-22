@@ -15,7 +15,7 @@ class StateEliminationNNet(nn.Module):
         self.conv2 = nn.Conv2d(args.num_channels, args.num_channels, 5, stride=1, padding=2)
         self.conv3 = nn.Conv2d(args.num_channels, args.num_channels, 5, stride=1, padding=2)
         self.conv4 = nn.Conv2d(args.num_channels, args.num_channels, 5, stride=1, padding=2)
-        self.fc1 = nn.Linear(args.num_channels * (self.board_x - 8) * (self.board_y - 8), 256)
+        self.fc1 = nn.Linear(args.num_channels * (self.board_x) * (self.board_y), 256)
         self.fc2 = nn.Linear(256, 128)
         self.policy_fc1 = nn.Linear(128, 128)
         self.policy_fc2 = nn.Linear(128, 32)
@@ -37,8 +37,7 @@ class StateEliminationNNet(nn.Module):
         # batch_size x num_channels x (board_x-4) x (board_y-4)
         s = F.relu((self.conv4(s)))
         
-        s = s.view(-1, self.args.num_channels *
-                   (self.board_x - 8)*(self.board_y - 8))
+        s = s.view(-1, self.args.num_channels * (self.board_x)*(self.board_y))
         s = F.dropout(F.relu((self.fc1(s))), p=self.args.dropout,
                       training=self.training)  # batch_size x 1024
         s = F.dropout(F.relu((self.fc2(s))), p=self.args.dropout,

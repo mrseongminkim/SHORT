@@ -38,7 +38,7 @@ args = dotdict({
     'checkpoint': './alpha_zero/models/length_only/',
     'load_model': True,
     'load_folder_file': ('./alpha_zero/models/length_only/', 'checkpoint_32.pth.tar'),
-    'numItersForTrainExamplesHistory': 5,
+    'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
 max_n = 10
@@ -323,9 +323,10 @@ def test_fig10():
 
 
 def main():
-    print("deleting-states")
-    test_brute_force(True, 'nfa')
-    test_brute_force(False, 'nfa')
+    print("length-only")
+    train_alpha_zero()
+    #test_brute_force(True, 'nfa')
+    #test_brute_force(False, 'nfa')
     #test_heuristics(True, 'nfa')
     #test_heuristics(False, 'nfa')
     #train_alpha_zero()
