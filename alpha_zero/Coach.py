@@ -62,7 +62,7 @@ class Coach():
                 board, self.curPlayer, action)
             r = self.game.getGameEnded(board, self.curPlayer)
             if r != None:
-                return [(x[0], x[1], x[2], r) for x in trainExamples]
+                return [(x[0], x[2], r) for x in trainExamples]
 
     def learn(self):
         """

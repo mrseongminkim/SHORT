@@ -35,9 +35,9 @@ args = dotdict({
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
     'cpuct': 3,
-    'checkpoint': './alpha_zero/models/deleting/',
+    'checkpoint': './alpha_zero/models/length_only/',
     'load_model': True,
-    'load_folder_file': ('./alpha_zero/models/deleting/', 'checkpoint_32.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/length_only/', 'checkpoint_32.pth.tar'),
     'numItersForTrainExamplesHistory': 5,
 })
 min_n = 3
