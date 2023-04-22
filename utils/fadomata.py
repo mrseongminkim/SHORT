@@ -8,7 +8,7 @@ from FAdo.reex import *
 from utils.CToken import *
 from utils.inclusion_checker import *
 
-def shuffle(gfa: GFA, states: int):
+def shuffle_gfa(gfa: GFA, states: int):
     order = {0 : 0, states + 1 : states + 1}
     lst = [x for x in range(1, states + 1)]
     random.shuffle(lst)
@@ -99,7 +99,44 @@ def print_counter():
     all_count_disj = 0
 
 
-def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
+def eliminate(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
+    if st in gfa.delta and st in gfa.delta[st]:
+        r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
+        del gfa.delta[st][st]
+    else:
+        r2 = None
+    for s in gfa.delta:
+        if st not in gfa.delta[s]:
+            continue
+        r1 = copy.copy(gfa.delta[s][st])
+        del gfa.delta[s][st]
+        for s1 in gfa.delta[st]:
+            r3 = copy.copy(gfa.delta[st][s1])
+            if r2 is not None:
+                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
+            else:
+                r = reex.CConcat(r1, r3, copy.copy(gfa.Sigma))
+            if s1 in gfa.delta[s]:
+                new_regex = reex.CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
+                if tokenize and new_regex.treeLength() > CToken.threshold:
+                    gfa.delta[s][s1] = CToken(new_regex)
+                else:
+                    gfa.delta[s][s1] = new_regex
+            else:
+                if tokenize and r.treeLength() > CToken.threshold:
+                    gfa.delta[s][s1] = CToken(r)
+                else:
+                    gfa.delta[s][s1] = r
+    if delete_state:
+        gfa.deleteState(st)
+    else:
+        del gfa.delta[st]
+    return gfa
+
+
+def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True, minimize: bool=True):
+    if not minimize:
+        return eliminate(gfa, st, delete_state, tokenize)
     global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
     if st in gfa.delta and st in gfa.delta[st]:
         if isinstance(gfa.delta[st][st], CStar) or is_epsilon(gfa.delta[st][st]):

@@ -15,8 +15,12 @@ def load_nfa():
         else:
             content = readFromFile('data/random_nfa/raw/' + file_name + '.txt')
             for i in range(len(content)):
+                content[i] = content[i].lrEquivNFA()
+                content[i].renameStates()
+                content[i].reorder({len(content[i].States) - 1 : list(content[i].Final)[0], list(content[i].Final)[0] : len(content[i].States) - 1})
+                content[i].renameStates()
                 content[i] = convert_nfa_to_gfa(content[i])
-                content[i].reorder({(content[i].States).index(x) : int(x) for x in content[i].States})
+                shuffle_gfa(content[i], len(content[i].States) - 2)
             with open('data/random_nfa/pkl/' + file_name + '.pkl', 'wb') as fp:
                 dump(content, fp)
             data[n] = content

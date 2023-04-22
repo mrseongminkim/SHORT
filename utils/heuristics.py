@@ -149,7 +149,7 @@ def eliminate_randomly(gfa: GFA) -> RegExp:
     random_order = [i for i in range(1, len(gfa.States) - 1)]
     shuffle(random_order)
     for i in random_order:
-        eliminate_with_minimization(gfa, i, delete_state=False)
+        eliminate_with_minimization(gfa, i, delete_state=False, minimize=True)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
@@ -161,7 +161,7 @@ def eliminate_by_state_weight_heuristic(gfa: GFA) -> RegExp:
     for i in range(1, len(gfa.States) - 1):
         pq.put((get_weight(gfa, i), i))
     while not pq.empty():
-        eliminate_with_minimization(gfa, pq.get()[1], delete_state=False)
+        eliminate_with_minimization(gfa, pq.get()[1], delete_state=False, minimize=True)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
@@ -178,5 +178,5 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
             if min_val > curr_val:
                 min_val = curr_val
                 min_idx = j
-        eliminate_with_minimization(gfa, min_idx)
+        eliminate_with_minimization(gfa, min_idx, minimize=True)
     return gfa.delta[0][1]
