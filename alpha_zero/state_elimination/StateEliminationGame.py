@@ -46,9 +46,9 @@ class StateEliminationGame():
         final_state = list(gfa.Final)[0]
         assert 0 < action and action < final_state
         if duplicate:
-            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action)
+            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action, minimize=False)
         else:
-            gfa_eliminated = eliminate_with_minimization(gfa, action)
+            gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=False)
         return (gfa_eliminated, player)
 
     def getValidMoves(self, gfa, player):

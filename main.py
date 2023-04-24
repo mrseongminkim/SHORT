@@ -31,13 +31,13 @@ args = dotdict({
     'updateThreshold': 0.0,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 100,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
     'cpuct': 3,
     'checkpoint': './alpha_zero/models/length_only/',
     'load_model': True,
-    'load_folder_file': ('./alpha_zero/models/length_only/', 'checkpoint_32.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/length_only/', 'checkpoint_20.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
@@ -324,15 +324,15 @@ def test_fig10():
 
 def main():
     print("length-only")
-    train_alpha_zero()
+    #train_alpha_zero()
     #test_brute_force(True, 'nfa')
     #test_brute_force(False, 'nfa')
     #test_heuristics(True, 'nfa')
     #test_heuristics(False, 'nfa')
     #train_alpha_zero()
     #test_fig10()
-    #test_alpha_zero(True, 'position')
-    #test_alpha_zero(False, 'position')
+    test_alpha_zero(True, 'dfa')
+    test_alpha_zero(False, 'dfa')
     #test_heuristics(True, 'position')
     #test_heuristics(False, 'position')
     #test_alpha_zero(True)
