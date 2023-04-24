@@ -29,12 +29,12 @@ class StateEliminationGame():
     def gfaToBoard(self, gfa):
         self.alphabet = copy.copy(gfa.Sigma)
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
-        re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
+        #re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
         for source in gfa.delta:
             for target in gfa.delta[source]:
                 board[source][target] = gfa.delta[source][target].treeLength()
-                re_board[source][target] = gfa.delta[source][target]
-        return board, re_board
+                #re_board[source][target] = gfa.delta[source][target]
+        return board#, re_board
 
     def getBoardSize(self):
         return (self.maxN + 2, self.maxN + 2)
@@ -46,9 +46,9 @@ class StateEliminationGame():
         final_state = list(gfa.Final)[0]
         assert 0 < action and action < final_state
         if duplicate:
-            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action, minimize=False)
+            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action, minimize=True)
         else:
-            gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=False)
+            gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=True)
         return (gfa_eliminated, player)
 
     def getValidMoves(self, gfa, player):
@@ -75,5 +75,5 @@ class StateEliminationGame():
         return [(gfa, pi)]
 
     def stringRepresentation(self, gfa):
-        board, re_board = self.gfaToBoard(gfa)
+        board = self.gfaToBoard(gfa)
         return board.tostring()

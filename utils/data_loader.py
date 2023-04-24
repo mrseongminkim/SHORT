@@ -8,22 +8,9 @@ from utils.fadomata import *
 def load_nfa():
     data = [[] for n in range(8)]
     for n in range(8):
-        file_name = 'n' + str(n + 3) + 'k5s'
-        if isfile('data/random_nfa/pkl/' + file_name + '.pkl'):
-            with open('data/random_nfa/pkl/' + file_name + '.pkl', 'rb') as fp:
-                data[n] = load(fp)
-        else:
-            content = readFromFile('data/random_nfa/raw/' + file_name + '.txt')
-            for i in range(len(content)):
-                content[i] = content[i].lrEquivNFA()
-                content[i].renameStates()
-                content[i].reorder({len(content[i].States) - 1 : list(content[i].Final)[0], list(content[i].Final)[0] : len(content[i].States) - 1})
-                content[i].renameStates()
-                content[i] = convert_nfa_to_gfa(content[i])
-                shuffle_gfa(content[i], len(content[i].States) - 2)
-            with open('data/random_nfa/pkl/' + file_name + '.pkl', 'wb') as fp:
-                dump(content, fp)
-            data[n] = content
+        file_name = 'n' + str(n + 3) + 'k5'
+        with open('data/random_nfa/' + file_name + '.pkl', 'rb') as fp:
+            data[n] = load(fp)
     return data
 
 
@@ -79,7 +66,7 @@ def load_fig10():
 
 
 def load_position():
-    with open('data/pos_s20_l30.pkl', 'rb') as fp:
+    with open('data/position_30.pkl', 'rb') as fp:
         data = load(fp)
     return data
 

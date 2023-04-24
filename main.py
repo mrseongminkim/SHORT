@@ -31,13 +31,13 @@ args = dotdict({
     'updateThreshold': 0.0,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 150,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
-    'cpuct': 3,
-    'checkpoint': './alpha_zero/models/length_only/',
+    'cpuct': 1,
+    'checkpoint': './alpha_zero/models/',
     'load_model': True,
-    'load_folder_file': ('./alpha_zero/models/length_only/', 'checkpoint_20.pth.tar'),
+    'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
 min_n = 3
@@ -45,7 +45,7 @@ max_n = 10
 n_range = max_n - min_n + 1
 alphabet = 5
 density = 0.2
-sample_size = 100
+sample_size = 1000
 
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
@@ -70,17 +70,17 @@ def train_alpha_zero():
     c.learn()
 
 
-def test_alpha_zero(model_updated, type):
+def test_alpha_zero(model_updated, type, file_name):
     model_updated = model_updated
-    if not model_updated and os.path.isfile('./result/alpha_zero_experiment_result.pkl'):
-        with open('./result/alpha_zero_experiment_result.pkl', 'rb') as fp:
+    if not model_updated and os.path.isfile('./result/' + file_name + '.pkl'):
+        with open('./result/' + file_name + '.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/rl_length.csv', 'w', newline='') as fp:
+        with open('./result/' + file_name + '_length.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(n_range):
                 size_value = exp[n][0] / 100
                 writer.writerow([size_value])
-        with open('./result/rl_time.csv', 'w', newline='') as fp:
+        with open('./result/' + file_name + '_time.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(n_range):
                 time_value = exp[n][1] / 100
@@ -118,7 +118,7 @@ def test_alpha_zero(model_updated, type):
                 result_time = end_time - start_time
                 exp[n][0] += result_length
                 exp[n][1] += result_time
-        with open('./result/alpha_zero_experiment_result.pkl', 'wb') as fp:
+        with open('./result/' + file_name + '.pkl', 'wb') as fp:
             dump(exp, fp)
 
 
@@ -131,12 +131,12 @@ def test_heuristics(model_updated, type):
             with open('./result/c' + str(c + 1) + '_length.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
                 for n in range(n_range):
-                    size_value = exp[c][n][0] / 100
+                    size_value = exp[c][n][0] / 1000
                     writer.writerow([size_value])
             with open('./result/c' + str(c + 1) + '_time.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
                 for n in range(n_range):
-                    time_value = exp[c][n][1] / 100
+                    time_value = exp[c][n][1] / 1000
                     writer.writerow([time_value])
     else:
         data = load_data(type)
@@ -324,17 +324,14 @@ def test_fig10():
 
 def main():
     print("length-only")
-    #train_alpha_zero()
-    #test_brute_force(True, 'nfa')
-    #test_brute_force(False, 'nfa')
-    #test_heuristics(True, 'nfa')
-    #test_heuristics(False, 'nfa')
-    #train_alpha_zero()
-    #test_fig10()
-    test_alpha_zero(True, 'dfa')
-    test_alpha_zero(False, 'dfa')
-    #test_heuristics(True, 'position')
-    #test_heuristics(False, 'position')
+    type = 'nfa'
+    minimization = 'true'
+    file_name = type + '_' + minimization
+    print(file_name)
+    #test_alpha_zero(True, type, file_name)
+    #test_alpha_zero(False, type, file_name)
+    test_heuristics(True, type)
+    test_heuristics(False, type)
     #test_alpha_zero(True)
     #test_alpha_zero(False)
     #train_alpha_zero()
@@ -346,7 +343,10 @@ def main():
     #test_heuristics(True)
     #test_heuristics(False)
 
-
+#import utils.random_position_automata_generator
+#test_heuristics(True, 'position')
+#test_heuristics(False, 'position')
 main()
 
 #import utils.random_position_automata_generator
+#import utils.random_dfa_generator

@@ -55,14 +55,14 @@ class Coach():
             canonicalBoard: GFA = self.game.getCanonicalForm(board, self.curPlayer)
             temp = 1
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            length_board, regex_board = self.game.gfaToBoard(canonicalBoard)
-            trainExamples.append([length_board, regex_board, pi])
+            length_board = self.game.gfaToBoard(canonicalBoard)
+            trainExamples.append([length_board, pi])
             action = np.random.choice(len(pi), p=pi)
             board, self.curPlayer = self.game.getNextState(
                 board, self.curPlayer, action)
             r = self.game.getGameEnded(board, self.curPlayer)
             if r != None:
-                return [(x[0], x[2], r) for x in trainExamples]
+                return [(x[0], x[1], r) for x in trainExamples]
 
     def learn(self):
         """

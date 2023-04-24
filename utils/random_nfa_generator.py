@@ -1,4 +1,5 @@
 import random
+from pickle import dump
 
 import gmpy2
 from FAdo.conversions import *
@@ -31,8 +32,14 @@ def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gm
             gfa.addTransition(src + 1, str(lbl), dst + 1)
     gfa.setInitial({0})
     gfa.setFinal({n + 1})
-    reorder(gfa, 7, skip_first_sort=True)
+    #reorder(gfa, 7, skip_first_sort=True)
+
+    gfa = gfa.lrEquivNFA()
+    gfa.renameStates()
+    gfa.reorder({len(gfa.States) - 1 : list(gfa.Final)[0], list(gfa.Final)[0] : len(gfa.States) - 1})
+    gfa.renameStates()
     gfa = convert_nfa_to_gfa(gfa)
+    shuffle_gfa(gfa, len(gfa) - 2)
     return gfa
 
 #Ensures non-returning, non-exiting, initially connected and single final state
@@ -108,10 +115,16 @@ def generate(n: int, k: int, d: float, file_name: str):
     else:
         make_fado_recognizable_nfa(n, k, nfa, finals, file_name)
 
-def main():
-    for n in range(3, 11):
-        for k in [2, 5, 10]:
-            for d in [0.2, 0.5]:
-                file_name = '../data/raw/n' + str(n) + 'k' + str(k) + ('s' if d == 0.2 else 'd') + '.txt'
-                for i in range(100):
-                    generate(n, k, d, file_name)
+'''
+states = [3, 4, 5, 6, 7, 8, 9, 10]
+k = 5
+d = 0.2
+for n in states:
+    content = []
+    for i in range(1000):
+        print("n: %d, i: %d" % (n, i))
+        nfa = generate(n, k, d, 'in-memory')
+        content.append(nfa)
+    with open('data/random_nfa/n' + str(n) + 'k5.pkl', 'wb') as fp:
+        dump(content, fp)
+'''
