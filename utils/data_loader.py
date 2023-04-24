@@ -5,22 +5,34 @@ from FAdo.fio import *
 
 from utils.fadomata import *
 
-def load_nfa():
-    data = [[] for n in range(8)]
-    for n in range(8):
-        file_name = 'n' + str(n + 3) + 'k5'
+def load_nfa(n=None):
+    if n == None:
+        data = [[] for n in range(8)]
+        for n in range(8):
+            file_name = 'n' + str(n + 3) + 'k5'
+            with open('data/random_nfa/' + file_name + '.pkl', 'rb') as fp:
+                data[n] = load(fp)
+        return data
+    else:
+        file_name = 'n' + str(n) + 'k5'
         with open('data/random_nfa/' + file_name + '.pkl', 'rb') as fp:
-            data[n] = load(fp)
-    return data
+            data = load(fp)
+        return data
 
 
-def load_dfa():
-    data = [[] for n in range(8)]
-    for n in range(8):
-        file_name = 'n' + str(n + 3) + 'k5'
+def load_dfa(n=None):
+    if n == None:
+        data = [[] for n in range(8)]
+        for n in range(8):
+            file_name = 'n' + str(n + 3) + 'k5'
+            with open('data/random_dfa/' + file_name + '.pkl', 'rb') as fp:
+                data[n] = load(fp)
+        return data
+    else:
+        file_name = 'n' + str(n) + 'k5'
         with open('data/random_dfa/' + file_name + '.pkl', 'rb') as fp:
-            data[n] = load(fp)
-    return data
+            data = load(fp)
+        return data
 
 
 '''
@@ -70,13 +82,13 @@ def load_position():
         data = load(fp)
     return data
 
-def load_data(type):
+def load_data(type, n=None):
     if type == 'nfa':
-        return load_nfa()
+        return load_nfa(n)
     elif type == 'position':
         return load_position()
     elif type == 'fig10':
         return load_fig10()
     elif type == 'dfa':
-        return load_dfa()
+        return load_dfa(n)
     return
