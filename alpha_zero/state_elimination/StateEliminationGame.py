@@ -42,13 +42,13 @@ class StateEliminationGame():
     def getActionSize(self):
         return self.maxN + 2
 
-    def getNextState(self, gfa, player, action, duplicate=False):
+    def getNextState(self, gfa, player, action, duplicate=False, minimize=True):
         final_state = list(gfa.Final)[0]
         assert 0 < action and action < final_state
         if duplicate:
-            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action, minimize=True)
+            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action, minimize=minimize)
         else:
-            gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=True)
+            gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=minimize)
         return (gfa_eliminated, player)
 
     def getValidMoves(self, gfa, player):
