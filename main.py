@@ -31,10 +31,10 @@ args = dotdict({
     'updateThreshold': 0.0,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 150,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
-    'cpuct': 1,
+    'cpuct': 3,
     'checkpoint': './alpha_zero/models/',
     'load_model': True,
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
@@ -69,25 +69,22 @@ def train_alpha_zero():
     log.info('Starting the learning process')
     c.learn()
 
-
-def test_alpha_zero(model_updated, type, file_name):
+#각각 작동하도록 해야한다.
+def test_alpha_zero(model_updated, type, n, minimize):
     model_updated = model_updated
-    if not model_updated and os.path.isfile('./result/' + file_name + '.pkl'):
-        with open('./result/' + file_name + '.pkl', 'rb') as fp:
+    if not model_updated:
+        with open('./result/rl_' + str(n) + '.pkl', 'rb') as fp:
             exp = load(fp)
-        with open('./result/' + file_name + '_length.csv', 'w', newline='') as fp:
+        with open('./result/rl_' + str(n) + '_length.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
-            for n in range(n_range):
-                size_value = exp[n][0] / 100
-                writer.writerow([size_value])
-        with open('./result/' + file_name + '_time.csv', 'w', newline='') as fp:
+            size_value = exp[0] / 1000
+            writer.writerow([size_value])
+        with open('./result/rl_' + str(n) + '_time.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
-            for n in range(n_range):
-                time_value = exp[n][1] / 100
-                writer.writerow([time_value])
+            time_value = exp[1] / 1000
+            writer.writerow([time_value])
     else:
-        data = load_data(type)
-        exp = [[0, 0] for n in range(n_range)]
+        data = load_data(type, n)
         g = Game()
         nnet = nn(g)
         mcts = MCTS(g, nnet, args)
@@ -98,27 +95,25 @@ def test_alpha_zero(model_updated, type, file_name):
         else:
             print("Can't test without pre-trained model")
             exit()
-        for n in range(n_range):
-            if type == 'position' and n != 0:
-                break
-            for i in range(sample_size):
-                mcts = MCTS(g, nnet, args)
-                print('n: ' + str(n + min_n) + ', i:', i)
-                gfa = data[n][i]
-                gfa = g.getInitBoard(gfa, n + min_n, 5, 0.2)
-                start_time = time.time()
-                while g.getGameEnded(gfa, curPlayer) == None:
-                    action = player(g.getCanonicalForm(gfa, curPlayer))
-                    valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-                    if valids[action] == 0:
-                        assert valids[action] > 0
-                    gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
-                end_time = time.time()
-                result_length = gfa.delta[0][1].treeLength()
-                result_time = end_time - start_time
-                exp[n][0] += result_length
-                exp[n][1] += result_time
-        with open('./result/' + file_name + '.pkl', 'wb') as fp:
+        exp = [0, 0]
+        for i in range(sample_size):
+            mcts = MCTS(g, nnet, args)
+            print('n: ' + str(n) + ', i:', i)
+            gfa = data[i]
+            gfa = g.getInitBoard(gfa, n + min_n, 5, 0.2)
+            start_time = time.time()
+            while g.getGameEnded(gfa, curPlayer) == None:
+                action = player(g.getCanonicalForm(gfa, curPlayer))
+                valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
+                if valids[action] == 0:
+                    assert valids[action] > 0
+                gfa, curPlayer = g.getNextState(gfa, curPlayer, action, minimize=minimize)
+            end_time = time.time()
+            result_length = gfa.delta[0][1].treeLength()
+            result_time = end_time - start_time
+            exp[0] += result_length
+            exp[1] += result_time
+        with open('./result/rl_' + str(n) + '.pkl', 'wb') as fp:
             dump(exp, fp)
 
 
@@ -139,6 +134,7 @@ def test_heuristics(model_updated, type):
                     time_value = exp[c][n][1] / 1000
                     writer.writerow([time_value])
     else:
+        random.seed(210)
         data = load_data(type)
         exp = [[[0, 0] for n in range(n_range)] for c in range(6)]
         for n in range(n_range):
@@ -324,14 +320,13 @@ def test_fig10():
 
 def main():
     print("length-only")
-    type = 'nfa'
-    minimization = 'true'
-    file_name = type + '_' + minimization
-    print(file_name)
-    #test_alpha_zero(True, type, file_name)
-    #test_alpha_zero(False, type, file_name)
-    test_heuristics(True, type)
-    test_heuristics(False, type)
+    type = 'dfa'
+    minimization = False
+    n = 6
+    test_alpha_zero(True, type, n, minimization)
+    test_alpha_zero(False, type, n, minimization)
+    #test_heuristics(True, type)
+    #test_heuristics(False, type)
     #test_alpha_zero(True)
     #test_alpha_zero(False)
     #train_alpha_zero()
