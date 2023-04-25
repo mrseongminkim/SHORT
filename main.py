@@ -326,8 +326,8 @@ def main():
     #test_fig10()
     #test_alpha_zero(True, type, n, minimization)
     #test_alpha_zero(False, type, n, minimization)
-    test_heuristics(True, type)
-    test_heuristics(False, type)
+    #test_heuristics(True, type)
+    #test_heuristics(False, type)
     #test_alpha_zero(True)
     #test_alpha_zero(False)
     #train_alpha_zero()
@@ -342,7 +342,7 @@ def main():
 #import utils.random_position_automata_generator
 #test_heuristics(True, 'position')
 #test_heuristics(False, 'position')
-main()
+#main()
 
 #import utils.random_position_automata_generator
-#import utils.random_dfa_generator
+import utils.random_dfa_generator

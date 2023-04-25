@@ -8,14 +8,14 @@ from utils.fadomata import *
 
 seed = hash(time.perf_counter())
 states = [3, 4, 5, 6, 7, 8, 9, 10]
-k = 5
+k = 2
 
 for n in states:
     print("n:", n)
     generator = ICDFArgen(n, k, seed=seed)
     count = 0
     content = []
-    while count < 1000:
+    while count < 100:
         dfa: DFA = generator.next()
         if dfa.Final:
             count += 1
@@ -32,5 +32,5 @@ for n in states:
         dfa = convert_nfa_to_gfa(dfa)
         shuffle_gfa(dfa, len(dfa.States) - 2)
         content.append(dfa)
-    with open('data/random_dfa/n' + str(n) + 'k5.pkl', 'wb') as fp:
+    with open('data/random_dfa/n' + str(n) + 'k2.pkl', 'wb') as fp:
         dump(content, fp)
