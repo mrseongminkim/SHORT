@@ -69,7 +69,7 @@ def train_alpha_zero():
     log.info('Starting the learning process')
     c.learn()
 
-#각각 작동하도록 해야한다.
+
 def test_alpha_zero(model_updated, type, n, minimize):
     model_updated = model_updated
     if not model_updated:
@@ -322,7 +322,7 @@ def main():
     print("length-only")
     type = 'dfa'
     minimization = False
-    n = 6
+    n = 9
     test_alpha_zero(True, type, n, minimization)
     test_alpha_zero(False, type, n, minimization)
     #test_heuristics(True, type)
