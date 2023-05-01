@@ -66,6 +66,4 @@ python main.py rl [DFA | NFA] [true | false]
 
 ## Acknowledgment
 The AlphaZero framework used in this work come from the following repository:
-```
 [https://github.com/suragnair/alpha-zero-general](https://github.com/suragnair/alpha-zero-general)
-```
