@@ -1,36 +1,69 @@
 # SHORT: Simplifying regular expression with Heuristics Optimization and Reinforcement learning Techniques
 
-## Requirement
-1. Python 3.10.10
-2. pip intstall -r requirements.txt
+This repo provides the source code & data of our paper: Obtaining Smaller Regular Expressions from Finite Automata (CIAA 2023 submitted).
 
-## Directories and its Descriptions
-* alpha_zero: alpha zero playable state elimination game.
-* data: randomly generated FAdo recognizable NFAs
-* result: test results for heuristics methods and alpha zero method
-* utils: miscellaneous modules
+## Dependencies
+* Python 3.10.10
+* Python libraries
+    ```
+    pip install -r requirements.txt
+    ```
 
-## Overview
-* SHORT/alpha_zero/models  
-    pretrained neural network parameters  
-* SHORT/alpha_zero/state_elimination
+## Data
+All the preprocessed data can be found in 
+```
+./data
+```
 
-* SHORT/data  
-    raw: result of random_nfa_generator.py  
-    pkl: pkl converted version of raw datas  
+The repo structure looks like the following:
+```plain
+.
+├─alpha_zero
+│  ├─models (pre-trained model)
+│  └─state_elimination (set of functions for our model)
+│      └─pytorch (neural network for our model)
+│
+├─data
+│  ├─random_dfa (preprocessed random DFAs)
+│  ├─random_nfa (preprocessed random NFAs)
+│  └─random_nfa_sparse (preprocessed random sparse DFAs)
+│
+├─result
+│  ├─heuristics_dfa_false (heuristics experiment results for random DFAs without simplification)
+│  ├─heuristics_dfa_true (heuristics experiment results for random DFAs with simplification)
+│  ├─heuristics_nfa_false (heuristics experiment results for random NFAs without simplification)
+│  ├─heuristics_nfa_true (heuristics experiment results for random DFAs without simplification)
+│  ├─optimal (shortest length obtained from random DFAs/NFAs by enumerating all the permutations)
+│  ├─rl_dfa_false (ours experiment results for random DFAs without simplification)
+│  ├─rl_dfa_true (ours experiment results for random DFAs with simplification)
+│  ├─rl_nfa_false (ours experiment results for random NFAs without simplification)
+│  └─rl_nfa_true (ours experiment results for random NFAs with simplification)
+│
+└─utils (codes for heuristics, FAdo modification, FA generator, etc.)
+```
 
-* SHORT/result  
-   alpha_zero_experiment_result.pkl: test result from alpha zero method  
-   heuristics_experiment_result.pkl: test results from combinations of heuristics  
-   C1, C2, C3, C4, C4, C5, C6, C7 denotes random elimination, decomposition with random elimination, state weight, decomposition with state weight, repeated state weight and decomposition with repeated state weight respectively  
+## Train models
+In order to train models
+```
+python main.py train
+```
+You can modify the hyperparameters in main.py.
 
-* SHORT/utils/data_loader  
-    read txt/pkl and save it to list  
-* SHORT/utils/fadomata  
-    modified FAdo functions/methods  
-* SHORT/utils/graph_maker  
-    make graph from the test result  
-* SHORT/utils/heuristics  
-    implementation of random, decomposition and state weight heuristic and their combinations  
-* SHORT/utils/random_nfa_generator  
-    make 100 NFAs per each parameters combinations  
+## Evaluate models
+We need to set target FAs and decide enable or disable on-the-fly simplification.
+
+### Heuristics
+To test heuristics, you can use following commands.
+```
+python main.py heuristics [DFA | NFA] [true | false]
+```
+
+### Reinforcement Learning
+To test RL approach, you can use following commands.
+```
+python main.py rl [DFA | NFA] [true | false]
+```
+
+## Acknowledgment
+The AlphaZero framework used in this work come from the following repository: 
+[https://github.com/suragnair/alpha-zero-general](https://github.com/suragnair/alpha-zero-general)
