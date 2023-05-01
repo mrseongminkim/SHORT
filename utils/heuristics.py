@@ -33,11 +33,11 @@ def get_bridge_states(gfa: GFA) -> set:
     return bridges_states
 
 
-def decompose(gfa: GFA, state_weight: bool = False, repeated: bool = False) -> RegExp:
+def decompose(gfa: GFA, state_weight: bool = False, repeated: bool = False, minimization = False) -> RegExp:
     final_result = None
     subautomata = decompose_vertically(gfa)
     for subautomaton in subautomata:
-        result = decompose_horizontally(subautomaton, state_weight, repeated)
+        result = decompose_horizontally(subautomaton, state_weight, repeated, minimization)
         final_result = result if final_result == None else CConcat(final_result, result)
     return final_result
 
@@ -105,7 +105,7 @@ def make_subautomaton(gfa: GFA, reachable_states: list, initial_state: int, fina
     return new
 
 
-def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegExp:
+def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool, minimization) -> RegExp:
     subautomata = []
     groups = []
     for state in gfa.delta[gfa.Initial]:
@@ -134,41 +134,41 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool) -> RegE
     final_result = None
     for subautomaton in subautomata:
         if len(get_bridge_states(subautomaton)):
-            result = decompose(subautomaton, state_weight, repeated)
+            result = decompose(subautomaton, state_weight, repeated, minimization)
         elif state_weight and repeated:
-            result = eliminate_by_repeated_state_weight_heuristic(subautomaton)
+            result = eliminate_by_repeated_state_weight_heuristic(subautomaton, minimization)
         elif state_weight:
-            result = eliminate_by_state_weight_heuristic(subautomaton)
+            result = eliminate_by_state_weight_heuristic(subautomaton, minimization)
         else:
-            result = eliminate_randomly(subautomaton)
+            result = eliminate_randomly(subautomaton, minimization)
         final_result = result if final_result == None else CDisj(final_result, result)
     return final_result
 
 
-def eliminate_randomly(gfa: GFA) -> RegExp:
+def eliminate_randomly(gfa: GFA, minimization) -> RegExp:
     random_order = [i for i in range(1, len(gfa.States) - 1)]
     shuffle(random_order)
     for i in random_order:
-        eliminate_with_minimization(gfa, i, delete_state=False, minimize=True)
+        eliminate_with_minimization(gfa, i, delete_state=False, minimize=minimization)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
 
-def eliminate_by_state_weight_heuristic(gfa: GFA) -> RegExp:
+def eliminate_by_state_weight_heuristic(gfa: GFA, minimization) -> RegExp:
     pq = PriorityQueue()
     for i in range(1, len(gfa.States) - 1):
         pq.put((get_weight(gfa, i), i))
     while not pq.empty():
-        eliminate_with_minimization(gfa, pq.get()[1], delete_state=False, minimize=True)
+        eliminate_with_minimization(gfa, pq.get()[1], delete_state=False, minimize=minimization)
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
         return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
 
 
-def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
+def eliminate_by_repeated_state_weight_heuristic(gfa: GFA, minimization) -> RegExp:
     n = len(gfa.States) - 2
     for i in range(n):
         min_val = get_weight(gfa, 1)
@@ -178,5 +178,5 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA) -> RegExp:
             if min_val > curr_val:
                 min_val = curr_val
                 min_idx = j
-        eliminate_with_minimization(gfa, min_idx, minimize=True)
+        eliminate_with_minimization(gfa, min_idx, minimize=minimization)
     return gfa.delta[0][1]

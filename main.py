@@ -4,6 +4,7 @@ import os
 import random
 import csv
 import itertools
+import sys
 from pickle import load, dump
 
 import torch
@@ -34,7 +35,7 @@ args = dotdict({
     'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
-    'cpuct': 1,
+    'cpuct': 3,
     'checkpoint': './alpha_zero/models/',
     'load_model': True,
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
@@ -45,7 +46,7 @@ max_n = 10
 n_range = max_n - min_n + 1
 alphabet = 5
 density = 0.2
-sample_size = 100
+sample_size = 1000
 
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
@@ -81,11 +82,11 @@ def test_alpha_zero(model_updated, type, n, minimize):
                 exp = load(fp)
         with open('./result/rl_' + str(n) + ('_true' if minimize else '_false') + '_length.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
-            size_value = exp[0] / 1000
+            size_value = exp[0] / sample_size
             writer.writerow([size_value])
         with open('./result/rl_' + str(n) + ('_true' if minimize else '_false') + '_time.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
-            time_value = exp[1] / 1000
+            time_value = exp[1] / sample_size
             writer.writerow([time_value])
     else:
         data = load_data(type)
@@ -120,7 +121,7 @@ def test_alpha_zero(model_updated, type, n, minimize):
                 exp[n][1] += result_time
         
         for i in range(8):
-            print(exp[i][0] / 100)
+            print(exp[i][0] / sample_size)
         
 
         if minimize:
@@ -131,7 +132,7 @@ def test_alpha_zero(model_updated, type, n, minimize):
                 dump(exp, fp)
 
 
-def test_heuristics(model_updated, type):
+def test_heuristics(model_updated, type, minimization):
     model_updated = model_updated
     if not model_updated and os.path.isfile('./result/heuristics_experiment_result.pkl'):
         with open('./result/heuristics_experiment_result.pkl', 'rb') as fp:
@@ -140,12 +141,12 @@ def test_heuristics(model_updated, type):
             with open('./result/c' + str(c + 1) + '_length.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
                 for n in range(n_range):
-                    size_value = exp[c][n][0] / 100
+                    size_value = exp[c][n][0] / sample_size
                     writer.writerow([size_value])
             with open('./result/c' + str(c + 1) + '_time.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
                 for n in range(n_range):
-                    time_value = exp[c][n][1] / 100
+                    time_value = exp[c][n][1] / sample_size
                     writer.writerow([time_value])
     else:
         random.seed(210)
@@ -155,30 +156,21 @@ def test_heuristics(model_updated, type):
             if type == 'position' and n != 0:
                 break
             for i in range(sample_size):
-                '''
-                if i == 52:
-                    gfa = data[n][i].dup()
-                    print(gfa.States)
-                    print(gfa.delta)
-                    exit()
-                '''
                 print('n: ' + str(n + min_n) + ', i:', i)
-                #'''
                 # eliminate_randomly
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = eliminate_randomly(gfa)
+                result = eliminate_randomly(gfa, minimization)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
                 exp[0][n][0] += result_size
                 exp[0][n][1] += result_time
-                print(result_size)
-                '''
+
                 # decompose with eliminate_randomly
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = decompose(gfa, False, False)
+                result = decompose(gfa, False, False, minimization=minimization)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
@@ -188,7 +180,7 @@ def test_heuristics(model_updated, type):
                 # eliminate_by_state_weight_heuristic
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = eliminate_by_state_weight_heuristic(gfa)
+                result = eliminate_by_state_weight_heuristic(gfa, minimization)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
@@ -198,47 +190,32 @@ def test_heuristics(model_updated, type):
                 # decompose + eliminate_by_state_weight_heuristic
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = decompose(gfa, True, False)
+                result = decompose(gfa, True, False, minimization=minimization)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
                 exp[3][n][0] += result_size
                 exp[3][n][1] += result_time
-                '''
+
                 # eliminate_by_repeated_state_weight_heuristic
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = eliminate_by_repeated_state_weight_heuristic(gfa)
+                result = eliminate_by_repeated_state_weight_heuristic(gfa, minimization)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
                 exp[4][n][0] += result_size
                 exp[4][n][1] += result_time
-                #print("answer:", result)
-                #print("delta verification")
-                #print(gfa.delta)
-                answer = result
-                #'''
+
                 # decompose + eliminate_by_repeated_state_weight_heuristic
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = decompose(gfa, True, True)
+                result = decompose(gfa, True, True, minimization=minimization)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
                 exp[5][n][0] += result_size
                 exp[5][n][1] += result_time
-                '''
-                if answer != result:
-                    if answer.treeLength() < result.treeLength():
-                        print('wrong')
-                    else:
-                        print("valid")
-                    #print(gfa.States)
-                    #print(gfa.delta)
-                    #print(gfa.Final)
-                    exit()
-                '''
         with open('./result/heuristics_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
@@ -290,8 +267,8 @@ def test_alpha_zero_for_position_automata(model_updated):
             print('lr:', gfa.delta[0][1].treeLength())
             print('c6:', rep_sw_length)
             print('random:', rand_length)
-        exp /= 100
-        original /= 100
+        exp /= sample_size
+        original /= sample_size
         with open('./result/alpha_zero_position_result.pkl', 'wb') as fp:
             dump(exp, fp)
         with open('./result/postion_original_length.pkl', 'wb') as fp:
@@ -306,7 +283,7 @@ def test_brute_force(model_updated, type):
         with open('./result/optimal_length_minimize_10.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             for n in range(5):
-                size_value = exp[n] / 100
+                size_value = exp[n] / sample_size
                 writer.writerow([size_value])
     else:
         data = load_data(type)
@@ -358,33 +335,31 @@ def test_fig10():
 
 
 def main():
-    print("length-only")
-    type = 'nfa'
-    minimization = False
-    n = 10
-    #test_fig10()
-    #test_alpha_zero(True, type, n, minimization)
-    #test_alpha_zero(False, type, n, minimization)
-    #test_brute_force(True,type)
-    #test_brute_force(False, type)
-    test_heuristics(True, type)
-    test_heuristics(False, type)
-    #test_alpha_zero(True)
-    #test_alpha_zero(False)
-    #train_alpha_zero()
-    #test_alpha_zero_for_position_automata(True)
-    #test_alpha_zero_for_position_automata(False)
-    #test_alpha_zero_for_trie(True, 2)
-    #test_alpha_zero_for_trie(False, 2)
-    #print("test-heuristics")
-    #test_heuristics(True)
-    #test_heuristics(False)
+    if sys.argv[1] == "train":
+        train_alpha_zero()
+        exit()
+    
+    if sys.argv[2] == 'DFA':
+        type = 'dfa'
+    elif sys.argv[2] == 'NFA':
+        type = 'nfa'
+    else:
+        print("Specify the target FAs")
+        exit()
+    if sys.argv[3] == 'true':
+        minimization = True
+    elif sys.argv[3] == 'false':
+        minimization = False
+    else:
+        print("Specify whether enable or disable minimization")
+        exit()
+    
+    if sys.argv[1] == 'rl':
+        for n in range(3, 11):
+            test_alpha_zero(True, type, n, minimization)
+            test_alpha_zero(False, type, n, minimization)
+    elif sys.argv[1] == 'heuristics':
+        test_heuristics(True, type, minimization)
+        test_heuristics(False, type, minimization)
 
-#import utils.random_position_automata_generator
-#test_heuristics(True, 'position')
-#test_heuristics(False, 'position')
 main()
-
-#import utils.random_position_automata_generator
-#import utils.random_nfa_generator
-#import utils.random_dfa_generator
