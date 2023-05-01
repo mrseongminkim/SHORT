@@ -31,7 +31,7 @@ args = dotdict({
     'updateThreshold': 0.0,
     # Number of game examples to train the neural networks.
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
     # Number of games to play during arena play to determine if new net will be accepted.
     'arenaCompare': 40,
     'cpuct': 1,
@@ -45,7 +45,7 @@ max_n = 10
 n_range = max_n - min_n + 1
 alphabet = 5
 density = 0.2
-sample_size = 1000
+sample_size = 100
 
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
@@ -73,18 +73,22 @@ def train_alpha_zero():
 def test_alpha_zero(model_updated, type, n, minimize):
     model_updated = model_updated
     if not model_updated:
-        with open('./result/rl_' + str(n) + '.pkl', 'rb') as fp:
-            exp = load(fp)
-        with open('./result/rl_' + str(n) + '_length.csv', 'w', newline='') as fp:
+        if minimize:
+            with open('./result/rl_' + str(n) + '_true.pkl', 'rb') as fp:
+                exp = load(fp)
+        else:
+            with open('./result/rl_' + str(n) + '_false.pkl', 'rb') as fp:
+                exp = load(fp)
+        with open('./result/rl_' + str(n) + ('_true' if minimize else '_false') + '_length.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             size_value = exp[0] / 1000
             writer.writerow([size_value])
-        with open('./result/rl_' + str(n) + '_time.csv', 'w', newline='') as fp:
+        with open('./result/rl_' + str(n) + ('_true' if minimize else '_false') + '_time.csv', 'w', newline='') as fp:
             writer = csv.writer(fp)
             time_value = exp[1] / 1000
             writer.writerow([time_value])
     else:
-        data = load_data(type, n)
+        data = load_data(type)
         g = Game()
         nnet = nn(g)
         mcts = MCTS(g, nnet, args)
@@ -95,26 +99,36 @@ def test_alpha_zero(model_updated, type, n, minimize):
         else:
             print("Can't test without pre-trained model")
             exit()
-        exp = [0, 0]
-        for i in range(sample_size):
-            mcts = MCTS(g, nnet, args)
-            print('n: ' + str(n) + ', i:', i)
-            gfa = data[i]
-            gfa = g.getInitBoard(gfa, n + min_n, 5, 0.2)
-            start_time = time.time()
-            while g.getGameEnded(gfa, curPlayer) == None:
-                action = player(g.getCanonicalForm(gfa, curPlayer))
-                valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-                if valids[action] == 0:
-                    assert valids[action] > 0
-                gfa, curPlayer = g.getNextState(gfa, curPlayer, action, minimize=minimize)
-            end_time = time.time()
-            result_length = gfa.delta[0][1].treeLength()
-            result_time = end_time - start_time
-            exp[0] += result_length
-            exp[1] += result_time
-        with open('./result/rl_' + str(n) + '.pkl', 'wb') as fp:
-            dump(exp, fp)
+        exp = [[0, 0] for i in range(8)]
+        for n in range(8):
+            for i in range(sample_size):
+                mcts = MCTS(g, nnet, args)
+                print('n: ' + str(n) + ', i:', i)
+                gfa = data[n][i]
+                gfa = g.getInitBoard(gfa, n + min_n, 5, 0.2)
+                start_time = time.time()
+                while g.getGameEnded(gfa, curPlayer) == None:
+                    action = player(g.getCanonicalForm(gfa, curPlayer))
+                    valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
+                    if valids[action] == 0:
+                        assert valids[action] > 0
+                    gfa, curPlayer = g.getNextState(gfa, curPlayer, action, minimize=minimize)
+                end_time = time.time()
+                result_length = gfa.delta[0][1].treeLength()
+                result_time = end_time - start_time
+                exp[n][0] += result_length
+                exp[n][1] += result_time
+        
+        for i in range(8):
+            print(exp[i][0] / 100)
+        
+
+        if minimize:
+            with open('./result/rl_' + str(n) + '_true.pkl', 'wb') as fp:
+                dump(exp, fp)
+        else:
+            with open('./result/rl_' + str(n) + '_false.pkl', 'wb') as fp:
+                dump(exp, fp)
 
 
 def test_heuristics(model_updated, type):
@@ -126,12 +140,12 @@ def test_heuristics(model_updated, type):
             with open('./result/c' + str(c + 1) + '_length.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
                 for n in range(n_range):
-                    size_value = exp[c][n][0] / 1000
+                    size_value = exp[c][n][0] / 100
                     writer.writerow([size_value])
             with open('./result/c' + str(c + 1) + '_time.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
                 for n in range(n_range):
-                    time_value = exp[c][n][1] / 1000
+                    time_value = exp[c][n][1] / 100
                     writer.writerow([time_value])
     else:
         random.seed(210)
@@ -141,7 +155,15 @@ def test_heuristics(model_updated, type):
             if type == 'position' and n != 0:
                 break
             for i in range(sample_size):
+                '''
+                if i == 52:
+                    gfa = data[n][i].dup()
+                    print(gfa.States)
+                    print(gfa.delta)
+                    exit()
+                '''
                 print('n: ' + str(n + min_n) + ', i:', i)
+                #'''
                 # eliminate_randomly
                 gfa = data[n][i].dup()
                 start_time = time.time()
@@ -151,7 +173,8 @@ def test_heuristics(model_updated, type):
                 result_size = result.treeLength()
                 exp[0][n][0] += result_size
                 exp[0][n][1] += result_time
-
+                print(result_size)
+                '''
                 # decompose with eliminate_randomly
                 gfa = data[n][i].dup()
                 start_time = time.time()
@@ -181,7 +204,7 @@ def test_heuristics(model_updated, type):
                 result_size = result.treeLength()
                 exp[3][n][0] += result_size
                 exp[3][n][1] += result_time
-
+                '''
                 # eliminate_by_repeated_state_weight_heuristic
                 gfa = data[n][i].dup()
                 start_time = time.time()
@@ -191,7 +214,11 @@ def test_heuristics(model_updated, type):
                 result_size = result.treeLength()
                 exp[4][n][0] += result_size
                 exp[4][n][1] += result_time
-
+                #print("answer:", result)
+                #print("delta verification")
+                #print(gfa.delta)
+                answer = result
+                #'''
                 # decompose + eliminate_by_repeated_state_weight_heuristic
                 gfa = data[n][i].dup()
                 start_time = time.time()
@@ -201,6 +228,17 @@ def test_heuristics(model_updated, type):
                 result_size = result.treeLength()
                 exp[5][n][0] += result_size
                 exp[5][n][1] += result_time
+                '''
+                if answer != result:
+                    if answer.treeLength() < result.treeLength():
+                        print('wrong')
+                    else:
+                        print("valid")
+                    #print(gfa.States)
+                    #print(gfa.delta)
+                    #print(gfa.Final)
+                    exit()
+                '''
         with open('./result/heuristics_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
@@ -290,6 +328,7 @@ def test_brute_force(model_updated, type):
                         length = gfa.delta[gfa.Initial][list(gfa.Final)[0]].treeLength()
                     min_length = min(min_length, length)
                 exp[n] += min_length
+            print(exp[n] / min_length)
         with open('./result/brute_force_experiment_result_minimize_10.pkl', 'wb') as fp:
             dump(exp, fp)
 
@@ -320,14 +359,16 @@ def test_fig10():
 
 def main():
     print("length-only")
-    type = 'dfa'
-    minimization = True
-    n = 9
+    type = 'nfa'
+    minimization = False
+    n = 10
     #test_fig10()
     #test_alpha_zero(True, type, n, minimization)
     #test_alpha_zero(False, type, n, minimization)
-    #test_heuristics(True, type)
-    #test_heuristics(False, type)
+    #test_brute_force(True,type)
+    #test_brute_force(False, type)
+    test_heuristics(True, type)
+    test_heuristics(False, type)
     #test_alpha_zero(True)
     #test_alpha_zero(False)
     #train_alpha_zero()
@@ -342,7 +383,8 @@ def main():
 #import utils.random_position_automata_generator
 #test_heuristics(True, 'position')
 #test_heuristics(False, 'position')
-#main()
+main()
 
 #import utils.random_position_automata_generator
-import utils.random_dfa_generator
+#import utils.random_nfa_generator
+#import utils.random_dfa_generator
