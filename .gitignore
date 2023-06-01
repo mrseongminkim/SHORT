@@ -2,5 +2,4 @@
 *.examples
 *.zip
 *.pdf
-*.ipynb
 graph_maker.py
