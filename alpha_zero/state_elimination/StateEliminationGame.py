@@ -26,7 +26,6 @@ class StateEliminationGame():
         return gfa
 
     def gfaToBoard(self, gfa):
-        self.alphabet = copy.copy(gfa.Sigma)
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
         #re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
         for source in gfa.delta:
@@ -50,14 +49,14 @@ class StateEliminationGame():
             gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=minimize)
         return (gfa_eliminated, player)
 
-    def getValidMoves(self, gfa, player):
+    def getValidMoves(self, gfa, player=1):
         final_state = list(gfa.Final)[0]
         validMoves = [0 for i in range(self.maxN + 2)]
         for i in range(1, final_state):
             validMoves[i] = 1
         return validMoves
 
-    def getGameEnded(self, gfa, player):
+    def getGameEnded(self, gfa, player=1):
         if len(gfa.States) == 2:
             length = gfa.delta[0][1].treeLength()
             AVG = 306.4036842105266

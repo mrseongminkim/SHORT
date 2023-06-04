@@ -54,9 +54,6 @@ def token():
     plt.show()
     '''
 
-token()
-exit()
-
 def primitive():
     type = "length"
     n = 8
@@ -65,7 +62,7 @@ def primitive():
     x = []
     
     for i in range(1, 7):
-        file = open("./result/true/c" + str(i) + "_" + type + ".csv")
+        file = open("./result/heuristics_nfa_true/c" + str(i) + "_" + type + ".csv")
         temp = []
         for row in csv.reader(file):
             temp.append(row[0])
@@ -73,7 +70,7 @@ def primitive():
         x.append(temp)
         file.close()
     
-    file = open("./result/rl" + "_" + type + ".csv")
+    file = open("./result/rl_greedy_nfa_True.csv")
     temp = []
     for row in csv.reader(file):
         temp.append(row[0])

@@ -19,7 +19,9 @@ from alpha_zero.Coach import Coach
 from alpha_zero.MCTS import MCTS
 from alpha_zero.utils import *
 from alpha_zero.state_elimination.StateEliminationGame import StateEliminationGame as Game
-from alpha_zero.state_elimination.pytorch.NNet import NNetWrapper as nn
+from alpha_zero.state_elimination.NNet import NNetWrapper as nn
+
+from config import *
 
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
@@ -41,9 +43,6 @@ args = dotdict({
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
-min_n = 3
-max_n = 10
-n_range = max_n - min_n + 1
 alphabet = 5
 density = 0.2
 sample_size = 1000
@@ -71,6 +70,51 @@ def train_alpha_zero():
     c.learn()
 
 
+def test_alpha_zero_without_mcts(model_updated, type, minimize):
+    if not model_updated:
+        with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "rb") as fp:
+            exp = load(fp)
+        with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".csv", 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            for i in range(N_RANGE):
+                size_value = exp[i][0]
+                time_value = exp[i][1]
+                writer.writerow([size_value, time_value])
+        return
+    data = load_data(type)
+    g = Game()
+    nnet = nn(g)
+    assert args.load_model
+    nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
+    exp = [[0, 0] for i in range(N_RANGE)]
+    for n in range(N_RANGE):
+        for i in range(sample_size):
+            print('n:' + str(n) + ', i:', i)
+            gfa = data[n][i]
+            start_time = time.time()
+            while g.getGameEnded(gfa) == None:
+                board = g.gfaToBoard(gfa)
+                policy, _ = nnet.predict(board)
+                valid_moves = g.getValidMoves(gfa)
+                policy = policy * valid_moves
+                if not policy.any():
+                    print("Poor prediction")
+                    policy = valid_moves
+                action = np.argmax(policy)
+                eliminate_with_minimization(gfa, action, minimize=minimize)
+            end_time = time.time()
+            result_length = gfa.delta[0][1].treeLength()
+            result_time = end_time - start_time
+            exp[n][0] += result_length
+            exp[n][1] += result_time
+        exp[n][0] /= sample_size
+        exp[n][1] /= sample_size
+    with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "wb") as fp:
+        dump(exp, fp)
+
+
+
+'''
 def test_alpha_zero(model_updated, type, n, minimize):
     model_updated = model_updated
     if not model_updated:
@@ -362,4 +406,7 @@ def main():
         test_heuristics(True, type, minimization)
         test_heuristics(False, type, minimization)
 
-main()
+#main()
+'''
+test_alpha_zero_without_mcts(True, "nfa", True)
+test_alpha_zero_without_mcts(False, "nfa", True)

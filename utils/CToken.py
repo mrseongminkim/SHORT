@@ -6,7 +6,6 @@ class CToken(RegExp):
     threshold = 10
 
     def __init__(self, regex: RegExp):
-        self.Sigma = regex.Sigma
         self.hashed_value = hash(regex)
         self.tree_length = regex.treeLength()
         CToken.token_to_regex[self.hashed_value] = regex

@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from alpha_zero.utils import *
-from alpha_zero.state_elimination.pytorch.StateEliminationNNet import StateEliminationNNet as sennet
+from alpha_zero.state_elimination.StateEliminationNNet import StateEliminationNNet as sennet
 
 args = dotdict({
     'lr': 0.001,
