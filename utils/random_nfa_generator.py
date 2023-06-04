@@ -14,7 +14,13 @@ def show_bitmap(nfa: gmpy2.mpz, size: int):
             print('0', end='')
     print()
 
-def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz):
+def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz) -> GFA:
+    '''
+    return a NFA object following three conditions
+    1. 0 as initial and -1 as final
+    2. reduced by lr equivalence relation
+    3. order of states is randomly shuffled
+    '''
     gfa = NFA()
     for i in range(n + 2):
         gfa.addState()
@@ -32,14 +38,17 @@ def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gm
             gfa.addTransition(src + 1, str(lbl), dst + 1)
     gfa.setInitial({0})
     gfa.setFinal({n + 1})
-    #reorder(gfa, 7, skip_first_sort=True)
-
+    '''condition: 0 as initial, n + 1 as final'''
+    #After reducing states, we can no longer guarantee the above condition thus we reorder states.
     gfa = gfa.lrEquivNFA()
-    gfa.renameStates()
-    gfa.reorder({len(gfa.States) - 1 : list(gfa.Final)[0], list(gfa.Final)[0] : len(gfa.States) - 1})
-    gfa.renameStates()
     gfa = convert_nfa_to_gfa(gfa)
+    if len(gfa.States) != n + 2:
+        #reorder: key: prev index, value: new index (delta wise)
+        print("this one")
+        gfa.reorder({gfa.Initial : 0, 0 : gfa.Initial, len(gfa.delta) - 1 : list(gfa.Final)[0], list(gfa.Final)[0] : len(gfa.delta) - 1})
+    '''NFA is reduced'''
     shuffle_gfa(gfa, len(gfa) - 2)
+    '''NFA is randomly sorted'''
     return gfa
 
 #Ensures non-returning, non-exiting, initially connected and single final state
@@ -114,6 +123,7 @@ def generate(n: int, k: int, d: float, file_name: str):
         return make_fado_recognizable_nfa_object(n, k, nfa, finals)
     else:
         make_fado_recognizable_nfa(n, k, nfa, finals, file_name)
+
 
 '''
 states = [3, 4, 5, 6, 7, 8, 9, 10]
