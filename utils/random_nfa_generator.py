@@ -44,7 +44,6 @@ def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gm
     gfa = convert_nfa_to_gfa(gfa)
     if len(gfa.States) != n + 2:
         #reorder: key: prev index, value: new index (delta wise)
-        print("this one")
         gfa.reorder({gfa.Initial : 0, 0 : gfa.Initial, len(gfa.delta) - 1 : list(gfa.Final)[0], list(gfa.Final)[0] : len(gfa.delta) - 1})
     '''NFA is reduced'''
     shuffle_gfa(gfa, len(gfa) - 2)
