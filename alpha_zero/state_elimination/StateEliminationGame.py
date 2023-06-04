@@ -20,10 +20,9 @@ class StateEliminationGame():
             k = 5
             d = 0.1
             gfa = generate(n, k, d, 'in-memory')
-            shuffle_gfa(gfa, n)
-        self.n = n + 2
-        self.k = k
-        self.d = d
+        #self.n = n + 2
+        #self.k = k
+        #self.d = d
         return gfa
 
     def gfaToBoard(self, gfa):
