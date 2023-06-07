@@ -16,6 +16,7 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
     4. non-returning and non-exsiting
     5. initially connected
     6. single inital and final state
+    7. name of states are always string
     '''
     gfa = NFA()
     for i in range(n + 2):
