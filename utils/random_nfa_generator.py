@@ -5,21 +5,17 @@ import gmpy2
 from FAdo.conversions import *
 
 from utils.fadomata import *
+from config import *
 
-def show_bitmap(nfa: gmpy2.mpz, size: int):
-    for i in range(size):
-        if nfa.bit_test(i):
-            print('1', end='')
-        else:
-            print('0', end='')
-    print()
-
-def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz) -> GFA:
+def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz) -> GFA:
     '''
-    return a NFA object following three conditions
+    return a NFA object following conditions
     1. 0 as initial and -1 as final
     2. reduced by lr equivalence relation
     3. order of states is randomly shuffled
+    4. non-returning and non-exsiting
+    5. initially connected
+    6. single inital and final state
     '''
     gfa = NFA()
     for i in range(n + 2):
@@ -50,26 +46,15 @@ def make_fado_recognizable_nfa_object(n: int, k: int, nfa: gmpy2.mpz, finals: gm
     '''NFA is randomly sorted'''
     return gfa
 
-#Ensures non-returning, non-exiting, initially connected and single final state
-def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz, file_name: str):
-    transition_list = ['0 @epsilon 1\n']
-    size = n * n * k
-    with open(file_name, 'a') as fp:
-        fp.write('@NFA ')
-        for i in range(n):
-            if finals.bit_test(i):
-                transition_list.append(f'{i + 1} @epsilon {n + 1}\n')
-        fp.write(f'{n + 1} * 0\n')
-        for i in range(size):
-            if nfa.bit_test(i):
-                src = i // (n * k)
-                foo = i % (n * k)
-                dst = foo // k
-                lbl = foo % k
-                transition_list.append(f'{src + 1} {lbl} {dst + 1}\n')
-        transition_list.sort()
-        for transition in transition_list:
-            fp.write(transition)
+
+def show_bitmap(nfa: gmpy2.mpz, size: int):
+    for i in range(size):
+        if nfa.bit_test(i):
+            print('1', end='')
+        else:
+            print('0', end='')
+    print()
+
 
 def connect(n: int, k: int, nfa: gmpy2.mpz) -> gmpy2.mpz:
     b = n - 1
@@ -88,6 +73,7 @@ def connect(n: int, k: int, nfa: gmpy2.mpz) -> gmpy2.mpz:
         del unvisited[bar]
     return nfa
 
+
 def add_random_transitions(nfa: gmpy2.mpz, size: int, t: int) -> gmpy2.mpz:
     if not t:
         return nfa
@@ -103,7 +89,8 @@ def add_random_transitions(nfa: gmpy2.mpz, size: int, t: int) -> gmpy2.mpz:
         j -= 1
     return nfa
 
-def generate(n: int, k: int, d: float, file_name: str):
+
+def generate(n: int, k: int, d: float):
     size = n * n * k
     nfa = gmpy2.mpz()
     finals = gmpy2.mpz()
@@ -118,22 +105,18 @@ def generate(n: int, k: int, d: float, file_name: str):
         nfa = add_random_transitions(nfa, size, t)
     rstate = gmpy2.random_state(random.randint(0, 2147483647 - 1))
     finals = gmpy2.mpz_rrandomb(rstate, n)
-    if file_name == 'in-memory':
-        return make_fado_recognizable_nfa_object(n, k, nfa, finals)
-    else:
-        make_fado_recognizable_nfa(n, k, nfa, finals, file_name)
+    make_fado_recognizable_nfa(n, k, nfa, finals)
 
 
-'''
-states = [3, 4, 5, 6, 7, 8, 9, 10]
-k = 5
-d = 0.2
-for n in states:
-    content = []
-    for i in range(1000):
-        print("n: %d, i: %d" % (n, i))
-        nfa = generate(n, k, d, 'in-memory')
-        content.append(nfa)
-    with open('data/random_nfa/n' + str(n) + 'k5.pkl', 'wb') as fp:
-        dump(content, fp)
-'''
+def generate_test_nfas():
+    for n in STATE:
+        for k in ALPHABET:
+            for d in DENSITY:
+                file_name = "data/random_nfa/n%dk%dd%.1f.pkl" % (n, k, d)
+                print(file_name)
+                nfas = []
+                for i in range(SAMPLE_SIZE):
+                    nfa = generate(n, k, d)
+                    nfas.append(nfa)
+                with open(file_name, "wb") as fp:
+                    dump(nfas, fp)
