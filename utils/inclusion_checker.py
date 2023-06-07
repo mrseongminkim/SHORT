@@ -24,7 +24,6 @@ def is_included(re1: RegExp, re2: RegExp, depth=0):
             return 2
         elif isinstance(re2, CStar):
             return 1
-        #trivial
         elif isinstance(re2, CToken):
             return is_included(re1, CToken.token_to_regex[re2.hashed_value], depth)
     elif is_epsilon(re2):
