@@ -12,7 +12,7 @@ def load_nfa():
     for n in STATE:
         file_name = 'n' + str(n) + 'k5d0.2'
         with open('data/random_nfa/' + file_name + '.pkl', 'rb') as fp:
-            data[n] = load(fp)
+            data[n - MIN_N] = load(fp)
     return data
 
 
