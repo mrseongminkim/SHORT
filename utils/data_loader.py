@@ -9,8 +9,8 @@ from config import *
 
 def load_nfa():
     data = [[] for n in range(N_RANGE)]
-    for n in range(N_RANGE):
-        file_name = 'n' + str(n + 3) + 'k5'
+    for n in STATE:
+        file_name = 'n' + str(n) + 'k5d0.2'
         with open('data/random_nfa/' + file_name + '.pkl', 'rb') as fp:
             data[n] = load(fp)
     return data
