@@ -14,6 +14,7 @@ from FAdo.conversions import *
 
 from utils.data_loader import *
 from utils.heuristics import *
+from utils.random_nfa_generator import *
 
 from alpha_zero.Coach import Coach
 from alpha_zero.MCTS import MCTS
@@ -45,7 +46,13 @@ args = dotdict({
 })
 alphabet = 5
 density = 0.2
-sample_size = 1000
+
+def generate_test_data(type: str):
+    if type == "nfa":
+        generate_test_nfas()
+
+
+
 
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
@@ -88,7 +95,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
-        for i in range(sample_size):
+        for i in range(SAMPLE_SIZE):
             print('n:' + str(n) + ', i:', i)
             gfa = data[n][i]
             start_time = time.time()
@@ -107,8 +114,8 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
-        exp[n][0] /= sample_size
-        exp[n][1] /= sample_size
+        exp[n][0] /= SAMPLE_SIZE
+        exp[n][1] /= SAMPLE_SIZE
     with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
@@ -408,5 +415,8 @@ def main():
 
 #main()
 '''
-test_alpha_zero_without_mcts(True, "nfa", True)
-test_alpha_zero_without_mcts(False, "nfa", True)
+#test_alpha_zero_without_mcts(True, "nfa", True)
+#test_alpha_zero_without_mcts(False, "nfa", True)
+
+generate_test_data("nfa")
+
