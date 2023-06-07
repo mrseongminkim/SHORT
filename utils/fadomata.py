@@ -8,15 +8,17 @@ from FAdo.reex import *
 from utils.CToken import *
 from utils.inclusion_checker import *
 
-def shuffle_gfa(gfa: GFA, states: int):
-    order = {0 : 0, states + 1 : states + 1}
-    lst = [x for x in range(1, states + 1)]
+def shuffle_gfa(gfa: GFA):
+    final = list(gfa.Final)[0]
+    order = {0 : 0, final : final}
+    lst = [x for x in range(1, final)]
     random.shuffle(lst)
-    for idx, val in enumerate(lst):
-        order[idx + 1] = val
+    for idx, val in enumerate(lst, start=1):
+        order[idx] = val
     gfa.reorder(order)
 
-
+#obsoleted
+'''
 def reorder(nfa: NFA, states: int, skip_first_sort=False):
     if not skip_first_sort:
         order = {}
@@ -78,7 +80,7 @@ def reorder_reverse(nfa: NFA, states: int):
                     visited.append(element)
     nfa.reorder(order)
     nfa.renameStates()
-
+'''
 
 save_count_star = 0
 save_count_concat = 0
@@ -97,7 +99,6 @@ def print_counter():
     all_count_star = 0
     all_count_concat = 0
     all_count_disj = 0
-
 
 def eliminate(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
     if st in gfa.delta and st in gfa.delta[st]:

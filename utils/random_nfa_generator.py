@@ -41,8 +41,9 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
     if len(gfa.States) != n + 2:
         #reorder: key: prev index, value: new index (delta wise)
         gfa.reorder({gfa.Initial : 0, 0 : gfa.Initial, len(gfa.delta) - 1 : list(gfa.Final)[0], list(gfa.Final)[0] : len(gfa.delta) - 1})
+        gfa.renameStates([str(i) for i in range(len(gfa.States))])
     '''NFA is reduced'''
-    shuffle_gfa(gfa, len(gfa) - 2)
+    shuffle_gfa(gfa)
     '''NFA is randomly sorted'''
     return gfa
 
@@ -105,7 +106,7 @@ def generate(n: int, k: int, d: float):
         nfa = add_random_transitions(nfa, size, t)
     rstate = gmpy2.random_state(random.randint(0, 2147483647 - 1))
     finals = gmpy2.mpz_rrandomb(rstate, n)
-    make_fado_recognizable_nfa(n, k, nfa, finals)
+    return make_fado_recognizable_nfa(n, k, nfa, finals)
 
 
 def generate_test_nfas():
