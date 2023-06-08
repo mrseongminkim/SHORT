@@ -27,7 +27,7 @@ from config import *
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
 args = dotdict({
-    'numIters': 1000,
+    'numIters': 100,
     # Number of complete self-play games to simulate during a new iteration.
     'numEps': 100,
     #'tempThreshold': 4,        # temperature hyperparameters
@@ -44,14 +44,10 @@ args = dotdict({
     'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
-alphabet = 5
-density = 0.2
 
 def generate_test_data(type: str):
     if type == "nfa":
         generate_test_nfas()
-
-
 
 
 def train_alpha_zero():
@@ -418,5 +414,5 @@ def main():
 #test_alpha_zero_without_mcts(True, "nfa", True)
 #test_alpha_zero_without_mcts(False, "nfa", True)
 
-generate_test_data("nfa")
+#generate_test_data("nfa")
 

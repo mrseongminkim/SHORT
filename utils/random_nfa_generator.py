@@ -9,7 +9,7 @@ from config import *
 
 def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz) -> GFA:
     '''
-    return a NFA object following conditions
+    return a NFA object following below conditions
     1. 0 as initial and -1 as final
     2. reduced by lr equivalence relation
     3. order of states is randomly shuffled
