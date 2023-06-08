@@ -23,14 +23,13 @@ class Coach():
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
-        #self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
         # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.trainExamplesHistory = []
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
 
-    def executeEpisode(self, curr_iter):
+    def executeEpisode(self):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -47,20 +46,18 @@ class Coach():
                            the player eventually won the game, else -1.
         """
         trainExamples = []
-        board: GFA = self.game.getInitBoard(n=curr_iter)
-        self.curPlayer = 1
+        board: GFA = self.game.getInitBoard()
         episodeStep = 0
         while True:
             episodeStep += 1
-            canonicalBoard: GFA = self.game.getCanonicalForm(board, self.curPlayer)
+            canonicalBoard: GFA = self.game.getCanonicalForm(board)
             temp = 1
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             length_board = self.game.gfaToBoard(canonicalBoard)
             trainExamples.append([length_board, pi])
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = self.game.getNextState(
-                board, self.curPlayer, action)
-            r = self.game.getGameEnded(board, self.curPlayer)
+            board = self.game.getNextState(board, action)
+            r = self.game.getGameEnded(board)
             if r != None:
                 return [(x[0], x[1], r) for x in trainExamples]
 
@@ -73,7 +70,6 @@ class Coach():
         only if it wins >= updateThreshold fraction of games.
         """
         for i in range(1, self.args.numIters + 1):
-            curr_iter = i
             # bookkeeping
             log.info(f'Starting Iter #{i} ...')
             # examples of the iteration
@@ -81,9 +77,9 @@ class Coach():
                 iterationTrainExamples = deque(
                     [], maxlen=self.args.maxlenOfQueue)
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    # reset search tree
+                    # Each instance of NFA have their own MCTS tree
                     self.mcts = MCTS(self.game, self.nnet, self.args)
-                    iterationTrainExamples += self.executeEpisode(curr_iter)
+                    iterationTrainExamples += self.executeEpisode()
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:

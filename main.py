@@ -27,7 +27,7 @@ from config import *
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
 args = dotdict({
-    'numIters': 100,
+    'numIters': 20,
     # Number of complete self-play games to simulate during a new iteration.
     'numEps': 100,
     #'tempThreshold': 4,        # temperature hyperparameters
@@ -416,3 +416,4 @@ def main():
 
 #generate_test_data("nfa")
 
+train_alpha_zero()

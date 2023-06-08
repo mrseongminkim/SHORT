@@ -6,7 +6,6 @@ from FAdo.reex import *
 
 from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
-from utils.fadomata import shuffle_gfa
 
 EPS = 1e-8
 
@@ -19,7 +18,7 @@ class StateEliminationGame():
             n = 7
             k = 5
             d = 0.1
-            gfa = generate(n, k, d, 'in-memory')
+            gfa = generate(n, k, d)
         #self.n = n + 2
         #self.k = k
         #self.d = d
@@ -40,23 +39,23 @@ class StateEliminationGame():
     def getActionSize(self):
         return self.maxN + 2
 
-    def getNextState(self, gfa, player, action, duplicate=False, minimize=True):
+    def getNextState(self, gfa, action, duplicate=False, minimize=True):
         final_state = list(gfa.Final)[0]
         assert 0 < action and action < final_state
         if duplicate:
-            gfa_eliminated = eliminate_with_minimization(gfa.dup(), action, minimize=minimize)
+            eliminated_gfa = eliminate_with_minimization(gfa.dup(), action, minimize=minimize)
         else:
-            gfa_eliminated = eliminate_with_minimization(gfa, action, minimize=minimize)
-        return (gfa_eliminated, player)
+            eliminated_gfa = eliminate_with_minimization(gfa, action, minimize=minimize)
+        return eliminated_gfa
 
-    def getValidMoves(self, gfa, player=1):
+    def getValidMoves(self, gfa):
         final_state = list(gfa.Final)[0]
         validMoves = [0 for i in range(self.maxN + 2)]
         for i in range(1, final_state):
             validMoves[i] = 1
         return validMoves
 
-    def getGameEnded(self, gfa, player=1):
+    def getGameEnded(self, gfa):
         if len(gfa.States) == 2:
             length = gfa.delta[0][1].treeLength()
             AVG = 306.4036842105266
@@ -66,7 +65,7 @@ class StateEliminationGame():
         else:
             return None
 
-    def getCanonicalForm(self, gfa, player):
+    def getCanonicalForm(self, gfa):
         return gfa
 
     def getSymmetries(self, gfa, pi):

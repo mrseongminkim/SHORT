@@ -68,7 +68,7 @@ class MCTS():
         """
         s = self.game.stringRepresentation(canonicalBoard)
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+            self.Es[s] = self.game.getGameEnded(canonicalBoard)
         #terminal
         if self.Es[s] != None:
             return self.Es[s]
@@ -76,7 +76,7 @@ class MCTS():
         if s not in self.Ps:
             length_board = self.game.gfaToBoard(canonicalBoard)
             self.Ps[s], v = self.nnet.predict(length_board)
-            valids = self.game.getValidMoves(canonicalBoard, 1)
+            valids = self.game.getValidMoves(canonicalBoard)
             self.Ps[s] = np.exp(self.Ps[s]) * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
@@ -104,11 +104,11 @@ class MCTS():
                 if u > cur_best:
                     cur_best = u
                     best_act = a
-                    
+
         # print(valids, self.game.getActionSize(), u, cur_best)
         a = best_act
-        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a, duplicate=True)
-        next_s = self.game.getCanonicalForm(next_s, next_player)
+        next_s = self.game.getNextState(canonicalBoard, a, duplicate=True)
+        next_s = self.game.getCanonicalForm(next_s)
 
         v = self.search(next_s)
         if (s, a) in self.Qsa:
