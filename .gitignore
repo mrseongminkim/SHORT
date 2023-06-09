@@ -3,3 +3,4 @@
 *.zip
 *.pdf
 graph_maker.py
+checkpoint*

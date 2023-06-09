@@ -116,7 +116,6 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
         dump(exp, fp)
 
 
-
 '''
 def test_alpha_zero(model_updated, type, n, minimize):
     model_updated = model_updated
@@ -177,7 +176,7 @@ def test_alpha_zero(model_updated, type, n, minimize):
         else:
             with open('./result/rl_' + str(n) + '_false.pkl', 'wb') as fp:
                 dump(exp, fp)
-
+'''
 
 def test_heuristics(model_updated, type, minimization):
     model_updated = model_updated
@@ -187,27 +186,29 @@ def test_heuristics(model_updated, type, minimization):
         for c in range(6):
             with open('./result/c' + str(c + 1) + '_length.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
-                for n in range(n_range):
-                    size_value = exp[c][n][0] / sample_size
+                for n in range(N_RANGE):
+                    size_value = exp[c][n][0] / SAMPLE_SIZE
                     writer.writerow([size_value])
             with open('./result/c' + str(c + 1) + '_time.csv', 'w', newline='') as fp:
                 writer = csv.writer(fp)
-                for n in range(n_range):
-                    time_value = exp[c][n][1] / sample_size
+                for n in range(N_RANGE):
+                    time_value = exp[c][n][1] / SAMPLE_SIZE
                     writer.writerow([time_value])
     else:
         random.seed(210)
         data = load_data(type)
-        exp = [[[0, 0] for n in range(n_range)] for c in range(6)]
-        for n in range(n_range):
+        exp = [[[0, 0] for n in range(N_RANGE)] for c in range(6)]
+        for n in range(N_RANGE):
             if type == 'position' and n != 0:
                 break
-            for i in range(sample_size):
-                print('n: ' + str(n + min_n) + ', i:', i)
+            for i in range(SAMPLE_SIZE):
+                print('n: ' + str(n + MIN_N) + ', i:', i)
                 # eliminate_randomly
+                random_order = [i for i in range(1, len(gfa.States) - 1)]
+                shuffle(random_order)
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = eliminate_randomly(gfa, minimization)
+                result = eliminate_randomly(gfa, minimization, random_order)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
@@ -217,7 +218,7 @@ def test_heuristics(model_updated, type, minimization):
                 # decompose with eliminate_randomly
                 gfa = data[n][i].dup()
                 start_time = time.time()
-                result = decompose(gfa, False, False, minimization=minimization)
+                result = decompose(gfa, False, False, minimization=minimization, random_order=random_order)
                 end_time = time.time()
                 result_time = end_time - start_time
                 result_size = result.treeLength()
@@ -266,7 +267,7 @@ def test_heuristics(model_updated, type, minimization):
         with open('./result/heuristics_experiment_result.pkl', 'wb') as fp:
             dump(exp, fp)
 
-
+'''
 def test_alpha_zero_for_position_automata(model_updated):
     model_updated = model_updated
     if not model_updated and os.path.isfile('./result/alpha_zero_position_result.pkl'):
