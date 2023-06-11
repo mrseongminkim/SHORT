@@ -9,15 +9,51 @@ from FAdo.reex import CConcat, CStar, CDisj
 from utils.fadomata import *
 
 '''
-To Do
-1. refactor group division
-2. refactor bridge states
-3. test it
-'''
+def get_bridge_states(aut: GFA) -> set:
+    gfa = aut.dup()
+    gfa.normalize()
+    # make gfa a graph instead of a digraph
+    new_edges = []
+    for a in gfa.delta:
+        for b in gfa.delta[a]:
+            new_edges.append((a, b))
+    for i in new_edges:
+        if i[1] not in gfa.delta:
+            gfa.delta[i[1]] = {}
+        else:
+            gfa.delta[i[1]][i[0]] = 'x'
+    for i in new_edges:
+        if i[0] not in gfa.delta[i[1]]:
+            gfa.delta[i[1]][i[0]] = 'x'
+    # initializations needed for cut point detection
+    gfa.c = 1
+    gfa.num = {}
+    gfa.visited = []
+    gfa.parent = {}
+    gfa.low = {}
+    gfa.cuts = set([])
+    gfa.assignNum(gfa.Initial)
+    gfa.assignLow(gfa.Initial)
+    # initial state is never a cut point, so it should be removed
+    gfa.cuts.remove(gfa.Initial)
+    cutpoints = copy.copy(gfa.cuts) - gfa.Final
+    # remove self-loops and check if the cut points are in a loop
+    gfa = aut.dup()
+    gfa.normalize()
+    for i in gfa.delta:
+        if i in gfa.delta[i]:
+            del gfa.delta[i][i]
+    cycles = gfa.evalNumberOfStateCycles()
+    for i in cycles:
+        if cycles[i] != 0 and i in cutpoints:
+            cutpoints.remove(i)
+    if 0 in cutpoints:
+        cutpoints.remove(0)
+    if len(aut.States) - 1 in cutpoints:
+        cutpoints.remove(len(aut.States) - 1)
+    #print(cutpoints)
+    return cutpoints
 
-
-
-def get_bridge_states(gfa: GFA) -> set:
     graph = nx.Graph()
     for source in gfa.delta:
         for target in gfa.delta[source]:
@@ -40,7 +76,31 @@ def get_bridge_states(gfa: GFA) -> set:
         if list(gfa.Final)[0] not in reachable_states:
             bridges_states.remove(i)
     return bridges_states
-
+'''
+#order of bridge states matters too
+def get_bridge_states(gfa: GFA) -> set:
+    graph = nx.Graph()
+    for source in gfa.delta:
+        for target in gfa.delta[source]:
+            graph.add_edge(source, target)
+    bridges = nx.algorithms.bridges(graph)
+    bridges_states = [i[1] for i in bridges if i[1] != 0 and i[1] != len(gfa) - 1]
+    new = gfa.dup()
+    for i in new.delta:
+        if i in new.delta[i]:
+            del new.delta[i][i]
+    cycles = new.evalNumberOfStateCycles()
+    for i in cycles:
+        if cycles[i] != 0 and i in bridges_states:
+            bridges_states.remove(i)
+    dead_end = []
+    for i in bridges_states:
+        reachable_states = []
+        check_all_reachable_states(gfa, i, list(gfa.Final)[0], reachable_states)
+        if list(gfa.Final)[0] not in reachable_states:
+            dead_end.append(i)
+    bridges_states = [x for x in bridges_states if x not in dead_end]
+    return bridges_states
 
 #done reviewing
 def decompose(gfa: GFA, state_weight=False, repeated=False, minimization=False, random_order=None, bridge_state_name=None) -> RegExp:
@@ -66,6 +126,14 @@ def decompose_vertically(gfa: GFA, bridge_state_name: list) -> list:
     bridge_state_name += [gfa.States[x] for x in bridge_states]
     if not bridge_states:
         return [gfa]
+    '''
+    print("states:", gfa.States)
+    print("Initial:", gfa.Initial)
+    print("Final:", gfa.Final)
+    print("delta:", gfa.delta)
+    print("bridges:", bridge_states)
+    exit()
+    '''
     initial_state = gfa.Initial
     for i in range(len(bridge_states) + 1):
         final_state = bridge_states[i] if i < len(bridge_states) else list(gfa.Final)[0]
@@ -78,7 +146,10 @@ def decompose_vertically(gfa: GFA, bridge_state_name: list) -> list:
 def make_vertical_subautomaton(gfa: GFA, initial_state: int, final_state: int) -> GFA:
     reachable_states = list()
     check_all_reachable_states(gfa, initial_state, final_state, reachable_states)
-    del reachable_states[final_state]
+    #print("init:", initial_state)
+    #print("final", final_state)
+    #print("rechable", reachable_states)
+    del reachable_states[reachable_states.index(final_state)]
     reachable_states.append(final_state)
     return make_subautomaton(gfa, reachable_states, initial_state, final_state)
 
@@ -97,7 +168,7 @@ def check_all_reachable_states(gfa: GFA, state: int, final_state: int, reachable
 
 #initial as 0, final as -1
 #states name should not be modified
-#Partially reviewed
+#done reviewing
 def make_subautomaton(gfa: GFA, reachable_states: list, initial_state: int, final_state: int) -> GFA:
     new = GFA()
     new.States = [gfa.States[x] for x in reachable_states]
@@ -107,6 +178,7 @@ def make_subautomaton(gfa: GFA, reachable_states: list, initial_state: int, fina
     new.predecessors = {}
     for i in range(len(new.States)):
         new.predecessors[i] = set([])
+    #key: new delta index, value: original delta index
     matching_states = {0: initial_state, len(reachable_states) - 1: final_state}
     counter = 1
     for i in reachable_states[1:-1]:
@@ -125,38 +197,48 @@ def make_subautomaton(gfa: GFA, reachable_states: list, initial_state: int, fina
             new.delta[i] = {}
     return new
 
-'''
-idea: employ disjoint set(find-union)
-reviewed except group division process
-'''
+
+#employed disjoint set (find-union data structure)
+#done reviewing
+def divide_groups(gfa: GFA):
+    def find_parent(parent, x):
+        if parent[x] != x:
+            parent[x] = find_parent(parent, parent[x])
+        return parent[x]
+    def union_parent(parents, x, y, candidates):
+        x = find_parent(parents, x)
+        y = find_parent(parents, y)
+        if x in candidates and y not in candidates:
+            parents[y] = x
+        elif x not in candidates and y in candidates:
+            parents[x] = y
+        elif x < y:
+            parents[y] = x
+        else:
+            parents[x] = y
+    groups = []
+    candidates = [i for i in gfa.delta[0].keys() if i != 0 and i != len(gfa) - 1]
+    parents = [i for i in range(len(gfa.States))]
+    for i in range(1, len(gfa.States) - 1):
+        for j in gfa.delta[i]:
+            union_parent(parents, i, j, candidates)
+    for i in candidates:
+        if i == parents[i]:
+            group = [j for j in range(1, len(gfa.States) - 1) if parents[j] == i]
+            group = [0] + group + [len(gfa.States) - 1]
+            groups.append(list(set(group)))
+    return groups
+
+
+#done reviewing
 def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool, minimization: bool, bridge_state_name) -> RegExp:
     subautomata = []
-    #group division start
-    groups = []
-    for state in gfa.delta[gfa.Initial]:
-        if state == list(gfa.Final)[0]:
-            continue
-        reachable_states = [gfa.Initial]
-        check_all_reachable_states(
-            gfa, state, list(gfa.Final)[0], reachable_states)
-        if list(gfa.Final)[0] not in reachable_states:
-            continue
-        is_disjoint = True
-        for group in groups:
-            if [state for state in reachable_states if state in group] != [gfa.Initial, list(gfa.Final)[0]]:
-                is_disjoint = False
-                group = group + \
-                    [state for state in reachable_states if state not in group]
-                break
-        if is_disjoint:
-            groups.append(reachable_states)
+    groups = divide_groups(gfa)
     if len(groups) <= 1:
         subautomata.append(gfa)
     else:
         for group in groups:
-            subautomata.append(make_subautomaton(
-                gfa, group, gfa.Initial, list(gfa.Final)[0]))
-    #group division ended
+            subautomata.append(make_subautomaton(gfa, group, gfa.Initial, list(gfa.Final)[0]))
     final_result = None
     for subautomaton in subautomata:
         if len(get_bridge_states(subautomaton)):
