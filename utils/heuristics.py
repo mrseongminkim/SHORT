@@ -8,83 +8,33 @@ from FAdo.reex import CConcat, CStar, CDisj
 
 from utils.fadomata import *
 
-'''
-def get_bridge_states(aut: GFA) -> set:
-    gfa = aut.dup()
-    gfa.normalize()
-    # make gfa a graph instead of a digraph
-    new_edges = []
-    for a in gfa.delta:
-        for b in gfa.delta[a]:
-            new_edges.append((a, b))
-    for i in new_edges:
-        if i[1] not in gfa.delta:
-            gfa.delta[i[1]] = {}
-        else:
-            gfa.delta[i[1]][i[0]] = 'x'
-    for i in new_edges:
-        if i[0] not in gfa.delta[i[1]]:
-            gfa.delta[i[1]][i[0]] = 'x'
-    # initializations needed for cut point detection
-    gfa.c = 1
-    gfa.num = {}
-    gfa.visited = []
-    gfa.parent = {}
-    gfa.low = {}
-    gfa.cuts = set([])
-    gfa.assignNum(gfa.Initial)
-    gfa.assignLow(gfa.Initial)
-    # initial state is never a cut point, so it should be removed
-    gfa.cuts.remove(gfa.Initial)
-    cutpoints = copy.copy(gfa.cuts) - gfa.Final
-    # remove self-loops and check if the cut points are in a loop
-    gfa = aut.dup()
-    gfa.normalize()
-    for i in gfa.delta:
-        if i in gfa.delta[i]:
-            del gfa.delta[i][i]
-    cycles = gfa.evalNumberOfStateCycles()
-    for i in cycles:
-        if cycles[i] != 0 and i in cutpoints:
-            cutpoints.remove(i)
-    if 0 in cutpoints:
-        cutpoints.remove(0)
-    if len(aut.States) - 1 in cutpoints:
-        cutpoints.remove(len(aut.States) - 1)
-    #print(cutpoints)
-    return cutpoints
+def reorder(gfa, bridges_states):
+    reordered_bridge_states = []
+    n = len(gfa.States)
+    visited = [False] * n
+    stack = []
+    stack.append(0)
+    while stack:
+        curr = stack.pop()
+        if curr == n - 1:
+            break
+        if curr in bridges_states:
+            reordered_bridge_states.append(curr)
+        for i in gfa.delta[curr]:
+            if not visited[i]:
+                visited[i] = True
+                stack.append(i)
+    return reordered_bridge_states
 
-    graph = nx.Graph()
-    for source in gfa.delta:
-        for target in gfa.delta[source]:
-            graph.add_edge(source, target)
-    bridges = set(nx.algorithms.bridges(graph))
-    bridges_states = {i[1] for i in bridges}
-    bridges_states = bridges_states.difference(gfa.Final.union({gfa.Initial}))
-    new = gfa.dup()
-    for i in new.delta:
-        if i in new.delta[i]:
-            del new.delta[i][i]
-    cycles = new.evalNumberOfStateCycles()
-    for i in cycles:
-        if cycles[i] != 0 and i in bridges_states:
-            bridges_states.remove(i)
-    for i in list(bridges_states):
-        reachable_states = []
-        check_all_reachable_states(
-            gfa, i, list(gfa.Final)[0], reachable_states)
-        if list(gfa.Final)[0] not in reachable_states:
-            bridges_states.remove(i)
-    return bridges_states
-'''
+
 #order of bridge states matters too
 def get_bridge_states(gfa: GFA) -> set:
     graph = nx.Graph()
     for source in gfa.delta:
         for target in gfa.delta[source]:
             graph.add_edge(source, target)
-    bridges = nx.algorithms.bridges(graph)
-    bridges_states = [i[1] for i in bridges if i[1] != 0 and i[1] != len(gfa) - 1]
+    bridges = nx.algorithms.articulation_points(graph)
+    bridges_states = [i for i in bridges if i != 0 and i != len(gfa) - 1]
     new = gfa.dup()
     for i in new.delta:
         if i in new.delta[i]:
@@ -100,6 +50,10 @@ def get_bridge_states(gfa: GFA) -> set:
         if list(gfa.Final)[0] not in reachable_states:
             dead_end.append(i)
     bridges_states = [x for x in bridges_states if x not in dead_end]
+    bridges_states = reorder(gfa, bridges_states)
+    #print("states", gfa.States)
+    #print("delta", gfa.delta)
+    #print("original bridges:", bridges_states)
     return bridges_states
 
 #done reviewing
@@ -114,6 +68,7 @@ def decompose(gfa: GFA, state_weight=False, repeated=False, minimization=False, 
     if random_order:
         bridge_state_index = [gfa.States.index(x) for x in bridge_state_name]
         random_order = [x for x in random_order if x not in bridge_state_index]
+        bridge_state_index.reverse()
         random_order += bridge_state_index
         final_result = eliminate_randomly(gfa, minimization, random_order)
     return final_result
@@ -239,8 +194,16 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool, minimiz
     else:
         for group in groups:
             subautomata.append(make_subautomaton(gfa, group, gfa.Initial, list(gfa.Final)[0]))
+    self_loop = CStar(gfa.delta[gfa.Initial][gfa.Initial]) if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial] else None
     final_result = None
+    delete_direct_edge = len(groups) > 1
     for subautomaton in subautomata:
+        if delete_direct_edge:
+            delete_direct_edge = False
+            if 0 in subautomaton.delta and len(subautomaton.States) - 1 in subautomaton.delta[0]:
+                del subautomaton.delta[0][len(subautomaton.States) - 1]
+        if self_loop:
+            del subautomaton.delta[0][0]
         if len(get_bridge_states(subautomaton)):
             result = decompose(subautomaton, state_weight, repeated, minimization, bridge_state_name=bridge_state_name)
         elif state_weight and repeated:
@@ -249,13 +212,21 @@ def decompose_horizontally(gfa: GFA, state_weight: bool, repeated: bool, minimiz
             result = eliminate_by_state_weight_heuristic(subautomaton, minimization)
         else:
             result = None
+        if not result:
+            continue
         final_result = result if final_result == None else CDisj(final_result, result)
+    if final_result and self_loop:
+        final_result = CConcat(self_loop, final_result)
     return final_result
 
 
 def eliminate_randomly(gfa: GFA, minimization, random_order) -> RegExp:
     for i in random_order:
         eliminate_with_minimization(gfa, i, delete_state=False, minimize=minimization)
+    if 0 in gfa.delta and len(gfa.States) - 1 in gfa.delta[0]:
+        return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
+    else:
+        return None
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
@@ -268,6 +239,10 @@ def eliminate_by_state_weight_heuristic(gfa: GFA, minimization) -> RegExp:
         pq.put((get_weight(gfa, i), i))
     while not pq.empty():
         eliminate_with_minimization(gfa, pq.get()[1], delete_state=False, minimize=minimization)
+    if 0 in gfa.delta and len(gfa.States) - 1 in gfa.delta[0]:
+        return gfa.delta[gfa.Initial][list(gfa.Final)[0]]
+    else:
+        return None
     if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
         return CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]])
     else:
@@ -285,4 +260,7 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA, minimization) -> RegE
                 min_val = curr_val
                 min_idx = j
         eliminate_with_minimization(gfa, min_idx, minimize=minimization)
-    return gfa.delta[0][1]
+    if 0 in gfa.delta and 1 in gfa.delta[0]:
+        return gfa.delta[0][1]
+    else:
+        return None

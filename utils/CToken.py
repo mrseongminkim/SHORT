@@ -3,7 +3,7 @@ from FAdo.reex import *
 class CToken(RegExp):
     token_to_regex = dict()
     token_to_string = dict()
-    threshold = 10
+    threshold = 10000000
 
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)

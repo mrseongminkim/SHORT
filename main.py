@@ -195,6 +195,7 @@ def test_heuristics(model_updated, type, minimization):
     exp = [[[0, 0] for n in range(N_RANGE)] for c in range(6)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
+            #if n + MIN_N != 4 or i != 369: continue
             print('n: ' + str(n + MIN_N) + ', i:', i)
             # eliminate_randomly
             gfa = data[n][i].dup()
@@ -208,6 +209,7 @@ def test_heuristics(model_updated, type, minimization):
             exp[0][n][0] += result_size
             exp[0][n][1] += result_time
             c1_length = result_size
+            c1_regex = result
 
             # decompose with eliminate_randomly
             gfa = data[n][i].dup()
@@ -219,6 +221,7 @@ def test_heuristics(model_updated, type, minimization):
             exp[1][n][0] += result_size
             exp[1][n][1] += result_time
             c2_length = result_size
+            c2_regex = result
 
             # eliminate_by_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -230,6 +233,7 @@ def test_heuristics(model_updated, type, minimization):
             exp[2][n][0] += result_size
             exp[2][n][1] += result_time
             c3_length = result_size
+            c3_regex = result
 
             # decompose + eliminate_by_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -241,6 +245,7 @@ def test_heuristics(model_updated, type, minimization):
             exp[3][n][0] += result_size
             exp[3][n][1] += result_time
             c4_length = result_size
+            c4_regex = result
 
             # eliminate_by_repeated_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -252,6 +257,7 @@ def test_heuristics(model_updated, type, minimization):
             exp[4][n][0] += result_size
             exp[4][n][1] += result_time
             c5_length = result_size
+            c5_regex = result
 
             # decompose + eliminate_by_repeated_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -263,13 +269,32 @@ def test_heuristics(model_updated, type, minimization):
             exp[5][n][0] += result_size
             exp[5][n][1] += result_time
             c6_length = result_size
+            c6_regex = result
 
-            '''fix it'''
-            #duplicate initial state self loop might be the problem
-            try: assert c1_length >= c2_length
-            except: print(c1_length); print(c2_length); exit()
-            assert c3_length >= c4_length
-            assert c5_length >= c6_length
+            try:
+                assert c1_length >= c2_length
+                assert c3_length >= c4_length
+                assert c5_length >= c6_length
+            except:
+                gfa = data[n][i].dup()
+                print("States", gfa.States)
+                print("Delta", gfa.delta)
+                print("Initial", gfa.Initial)
+                print("Final", gfa.Final)
+                print("bridges", get_bridge_states(gfa))
+                print("c1_length", c1_length)
+                print("c2_lenght", c2_length)
+                print("c3_length", c3_length)
+                print("c4_lenght", c4_length)
+                print("c5_length", c5_length)
+                print("c6_lenght", c6_length)
+                #print("c1_regex", c1_regex)
+                #print("c2_regex", c2_regex)
+                print("c3_regex", c3_regex)
+                print("c4_regex", c4_regex)
+                print("c5_regex", c5_regex)
+                print("c6_regex", c6_regex)
+                exit()
 
         for c in range(6):
             exp[c][n][0] /= SAMPLE_SIZE
