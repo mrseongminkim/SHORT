@@ -196,6 +196,7 @@ def test_heuristics(model_updated, type, minimization):
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
             #if n + MIN_N != 4 or i != 369: continue
+            '''n=4, i = 369에서 발생하는 문제를 해결해라'''
             print('n: ' + str(n + MIN_N) + ', i:', i)
             # eliminate_randomly
             gfa = data[n][i].dup()
