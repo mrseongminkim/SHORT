@@ -178,6 +178,7 @@ def test_alpha_zero(model_updated, type, n, minimize):
                 dump(exp, fp)
 '''
 
+
 def test_heuristics(model_updated, type, minimization):
     if not model_updated:
         with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "rb") as fp:
@@ -190,18 +191,24 @@ def test_heuristics(model_updated, type, minimization):
                     time_value = exp[c][i][1]
                     writer.writerow([size_value, time_value])
         return
-    random.seed(210)
+    random.seed(SEED)
     data = load_data(type)
     exp = [[[0, 0] for n in range(N_RANGE)] for c in range(6)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 4 or i != 369: continue
-            '''n=4, i = 369에서 발생하는 문제를 해결해라'''
+            #if n != 0 or i != 235: continue
             print('n: ' + str(n + MIN_N) + ', i:', i)
-            # eliminate_randomly
             gfa = data[n][i].dup()
+            assert 0 not in gfa.delta[0]
             random_order = [i for i in range(1, len(gfa.States) - 1)]
             shuffle(random_order)
+            decomposition_start_time = time.time()
+            bridge_state_name = decompose(gfa)
+            decomposition_end_time = time.time()
+            decomposition_time = decomposition_end_time - decomposition_start_time
+
+            # eliminate_randomly
+            gfa = data[n][i].dup()
             start_time = time.time()
             result = eliminate_randomly(gfa, minimization, random_order)
             end_time = time.time()
@@ -215,9 +222,9 @@ def test_heuristics(model_updated, type, minimization):
             # decompose with eliminate_randomly
             gfa = data[n][i].dup()
             start_time = time.time()
-            result = decompose(gfa, False, False, minimization=minimization, random_order=random_order)
+            result = eliminate_randomly(gfa, minimization, random_order, bridge_state_name)
             end_time = time.time()
-            result_time = end_time - start_time
+            result_time = end_time - start_time + decomposition_time
             result_size = result.treeLength()
             exp[1][n][0] += result_size
             exp[1][n][1] += result_time
@@ -239,9 +246,9 @@ def test_heuristics(model_updated, type, minimization):
             # decompose + eliminate_by_state_weight_heuristic
             gfa = data[n][i].dup()
             start_time = time.time()
-            result = decompose(gfa, True, False, minimization=minimization)
+            result = eliminate_by_state_weight_heuristic(gfa, minimization, bridge_state_name)
             end_time = time.time()
-            result_time = end_time - start_time
+            result_time = end_time - start_time + decomposition_time
             result_size = result.treeLength()
             exp[3][n][0] += result_size
             exp[3][n][1] += result_time
@@ -263,15 +270,15 @@ def test_heuristics(model_updated, type, minimization):
             # decompose + eliminate_by_repeated_state_weight_heuristic
             gfa = data[n][i].dup()
             start_time = time.time()
-            result = decompose(gfa, True, True, minimization=minimization)
+            result = eliminate_by_repeated_state_weight_heuristic(gfa, minimization, bridge_state_name)
             end_time = time.time()
-            result_time = end_time - start_time
+            result_time = end_time - start_time + decomposition_time
             result_size = result.treeLength()
             exp[5][n][0] += result_size
             exp[5][n][1] += result_time
             c6_length = result_size
             c6_regex = result
-
+            '''
             try:
                 assert c1_length >= c2_length
                 assert c3_length >= c4_length
@@ -289,14 +296,14 @@ def test_heuristics(model_updated, type, minimization):
                 print("c4_lenght", c4_length)
                 print("c5_length", c5_length)
                 print("c6_lenght", c6_length)
-                #print("c1_regex", c1_regex)
-                #print("c2_regex", c2_regex)
+                print("c1_regex", c1_regex)
+                print("c2_regex", c2_regex)
                 print("c3_regex", c3_regex)
                 print("c4_regex", c4_regex)
                 print("c5_regex", c5_regex)
                 print("c6_regex", c6_regex)
                 exit()
-
+            '''
         for c in range(6):
             exp[c][n][0] /= SAMPLE_SIZE
             exp[c][n][1] /= SAMPLE_SIZE
@@ -455,4 +462,6 @@ def main():
 
 #train_alpha_zero()
 
-test_heuristics(True, "nfa", False)
+#generate_test_data("nfa")
+test_heuristics(model_updated=True, type="nfa", minimization=True)
+test_heuristics(model_updated=False, type="nfa", minimization=True)
