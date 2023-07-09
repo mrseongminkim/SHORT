@@ -310,6 +310,36 @@ def test_heuristics(model_updated, type, minimization):
     with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
+
+def test_optimal(model_updated, type, minimization):
+    if not model_updated:
+        with open("./result/optimal_" + type + "_" + str(minimization) + ".pkl", "rb") as fp:
+            exp = load(fp)
+        with open("./result/optimal_" + type + "_" + str(minimization) + ".csv", "w", newline="") as fp:
+            writer = csv.writer(fp)
+            for i in range(N_RANGE):
+                size_value = exp[i]
+                time_value = exp[i]
+                writer.writerow([size_value, time_value])
+        return
+    data = load_data(type)
+    exp = [0 for n in range(N_RANGE)]
+    for n in range(0, 5):
+        for i in range(SAMPLE_SIZE):
+            print('n: ' + str(n + MIN_N) + ', i:', i)
+            gfa = data[n][i].dup()
+            order = [i for i in range(1, len(gfa.States) - 1)]
+            min_length = float("inf")
+            for perm in itertools.permutations(order):
+                result = eliminate_randomly(gfa, minimization, perm)
+                min_length = min(min_length, result.treeLength())
+                del gfa
+                gfa = data[n][i].dup()
+            exp[n] += min_length
+        exp[n] /= SAMPLE_SIZE
+    with open("./result/optimal_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
+        dump(exp, fp)
+
 '''
 def test_alpha_zero_for_position_automata(model_updated):
     model_updated = model_updated
@@ -463,5 +493,8 @@ def main():
 #train_alpha_zero()
 
 #generate_test_data("nfa")
-test_heuristics(model_updated=True, type="nfa", minimization=True)
-test_heuristics(model_updated=False, type="nfa", minimization=True)
+#test_heuristics(model_updated=True, type="nfa", minimization=True)
+#test_heuristics(model_updated=False, type="nfa", minimization=True)
+
+test_optimal(model_updated=True, type="nfa", minimization=False)
+test_optimal(model_updated=False, type="nfa", minimization=False)

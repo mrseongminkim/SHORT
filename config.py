@@ -10,7 +10,7 @@ ALPHABET = [5]
 DENSITY = [0.2]
 
 #CToken parameters
-THRESHOLD = 10
+THRESHOLD = 9999999999
 
 #Random seed parameters
 SEED = 210
