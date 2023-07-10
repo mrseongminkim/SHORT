@@ -31,3 +31,10 @@ class CToken(RegExp):
 
     def __copy__(self):
         return CToken(CToken.token_to_regex[self.hashed_value])
+
+    @classmethod
+    def clear_memory(cls):
+        del CToken.token_to_regex
+        del CToken.token_to_string
+        CToken.token_to_regex = dict()
+        CToken.token_to_string = dict()
