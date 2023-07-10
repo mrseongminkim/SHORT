@@ -319,8 +319,7 @@ def test_optimal(model_updated, type, minimization):
             writer = csv.writer(fp)
             for i in range(N_RANGE):
                 size_value = exp[i]
-                time_value = exp[i]
-                writer.writerow([size_value, time_value])
+                writer.writerow([size_value])
         return
     data = load_data(type)
     exp = [0 for n in range(N_RANGE)]

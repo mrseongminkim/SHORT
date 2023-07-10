@@ -56,7 +56,7 @@ def token():
     plt.show()
     '''
 
-def primitive():
+def primitive(optimal: bool=False, minimization: bool=False):
     type = "length"
     n = N_RANGE
     r = np.arange(n)
@@ -64,34 +64,35 @@ def primitive():
     x = []
     
     for i in range(1, 7):
-        file = open("./result/heuristics_greedy_nfa_True_C" + str(i) + ".csv")
+        file = open("./result/heuristics_greedy_nfa_False_C" + str(i) + ".csv")
         temp = []
         for row in csv.reader(file):
             temp.append(row[0])
         temp = [float(i) for i in temp]
         x.append(temp)
         file.close()
-    '''
-    file = open("./result/rl_greedy_nfa_True.csv")
-    temp = []
-    for row in csv.reader(file):
-        temp.append(row[0])
-    temp = [float(i) for i in temp]
-    x.append(temp)
-    file.close()
-    '''
+    
+    if optimal:
+        file = open("./result/optimal_nfa_False.csv")
+        temp = []
+        for row in csv.reader(file):
+            temp.append(row[0])
+        temp = [float(i) for i in temp]
+        x.append(temp)
+        file.close()
 
-    color = ['tab:red', 'tab:green', 'tab:blue', 'tab:purple', 'tab:cyan', 'tab:olive']
+    color = ['tab:red', 'tab:green', 'tab:blue', 'tab:purple', 'tab:cyan', 'tab:olive', "w"]
     for i in range(6):
         plt.bar(r + width * i, x[i], color=color[i], width=width, edgecolor='black', label='C-' + str(i + 1))
 
-    #plt.bar(r + width * 6, x[6], color='k', width=width, edgecolor='black', label='Ours')
+    if optimal:
+        plt.bar(r + width * 6, x[6], color=color[6], width=width, edgecolor='black', label='Optimal')
 
     plt.xlabel("k = 5, d = 0.2")
     plt.ylabel("Size of Regular Expressions")
     plt.title("Average size of resulting regular expressions of state elimination from random NFAs")
 
-    plt.xticks(r + width / 2, ['n = 3','n = 4','n = 5','n = 6', 'n = 7', 'n = 8', 'n = 9', 'n = 10'])
+    plt.xticks(r + width / 2, ['n = 3','n = 4','n = 5','n = 6', 'n = 7'])
     plt.yscale('log', base=10)
 
     plt.legend()
@@ -148,4 +149,4 @@ def simplification():
 
 #simplification()
 
-primitive()
+primitive(optimal=True)
