@@ -17,6 +17,7 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
     5. initially connected
     6. single inital and final state
     7. name of states are always string
+    8. trimmed
     '''
     gfa = NFA()
     for i in range(n + 2):
@@ -37,6 +38,7 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
     gfa.setFinal({n + 1})
     '''condition: 0 as initial, n + 1 as final'''
     #After reducing states, we can no longer guarantee the above condition thus we reorder states.
+    gfa = gfa.trim()
     gfa = gfa.lrEquivNFA()
     gfa = convert_nfa_to_gfa(gfa)
     if len(gfa.States) != n + 2:
