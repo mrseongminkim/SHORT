@@ -7,9 +7,9 @@ from FAdo.conversions import *
 from utils.fadomata import *
 from config import *
 
-def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz) -> GFA:
+def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz, type: str="gfa") -> GFA:
     '''
-    return a NFA object following below conditions
+    return a NFA/GFA object following below conditions
     1. 0 as initial and -1 as final
     2. reduced by lr equivalence relation
     3. order of states is randomly shuffled
@@ -19,36 +19,37 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
     7. name of states are always string
     8. trimmed
     '''
-    gfa = NFA()
+    fa = NFA()
     for i in range(n + 2):
-        gfa.addState()
-    gfa.addTransition(0, '@epsilon', 1)
+        fa.addState()
+    fa.addTransition(0, '@epsilon', 1)
     size = n * n * k
     for i in range(n):
         if finals.bit_test(i):
-            gfa.addTransition(i + 1, '@epsilon', n + 1)
+            fa.addTransition(i + 1, '@epsilon', n + 1)
     for i in range(size):
         if nfa.bit_test(i):
             src = i // (n * k)
             foo = i % (n * k)
             dst = foo // k
             lbl = foo % k
-            gfa.addTransition(src + 1, str(lbl), dst + 1)
-    gfa.setInitial({0})
-    gfa.setFinal({n + 1})
+            fa.addTransition(src + 1, str(lbl), dst + 1)
+    fa.setInitial({0})
+    fa.setFinal({n + 1})
     '''condition: 0 as initial, n + 1 as final'''
     #After reducing states, we can no longer guarantee the above condition thus we reorder states.
-    gfa = gfa.trim()
-    gfa = gfa.lrEquivNFA()
-    gfa = convert_nfa_to_gfa(gfa)
-    if len(gfa.States) != n + 2:
+    fa = fa.trim()
+    fa = fa.lrEquivNFA()
+    if len(fa.States) != n + 2:
         #reorder: key: prev index, value: new index (delta wise)
-        gfa.reorder({gfa.Initial : 0, 0 : gfa.Initial, len(gfa.delta) - 1 : list(gfa.Final)[0], list(gfa.Final)[0] : len(gfa.delta) - 1})
-        gfa.renameStates([str(i) for i in range(len(gfa.States))])
+        fa.reorder({list(fa.Initial)[0] : 0, 0 : list(fa.Initial)[0], len(fa.delta) - 1 : list(fa.Final)[0], list(fa.Final)[0] : len(fa.delta) - 1})
+        fa.renameStates([str(i) for i in range(len(fa.States))])
     '''NFA is reduced'''
-    shuffle_gfa(gfa)
+    shuffle_fa(fa)
     '''NFA is randomly sorted'''
-    return gfa
+    if type == "gfa":
+        fa = convert_nfa_to_gfa(fa)
+    return fa
 
 
 def show_bitmap(nfa: gmpy2.mpz, size: int):
@@ -94,7 +95,7 @@ def add_random_transitions(nfa: gmpy2.mpz, size: int, t: int) -> gmpy2.mpz:
     return nfa
 
 
-def generate(n: int, k: int, d: float):
+def generate(n: int, k: int, d: float, type: str="gfa"):
     size = n * n * k
     nfa = gmpy2.mpz()
     finals = gmpy2.mpz()
@@ -109,7 +110,7 @@ def generate(n: int, k: int, d: float):
         nfa = add_random_transitions(nfa, size, t)
     rstate = gmpy2.random_state(random.randint(0, 2147483647 - 1))
     finals = gmpy2.mpz_rrandomb(rstate, n)
-    return make_fado_recognizable_nfa(n, k, nfa, finals)
+    return make_fado_recognizable_nfa(n, k, nfa, finals, type)
 
 
 def generate_test_nfas():

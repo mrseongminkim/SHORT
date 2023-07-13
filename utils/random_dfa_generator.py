@@ -30,7 +30,7 @@ for n in states:
         dfa.reorder({list(dfa.Initial)[0] : 0, 0 : list(dfa.Initial)[0], len(dfa.States) - 1 : list(dfa.Final)[0], list(dfa.Final)[0] : len(dfa.States) - 1})
         dfa.renameStates()
         dfa = convert_nfa_to_gfa(dfa)
-        shuffle_gfa(dfa, len(dfa.States) - 2)
+        shuffle_fa(dfa, len(dfa.States) - 2)
         content.append(dfa)
     with open('data/random_dfa/n' + str(n) + 'k2.pkl', 'wb') as fp:
         dump(content, fp)

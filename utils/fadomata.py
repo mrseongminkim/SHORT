@@ -8,14 +8,14 @@ from FAdo.reex import *
 from utils.CToken import *
 from utils.inclusion_checker import *
 
-def shuffle_gfa(gfa: GFA):
-    final = list(gfa.Final)[0]
+def shuffle_fa(fa):
+    final = list(fa.Final)[0]
     order = {0 : 0, final : final}
     lst = [x for x in range(1, final)]
     random.shuffle(lst)
     for idx, val in enumerate(lst, start=1):
         order[idx] = val
-    gfa.reorder(order)
+    fa.reorder(order)
 
 #obsoleted
 '''
