@@ -53,10 +53,10 @@ for _ in range(number_of_pairs):
 
     for i in range(10):
         for j in range(i + 1, 10):
-            writer.writerow([f"gfa_{count - 10 + i}", f"gfa_{count - 10 + j}", 1])
-            writer.writerow([f"gfa_{count + i}", f"gfa_{count + j}", 1])
-            writer.writerow([f"gfa_{count - 10 + i}", f"gfa_{count + j}", 0])
-            writer.writerow([f"gfa_{count + i}", f"gfa_{count - 10 + j}", 0])
+            writer.writerow([f"gfa_{count - 10 + i}.pkl", f"gfa_{count - 10 + j}.pkl", 1])
+            writer.writerow([f"gfa_{count + i}.pkl", f"gfa_{count + j}.pkl", 1])
+            writer.writerow([f"gfa_{count - 10 + i}.pkl", f"gfa_{count + j}.pkl", 0])
+            writer.writerow([f"gfa_{count + i}.pkl", f"gfa_{count - 10 + j}.pkl", 0])
     count += 10
 
 annotation_file.close()

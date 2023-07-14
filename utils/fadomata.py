@@ -16,6 +16,7 @@ def shuffle_fa(fa):
     for idx, val in enumerate(lst, start=1):
         order[idx] = val
     fa.reorder(order)
+    return fa
 
 #obsoleted
 '''
