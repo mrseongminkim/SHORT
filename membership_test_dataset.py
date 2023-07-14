@@ -32,14 +32,23 @@ class MembershipTestDataset(Dataset):
             label = self.target_transform(label)
         return fa, word, label
 
+def test_transform(gfa):
+    lst = [int(x) for x in gfa.States]
+    lst = lst + [0 for i in range(10 - len(lst))]
+    return torch.Tensor(lst)
+
 TRAINING_DATA_SIZE = 80_000
-membership_test_data = MembershipTestDataset("./membership_test_data/annotations_file.csv", "./membership_test_data/")
+membership_test_data = MembershipTestDataset("./membership_test_data/annotations_file.csv", "./membership_test_data/", fa_transform=test_transform)
 
 train_data = Subset(membership_test_data, torch.arange(TRAINING_DATA_SIZE))
 test_data = Subset(membership_test_data, torch.arange(TRAINING_DATA_SIZE, len(membership_test_data)))
 
-train = DataLoader(train_data, batch_size=1, shuffle=False)
+train = DataLoader(train_data, batch_size=6, shuffle=True)
 test = DataLoader(test_data, batch_size=1, shuffle=False)
+
+for fa, word, label in train:
+    print(fa, word, label)
+    exit()
 
 #TypeError: default_collate: batch must contain tensors, numpy arrays, numbers, dicts or lists; found <class 'FAdo.conversions.GFA'>
 #need to transform FAs
