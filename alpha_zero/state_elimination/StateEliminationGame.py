@@ -1,30 +1,22 @@
-from copy import copy
-import sys
-
 import numpy as np
 from FAdo.reex import *
 
 from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
 
-EPS = 1e-8
+from config import *
 
 class StateEliminationGame():
     def __init__(self, maxN=50):
         self.maxN = maxN
 
-    def getInitBoard(self, gfa=None, n=None, k=None, d=None):
+    def get_initial_gfa(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n = 7
-            k = 5
-            d = 0.1
+            n, k, d = 7, 5, 0.1
             gfa = generate(n, k, d)
-        #self.n = n + 2
-        #self.k = k
-        #self.d = d
         return gfa
 
-    def gfaToBoard(self, gfa):
+    def gfa_to_tensor(self, gfa):
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
         #re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
         for source in gfa.delta:
@@ -39,9 +31,9 @@ class StateEliminationGame():
     def getActionSize(self):
         return self.maxN + 2
 
-    def getNextState(self, gfa, action, duplicate=False, minimize=True):
+    def getNextState(self, gfa, action, duplicate=False, minimize=False):
         final_state = list(gfa.Final)[0]
-        assert 0 < action and action < final_state
+        assert 0 < action < final_state
         if duplicate:
             eliminated_gfa = eliminate_with_minimization(gfa.dup(), action, minimize=minimize)
         else:
@@ -65,12 +57,5 @@ class StateEliminationGame():
         else:
             return None
 
-    def getCanonicalForm(self, gfa):
-        return gfa
-
-    def getSymmetries(self, gfa, pi):
-        return [(gfa, pi)]
-
     def stringRepresentation(self, gfa):
-        board = self.gfaToBoard(gfa)
-        return board.tostring()
+        return str(gfa.delta)

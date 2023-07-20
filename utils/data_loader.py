@@ -78,7 +78,7 @@ def load_position():
         data = load(fp)
     return data
 
-def load_data(type, n=None):
+def load_data(type):
     if type == 'nfa':
         return load_nfa()
     elif type == 'position':
@@ -86,5 +86,5 @@ def load_data(type, n=None):
     elif type == 'fig10':
         return load_fig10()
     elif type == 'dfa':
-        return load_dfa(n)
+        return load_dfa()
     return

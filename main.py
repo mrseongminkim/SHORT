@@ -6,6 +6,7 @@ import csv
 import itertools
 import sys
 from pickle import load, dump
+from statistics import mean, stdev
 
 import torch
 import numpy as np
@@ -26,24 +27,6 @@ from config import *
 
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
-args = dotdict({
-    'numIters': 20,
-    # Number of complete self-play games to simulate during a new iteration.
-    'numEps': 100,
-    #'tempThreshold': 4,        # temperature hyperparameters
-    # During arena playoff, new neural net will be accepted if threshold or more of games are won.
-    'updateThreshold': 0.0,
-    # Number of game examples to train the neural networks.
-    'maxlenOfQueue': 200000,
-    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
-    # Number of games to play during arena play to determine if new net will be accepted.
-    'arenaCompare': 40,
-    'cpuct': 3,
-    'checkpoint': './alpha_zero/models/',
-    'load_model': True,
-    'load_folder_file': ('./alpha_zero/models/', 'best.pth.tar'),
-    'numItersForTrainExamplesHistory': 20,
-})
 
 def generate_test_data(type: str):
     if type == "nfa":
@@ -52,21 +35,21 @@ def generate_test_data(type: str):
 
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
-    print("\tnumMCTSSims: ", args.numMCTSSims)
-    print("\tcpuct: ", args.cpuct)
-    print("\tcuda: ", torch.cuda.is_available())
+    print("\tNUMBER_OF_MCTS_SIMULATIONS: ", NUMBER_OF_MCTS_SIMULATIONS)
+    print("\tCPUCT: ", CPUCT)
+    print("\tCUDA: ", CUDA)
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
-    if not args.load_model:
-        log.info('Loading checkpoint "%s/%s"...', args.load_folder_file[0], args.load_folder_file[1])
-        nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
+    if LOAD_MODEL:
+        log.info('Loading checkpoint "%s/%s"...', LOAD_FOLDER_FILE[0], LOAD_FOLDER_FILE[1])
+        nnet.load_checkpoint(LOAD_FOLDER_FILE[0], LOAD_FOLDER_FILE[1])
     else:
         log.warning('Not loading a checkpoint!')
     log.info('Loading the Coach...')
-    c = Coach(g, nnet, args)
-    if not args.load_model:
+    c = Coach(g, nnet)
+    if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
     log.info('Starting the learning process')
@@ -87,8 +70,8 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     data = load_data(type)
     g = Game()
     nnet = nn(g)
-    assert args.load_model
-    nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
+    assert LOAD_MODEL
+    nnet.load_checkpoint(CHECKPOINT, LOAD_FOLDER_FILE[1])
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
@@ -115,6 +98,40 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
+
+def get_sample_distribution(model_updated, minimization=False):
+    if not model_updated:
+        with open("./result/distribution.pkl", "rb") as fp:
+            exp = load(fp)
+        with open("./result/distribution.csv", "w", newline="") as fp:
+            writer = csv.writer(fp)
+            writer.writerow([exp[0], exp[1]])
+        return
+    lst = []
+    game = Game()
+    for i in range(SAMPLE_SIZE):
+        print("i:", i)
+        CToken.clear_memory()
+        gfa = game.get_initial_gfa()
+        order = [i for i in range(1, len(gfa.States) - 1)]
+        min_length = float("inf")
+        for perm in itertools.permutations(order):
+            result = eliminate_randomly(gfa.dup(), minimization, perm)
+            min_length = min(min_length, result.treeLength())
+        lst.append(min_length)
+    avg = mean(lst)
+    std = stdev(lst)
+    exp = [avg, std]
+    with open("./result/distribution.pkl", "wb") as fp:
+        dump(exp, fp)
+
+
+train_alpha_zero()
+##test_alpha_zero_without_mcts(True, "nfa", "False")
+#test_alpha_zero_without_mcts(False, "nfa", "False")
+#exit()
+
+"""
 
 '''
 def test_alpha_zero(model_updated, type, n, minimize):
@@ -311,6 +328,7 @@ def test_heuristics(model_updated, type, minimization):
         dump(exp, fp)
 
 
+'''
 def test_optimal(model_updated, type, minimization):
     if not model_updated:
         with open("./result/optimal_" + type + "_" + str(minimization) + ".pkl", "rb") as fp:
@@ -339,7 +357,7 @@ def test_optimal(model_updated, type, minimization):
     with open("./result/optimal_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
-'''
+
 def test_alpha_zero_for_position_automata(model_updated):
     model_updated = model_updated
     if not model_updated and os.path.isfile('./result/alpha_zero_position_result.pkl'):
@@ -393,41 +411,6 @@ def test_alpha_zero_for_position_automata(model_updated):
             dump(exp, fp)
         with open('./result/postion_original_length.pkl', 'wb') as fp:
             dump(original, fp)
-
-
-def test_brute_force(model_updated, type):
-    model_updated = model_updated
-    if not model_updated and os.path.isfile('./result/brute_force_experiment_result.pkl'):
-        with open('./result/brute_force_experiment_result_minimize_10.pkl', 'rb') as fp:
-            exp = load(fp)
-        with open('./result/optimal_length_minimize_10.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            for n in range(5):
-                size_value = exp[n] / sample_size
-                writer.writerow([size_value])
-    else:
-        data = load_data(type)
-        exp = [0] * 5
-        for n in range(3 - 3, 8 - 3):
-            for i in range(sample_size):
-                permutations = [x for x in range(1, len(data[n][i].States) - 1)]
-                print('n' + str(n + min_n) + '\'s' + str(i + 1) + 'sample')
-                min_length = float('inf')
-                start_time = time.time()
-                for perm in itertools.permutations(permutations):
-                    gfa = data[n][i].dup()
-                    for state in perm:
-                        eliminate_with_minimization(gfa, state, delete_state=False, minimize=True)
-                    if gfa.Initial in gfa.delta and gfa.Initial in gfa.delta[gfa.Initial]:
-                        length = CConcat(CStar(gfa.delta[gfa.Initial][gfa.Initial]), gfa.delta[gfa.Initial][list(gfa.Final)[0]]).treeLength()
-                        print('This will never run, since i specifically made GFA to not have returnining transition')
-                    else:
-                        length = gfa.delta[gfa.Initial][list(gfa.Final)[0]].treeLength()
-                    min_length = min(min_length, length)
-                exp[n] += min_length
-            print(exp[n] / min_length)
-        with open('./result/brute_force_experiment_result_minimize_10.pkl', 'wb') as fp:
-            dump(exp, fp)
 
 
 def test_fig10():
@@ -484,18 +467,5 @@ def main():
 
 #main()
 '''
-#test_alpha_zero_without_mcts(True, "nfa", True)
-#test_alpha_zero_without_mcts(False, "nfa", True)
 
-#generate_test_data("nfa")
-
-#train_alpha_zero()
-
-#generate_test_data("nfa")
-#test_heuristics(model_updated=True, type="nfa", minimization=False)
-#test_heuristics(model_updated=False, type="nfa", minimization=False)
-
-test_optimal(model_updated=True, type="nfa", minimization=False)
-test_optimal(model_updated=False, type="nfa", minimization=False)
-
-#generate_test_data("nfa")
+"""

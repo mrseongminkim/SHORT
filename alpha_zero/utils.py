@@ -14,7 +14,6 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-
 class dotdict(dict):
     def __getattr__(self, name):
         return self[name]
