@@ -18,12 +18,10 @@ class StateEliminationGame():
 
     def gfa_to_tensor(self, gfa):
         board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
-        #re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
         for source in gfa.delta:
             for target in gfa.delta[source]:
                 board[source][target] = gfa.delta[source][target].treeLength()
-                #re_board[source][target] = gfa.delta[source][target]
-        return board#, re_board
+        return board
 
     def getBoardSize(self):
         return (self.maxN + 2, self.maxN + 2)
