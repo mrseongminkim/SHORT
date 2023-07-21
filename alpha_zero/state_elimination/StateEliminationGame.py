@@ -48,8 +48,8 @@ class StateEliminationGame():
     def getGameEnded(self, gfa):
         if len(gfa.States) == 2:
             length = gfa.delta[0][1].treeLength()
-            AVG = 306.4036842105266
-            STD = 146.21107624649574
+            AVG = 328.5862
+            STD = 149.44780839578556
             reward = (length - AVG) / STD
             return - reward
         else:
