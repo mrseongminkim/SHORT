@@ -125,8 +125,8 @@ def get_sample_distribution(model_updated, minimization=False):
     with open("./result/distribution.pkl", "wb") as fp:
         dump(exp, fp)
 
-
 train_alpha_zero()
+
 ##test_alpha_zero_without_mcts(True, "nfa", "False")
 #test_alpha_zero_without_mcts(False, "nfa", "False")
 #exit()

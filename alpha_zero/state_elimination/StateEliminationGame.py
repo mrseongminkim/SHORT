@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 from FAdo.reex import *
 
@@ -5,6 +6,11 @@ from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
 
 from config import *
+
+#0 as emptyness, 5 + max(ALPHABET) should be input size of embedding dimension
+word_to_ix = {'@': 1, '+': 2, '*': 3, '.': 4}
+for i in range(max(ALPHABET)):
+    word_to_ix[str(i)] = i + 5
 
 class StateEliminationGame():
     def __init__(self, maxN=50):
@@ -17,13 +23,19 @@ class StateEliminationGame():
         return gfa
 
     def gfa_to_tensor(self, gfa):
-        board = np.zeros((self.maxN + 2, self.maxN + 2), dtype=int)
-        #re_board = [['' for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
+        length_board = torch.zeros((self.maxN + 2, self.maxN + 2), dtype=torch.long)
+        regex_board = [[[0] * MAX_LEN for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
         for source in gfa.delta:
             for target in gfa.delta[source]:
-                board[source][target] = gfa.delta[source][target].treeLength()
-                #re_board[source][target] = gfa.delta[source][target]
-        return board#, re_board
+                length_board[source][target] = gfa.delta[source][target].treeLength()
+                #NB: This technique cannot be applied to GFA with an alphabet size of more than 9.
+                encoded_regex = [word_to_ix[word] for word in list(gfa.delta[source][target].rpn().replace("@epsilon", "@").replace("'", ""))[:MAX_LEN]]
+                if len(encoded_regex) < MAX_LEN:
+                    encoded_regex = encoded_regex + [0] * (MAX_LEN - len(encoded_regex))
+                assert len(encoded_regex) == MAX_LEN
+                regex_board[source][target] = encoded_regex        
+        board = torch.cat((length_board.unsqueeze(2), torch.LongTensor(regex_board)), dim = 2)
+        return board
 
     def getBoardSize(self):
         return (self.maxN + 2, self.maxN + 2)
@@ -50,8 +62,8 @@ class StateEliminationGame():
     def getGameEnded(self, gfa):
         if len(gfa.States) == 2:
             length = gfa.delta[0][1].treeLength()
-            AVG = 306.4036842105266
-            STD = 146.21107624649574
+            AVG = 328.5862
+            STD = 149.44780839578556
             reward = (length - AVG) / STD
             return - reward
         else:

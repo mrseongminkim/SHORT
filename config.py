@@ -1,7 +1,7 @@
 from torch.cuda import is_available
 
 #Test parameters
-SAMPLE_SIZE = 1_000
+SAMPLE_SIZE = 10_000
 
 #NFA parameters
 MIN_N = 3
@@ -32,6 +32,12 @@ EPS = 1e-8
 LR = 0.001
 DROUPOUT = 0.0
 EPOCHS = 20
-BATCH_SIZE = 64
+BATCH_SIZE = 16
 CUDA = is_available()
 NUMBER_OF_CHANNELS = 32
+
+#regex-board parameters
+MAX_LEN = 50
+VOCAB_SIZE = 16
+EMBEDDING_DIMENSION = 2
+LSTM_DIMENSION = 32
