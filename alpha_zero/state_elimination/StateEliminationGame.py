@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from FAdo.reex import *
+from torch_geometric.data import Data
 
 from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
@@ -13,7 +14,7 @@ for i in range(max(ALPHABET)):
     word_to_ix[str(i)] = i + 5
 
 class StateEliminationGame():
-    def __init__(self, maxN=50):
+    def __init__(self, maxN=MAX_STATES):
         self.maxN = maxN
 
     def get_initial_gfa(self, gfa=None, n=None, k=None, d=None):
@@ -22,20 +23,34 @@ class StateEliminationGame():
             gfa = generate(n, k, d)
         return gfa
 
+    def get_encoded_regex(self, regex):
+        #NB: This technique cannot be applied to GFA with an alphabet size of more than 9.
+        encoded_regex = [word_to_ix[word] for word in list(regex.rpn().replace("@epsilon", "@").replace("'", ""))[:MAX_LEN]]
+        if len(encoded_regex) < MAX_LEN:
+            encoded_regex = encoded_regex + [0] * (MAX_LEN - len(encoded_regex))
+        assert len(encoded_regex) == MAX_LEN
+        return encoded_regex
+
     def gfa_to_tensor(self, gfa):
-        length_board = torch.zeros((self.maxN + 2, self.maxN + 2), dtype=torch.long)
-        regex_board = [[[0] * MAX_LEN for i in range(self.maxN + 2)] for i in range(self.maxN + 2)]
+        num_nodes = len(gfa.States)
+        x = []
+        edge_index = [[], []]
+        edge_attr = []
         for source in gfa.delta:
+            source_state_number = int(gfa.States[source])
+            is_initial_state = 1 if source == gfa.Initial else 0
+            is_final_state = 1 if source in gfa.Final else 0
+            x.append([source_state_number, is_initial_state, is_final_state])
             for target in gfa.delta[source]:
-                length_board[source][target] = gfa.delta[source][target].treeLength()
-                #NB: This technique cannot be applied to GFA with an alphabet size of more than 9.
-                encoded_regex = [word_to_ix[word] for word in list(gfa.delta[source][target].rpn().replace("@epsilon", "@").replace("'", ""))[:MAX_LEN]]
-                if len(encoded_regex) < MAX_LEN:
-                    encoded_regex = encoded_regex + [0] * (MAX_LEN - len(encoded_regex))
-                assert len(encoded_regex) == MAX_LEN
-                regex_board[source][target] = encoded_regex        
-        board = torch.cat((length_board.unsqueeze(2), torch.LongTensor(regex_board)), dim = 2)
-        return board
+                target_state_number = int(gfa.States[target])
+                edge_index[0].append(source)
+                edge_index[1].append(target)
+                edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + [source_state_number, target_state_number])
+        x = torch.LongTensor(x)
+        edge_index = torch.LongTensor(edge_index)
+        edge_attr = torch.LongTensor(edge_attr)
+        graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
+        return graph
 
     def getBoardSize(self):
         return (self.maxN + 2, self.maxN + 2)

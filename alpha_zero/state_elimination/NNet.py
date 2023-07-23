@@ -4,6 +4,7 @@ import torch
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
+from torch_geometric.loader import DataLoader
 
 from alpha_zero.utils import *
 from alpha_zero.state_elimination.StateEliminationNNet import StateEliminationNNet as sennet
@@ -29,30 +30,32 @@ class NNetWrapper():
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
                 sample_ids = np.random.randint(len(examples), size=BATCH_SIZE)
-                boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                boards = torch.stack(boards)
+                graphs, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+                batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
+                batch = next(iter(batch_loader))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
                 if CUDA:
-                    boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
-                out_pis, out_vs = self.nnet(boards)
+                    batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                out_pis, out_vs = self.nnet(batch)
                 l_pi = self.loss_pi(target_pis, out_pis)
                 l_v = self.loss_v(target_vs, out_vs)
                 total_loss = l_pi + l_v
-                pi_losses.update(l_pi.item(), boards.size(0))
-                v_losses.update(l_v.item(), boards.size(0))
+                pi_losses.update(l_pi.item(), len(graphs))
+                v_losses.update(l_v.item(), len(graphs))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
 
-    def predict(self, board):
-        if CUDA:
-            board = board.contiguous().cuda()
-        board = board.view(1, self.board_x, self.board_y, -1)
+    def predict(self, graph):
+        batch_loader = DataLoader([graph], batch_size=1, shuffle=False)
         self.nnet.eval()
         with torch.no_grad():
-            pi, v = self.nnet(board)
+            batch = next(iter(batch_loader))
+            if CUDA:
+                batch.contiguous().cuda()
+            pi, v = self.nnet(batch)
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
