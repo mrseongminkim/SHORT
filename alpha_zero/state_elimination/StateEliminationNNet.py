@@ -21,11 +21,11 @@ class StateEliminationNNet(nn.Module):
         self.lstm = nn.LSTM(self.regex_embedding_dim, self.lstm_dim, batch_first=True)
         assert self.action_size % NUMBER_OF_HEADS == 0
         self.conv1 = GATv2Conv(self.state_number_embedding_dim * 3 + self.lstm_dim * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
-        self.conv2 = GATv2Conv(self.action_size, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
-        self.conv3 = GATv2Conv(self.action_size, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
-        self.conv4 = GATv2Conv(self.action_size, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
+        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
+        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
+        self.conv4 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
         self.policy_head1 = nn.Linear(NUMBER_OF_CHANNELS, 128)
-        self.policy_head2 = nn.Linear(128, MAX_STATES)
+        self.policy_head2 = nn.Linear(128, self.action_size)
         self.value_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
         self.value_head2 = nn.Linear(32, 1)
 
@@ -50,14 +50,15 @@ class StateEliminationNNet(nn.Module):
         in_transitions = global_mean_pool(torch.cat((source_state_numbers, encoded_regex), dim=-1), target_states, data.x.size()[0])
 
         data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
-
         data.x = F.relu(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
         data.x = F.relu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)) + data.x
         data.x = F.relu(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)) + data.x
         data.x = F.relu(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)) + data.x
+
         s = global_mean_pool(data.x, data.batch)
+
         pi = F.relu(self.policy_head1(s))
-        pi = self.policy_head2(s)
+        pi = self.policy_head2(pi)
         v = F.relu(self.value_head1(s))
         v = self.value_head2(v)
         return F.log_softmax(pi, dim=1), v
