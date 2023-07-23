@@ -19,7 +19,7 @@ class StateEliminationNNet(nn.Module):
         self.regex_embed = nn.Embedding(VOCAB_SIZE, self.regex_embedding_dim)
         self.lstm_dim = LSTM_DIMENSION
         self.lstm = nn.LSTM(self.regex_embedding_dim, self.lstm_dim, batch_first=True)
-        assert self.action_size % NUMBER_OF_HEADS == 0
+        assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
         self.conv1 = GATv2Conv(self.state_number_embedding_dim * 3 + self.lstm_dim * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
         self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
         self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
