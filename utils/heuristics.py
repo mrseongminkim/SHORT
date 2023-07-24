@@ -216,5 +216,5 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA, minimization: bool, b
     if bridge_state_name:
         bridge_state_index = list(reversed([gfa.States.index(x) for x in bridge_state_name]))
         for i in bridge_state_index:
-            eliminate_with_minimization(gfa, i, minimize=minimization)
-    return gfa.delta[0][1]
+            eliminate_with_minimization(gfa, i, minimize=minimization, delete_state=False)
+    return gfa.delta[gfa.Initial][list(gfa.Final)[0]]

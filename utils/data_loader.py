@@ -10,7 +10,7 @@ from config import *
 def load_nfa():
     data = [[] for n in range(N_RANGE)]
     for n in STATE:
-        file_name = 'n' + str(n) + 'k5d0.2'
+        file_name = f"n{n}k{ALPHABET[0]}d{DENSITY[0]}"
         with open('data/random_nfa/' + file_name + '.pkl', 'rb') as fp:
             data[n - MIN_N] = load(fp)
     return data

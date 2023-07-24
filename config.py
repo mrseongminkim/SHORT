@@ -1,7 +1,7 @@
 from torch.cuda import is_available
 
 #Test parameters
-SAMPLE_SIZE = 10_000
+SAMPLE_SIZE = 1
 
 #NFA parameters
 MIN_N = 3
@@ -9,7 +9,7 @@ MAX_N = 10
 N_RANGE = MAX_N - MIN_N + 1
 STATE = [n for n in range(MIN_N, MAX_N + 1)]
 ALPHABET = [5]
-DENSITY = [0.2]
+DENSITY = [0.1]
 
 #CToken parameters
 THRESHOLD = 5
@@ -22,11 +22,11 @@ NUMBER_OF_ITERATIONS = 10000000
 NUMBER_OF_EPISODES = 100
 TEMPERATURE_THRESHOLD = 0
 MAXIMUM_LENGTH_OF_QUEUE = 200_000
-NUMBER_OF_MCTS_SIMULATIONS = 50
+NUMBER_OF_MCTS_SIMULATIONS = 25
 CPUCT = 1
 CHECKPOINT = "./alpha_zero/models/"
-LOAD_MODEL = False
-LOAD_FOLDER_FILE = ("./alpha_zero/models/", "best.pth.tar")
+LOAD_MODEL = True
+LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_78.pth.tar")
 NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY = 20
 EPS = 1e-8
 LR = 0.001

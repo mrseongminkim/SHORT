@@ -32,7 +32,6 @@ def generate_test_data(type: str):
     if type == "nfa":
         generate_test_nfas()
 
-
 def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
     print("\tNUMBER_OF_MCTS_SIMULATIONS: ", NUMBER_OF_MCTS_SIMULATIONS)
@@ -55,7 +54,6 @@ def train_alpha_zero():
     log.info('Starting the learning process')
     c.learn()
 
-
 def test_alpha_zero_without_mcts(model_updated, type, minimize):
     if not model_updated:
         with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "rb") as fp:
@@ -76,11 +74,12 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
             print('n:' + str(n + MIN_N) + ', i:', i)
+            CToken.clear_memory()
             gfa = data[n][i]
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
-                board = g.gfaToBoard(gfa)
-                policy, _ = nnet.predict(board)
+                gfa_representation = g.gfa_to_tensor(gfa)
+                policy, _ = nnet.predict(gfa_representation)
                 valid_moves = g.getValidMoves(gfa)
                 policy = policy * valid_moves
                 if not policy.any():
@@ -98,6 +97,56 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
+def test_alpha_zero_with_mcts(model_updated, type, minimize):
+    if not model_updated:
+        with open("./result/rl_search_" + type + "_" + str(minimize) + ".pkl", "rb") as fp:
+            exp = load(fp)
+        with open("./result/rl_search_" + type + "_" + str(minimize) + ".csv", 'w', newline='') as fp:
+            writer = csv.writer(fp)
+            for i in range(N_RANGE):
+                size_value = exp[i][0]
+                time_value = exp[i][1]
+                writer.writerow([size_value, time_value])
+        return
+    data = load_data(type)
+    g = Game()
+    nnet = nn(g)
+    assert LOAD_MODEL
+    nnet.load_checkpoint(CHECKPOINT, LOAD_FOLDER_FILE[1])
+    exp = [[0, 0] for i in range(N_RANGE)]
+    for n in range(N_RANGE):
+        for i in range(SAMPLE_SIZE):
+            if n + MIN_N != 7:
+                continue
+            print('n:' + str(n + MIN_N) + ', i:', i)
+            CToken.clear_memory()
+            mcts = MCTS(g, nnet)
+            gfa = data[n][i]
+            start_time = time.time()
+
+            ordering = []
+            print("gfa.States:", gfa.States)
+            while g.getGameEnded(gfa) == None:
+                pi = mcts.getActionProb(gfa, temp=1)
+                exit()
+                action = np.random.choice(len(pi), p=pi)
+
+                ordering.append(gfa.States[action])
+
+                gfa = g.getNextState(gfa, action)
+            end_time = time.time()
+            result_length = gfa.delta[0][1].treeLength()
+            result_time = end_time - start_time
+
+            print("ordering:", ordering)
+
+
+            exp[n][0] += result_length
+            exp[n][1] += result_time
+        exp[n][0] /= SAMPLE_SIZE
+        exp[n][1] /= SAMPLE_SIZE
+    with open("./result/rl_search_" + type + "_" + str(minimize) + ".pkl", "wb") as fp:
+        dump(exp, fp)
 
 def get_sample_distribution(model_updated, minimization=False):
     if not model_updated:
@@ -125,76 +174,24 @@ def get_sample_distribution(model_updated, minimization=False):
     with open("./result/distribution.pkl", "wb") as fp:
         dump(exp, fp)
 
-train_alpha_zero()
-
-##test_alpha_zero_without_mcts(True, "nfa", "False")
-#test_alpha_zero_without_mcts(False, "nfa", "False")
-#exit()
-
-"""
-
-'''
-def test_alpha_zero(model_updated, type, n, minimize):
-    model_updated = model_updated
-    if not model_updated:
-        if minimize:
-            with open('./result/rl_' + str(n) + '_true.pkl', 'rb') as fp:
-                exp = load(fp)
-        else:
-            with open('./result/rl_' + str(n) + '_false.pkl', 'rb') as fp:
-                exp = load(fp)
-        with open('./result/rl_' + str(n) + ('_true' if minimize else '_false') + '_length.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            size_value = exp[0] / sample_size
-            writer.writerow([size_value])
-        with open('./result/rl_' + str(n) + ('_true' if minimize else '_false') + '_time.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            time_value = exp[1] / sample_size
-            writer.writerow([time_value])
-    else:
-        data = load_data(type)
-        g = Game()
-        nnet = nn(g)
-        mcts = MCTS(g, nnet, args)
-        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
-        curPlayer = 1
-        if args.load_model:
-            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
-        else:
-            print("Can't test without pre-trained model")
-            exit()
-        exp = [[0, 0] for i in range(8)]
-        for n in range(8):
-            for i in range(sample_size):
-                mcts = MCTS(g, nnet, args)
-                print('n: ' + str(n) + ', i:', i)
-                gfa = data[n][i]
-                gfa = g.getInitBoard(gfa, n + min_n, 5, 0.2)
-                start_time = time.time()
-                while g.getGameEnded(gfa, curPlayer) == None:
-                    action = player(g.getCanonicalForm(gfa, curPlayer))
-                    valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-                    if valids[action] == 0:
-                        assert valids[action] > 0
-                    gfa, curPlayer = g.getNextState(gfa, curPlayer, action, minimize=minimize)
-                end_time = time.time()
-                result_length = gfa.delta[0][1].treeLength()
-                result_time = end_time - start_time
-                exp[n][0] += result_length
-                exp[n][1] += result_time
-        
-        for i in range(8):
-            print(exp[i][0] / sample_size)
-        
-
-        if minimize:
-            with open('./result/rl_' + str(n) + '_true.pkl', 'wb') as fp:
-                dump(exp, fp)
-        else:
-            with open('./result/rl_' + str(n) + '_false.pkl', 'wb') as fp:
-                dump(exp, fp)
-'''
-
+def get_optimal_ordering(minimization=False):
+    data = load_data("nfa")
+    for n in range(N_RANGE):
+        for i in range(SAMPLE_SIZE):
+            print("i", i)
+            CToken.clear_memory()
+            gfa = data[n][i]
+            order = [i for i in range(1, len(gfa.States) - 1)]
+            min_length = float("inf")
+            optimal_ordering = []
+            for perm in itertools.permutations(order):
+                result = eliminate_randomly(gfa.dup(), minimization, perm)
+                if min_length > result.treeLength():
+                    min_length = result.treeLength()
+                    optimal_ordering = perm
+            optimal_ordering = [gfa.States[x] for x in optimal_ordering]
+            print("min_length:", min_length)
+            print("optimal_ordering", optimal_ordering)
 
 def test_heuristics(model_updated, type, minimization):
     if not model_updated:
@@ -233,8 +230,6 @@ def test_heuristics(model_updated, type, minimization):
             result_size = result.treeLength()
             exp[0][n][0] += result_size
             exp[0][n][1] += result_time
-            c1_length = result_size
-            c1_regex = result
 
             # decompose with eliminate_randomly
             gfa = data[n][i].dup()
@@ -245,8 +240,6 @@ def test_heuristics(model_updated, type, minimization):
             result_size = result.treeLength()
             exp[1][n][0] += result_size
             exp[1][n][1] += result_time
-            c2_length = result_size
-            c2_regex = result
 
             # eliminate_by_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -257,8 +250,6 @@ def test_heuristics(model_updated, type, minimization):
             result_size = result.treeLength()
             exp[2][n][0] += result_size
             exp[2][n][1] += result_time
-            c3_length = result_size
-            c3_regex = result
 
             # decompose + eliminate_by_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -269,8 +260,6 @@ def test_heuristics(model_updated, type, minimization):
             result_size = result.treeLength()
             exp[3][n][0] += result_size
             exp[3][n][1] += result_time
-            c4_length = result_size
-            c4_regex = result
 
             # eliminate_by_repeated_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -281,8 +270,6 @@ def test_heuristics(model_updated, type, minimization):
             result_size = result.treeLength()
             exp[4][n][0] += result_size
             exp[4][n][1] += result_time
-            c5_length = result_size
-            c5_regex = result
 
             # decompose + eliminate_by_repeated_state_weight_heuristic
             gfa = data[n][i].dup()
@@ -293,39 +280,24 @@ def test_heuristics(model_updated, type, minimization):
             result_size = result.treeLength()
             exp[5][n][0] += result_size
             exp[5][n][1] += result_time
-            c6_length = result_size
-            c6_regex = result
-            '''
-            try:
-                assert c1_length >= c2_length
-                assert c3_length >= c4_length
-                assert c5_length >= c6_length
-            except:
-                gfa = data[n][i].dup()
-                print("States", gfa.States)
-                print("Delta", gfa.delta)
-                print("Initial", gfa.Initial)
-                print("Final", gfa.Final)
-                print("bridges", get_bridge_states(gfa))
-                print("c1_length", c1_length)
-                print("c2_lenght", c2_length)
-                print("c3_length", c3_length)
-                print("c4_lenght", c4_length)
-                print("c5_length", c5_length)
-                print("c6_lenght", c6_length)
-                print("c1_regex", c1_regex)
-                print("c2_regex", c2_regex)
-                print("c3_regex", c3_regex)
-                print("c4_regex", c4_regex)
-                print("c5_regex", c5_regex)
-                print("c6_regex", c6_regex)
-                exit()
-            '''
+
         for c in range(6):
             exp[c][n][0] /= SAMPLE_SIZE
             exp[c][n][1] /= SAMPLE_SIZE
     with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
         dump(exp, fp)
+
+#get_optimal_ordering()
+#generate_test_data("nfa")
+#test_alpha_zero_without_mcts(True, "nfa", False)
+#test_alpha_zero_without_mcts(False, "nfa", False)
+#test_heuristics(True, "nfa", False)
+#test_heuristics(False, "nfa", False)
+test_alpha_zero_with_mcts(True, "nfa", False)
+test_alpha_zero_with_mcts(False, "nfa", False)
+
+"""
+
 
 
 '''

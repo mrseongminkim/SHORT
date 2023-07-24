@@ -79,8 +79,8 @@ class StateEliminationGame():
             length = gfa.delta[0][1].treeLength()
             AVG = 328.5862
             STD = 149.44780839578556
-            reward = (length - AVG) / STD
-            return - reward
+            reward = (AVG - length) / STD
+            return reward
         else:
             return None
 
