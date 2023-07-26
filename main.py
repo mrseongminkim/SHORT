@@ -88,7 +88,8 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
                 action = np.argmax(policy)
                 eliminate_with_minimization(gfa, action, minimize=minimize)
             end_time = time.time()
-            result_length = gfa.delta[0][1].treeLength()
+            result = g.get_resulting_regex(gfa)
+            result_length = result.treeLength()
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -116,31 +117,22 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            if n + MIN_N != 7:
-                continue
+            #if n + MIN_N != 3 or i != 23: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             mcts = MCTS(g, nnet)
-            gfa = data[n][i]
+            gfa = g.get_initial_gfa(data[n][i], n + MIN_N, 5, 0.1)
             start_time = time.time()
-
-            ordering = []
-            print("gfa.States:", gfa.States)
             while g.getGameEnded(gfa) == None:
-                pi = mcts.getActionProb(gfa, temp=1)
-                exit()
+                pi = mcts.getActionProb(gfa, temp=0)
                 action = np.random.choice(len(pi), p=pi)
-
-                ordering.append(gfa.States[action])
-
                 gfa = g.getNextState(gfa, action)
             end_time = time.time()
-            result_length = gfa.delta[0][1].treeLength()
+            result = g.get_resulting_regex(gfa)
+            result_length = result.treeLength()
+            #print("dead_end:", len(mcts.dead_end))
+            #print("result length:", result_length)
             result_time = end_time - start_time
-
-            print("ordering:", ordering)
-
-
             exp[n][0] += result_length
             exp[n][1] += result_time
         exp[n][0] /= SAMPLE_SIZE
@@ -178,6 +170,7 @@ def get_optimal_ordering(minimization=False):
     data = load_data("nfa")
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
+            #if n + MIN_N != 6: continue
             print("i", i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -186,6 +179,8 @@ def get_optimal_ordering(minimization=False):
             optimal_ordering = []
             for perm in itertools.permutations(order):
                 result = eliminate_randomly(gfa.dup(), minimization, perm)
+                #print("perm:", [gfa.States[x] for x in perm])
+                #print("length:", result.treeLength())
                 if min_length > result.treeLength():
                     min_length = result.treeLength()
                     optimal_ordering = perm
@@ -293,9 +288,9 @@ def test_heuristics(model_updated, type, minimization):
 #test_alpha_zero_without_mcts(False, "nfa", False)
 #test_heuristics(True, "nfa", False)
 #test_heuristics(False, "nfa", False)
-test_alpha_zero_with_mcts(True, "nfa", False)
-test_alpha_zero_with_mcts(False, "nfa", False)
-
+#test_alpha_zero_with_mcts(True, "nfa", False)
+#test_alpha_zero_with_mcts(False, "nfa", False)
+train_alpha_zero()
 """
 
 

@@ -40,6 +40,7 @@ class Coach():
             gfa = self.game.getNextState(gfa, action)
             r = self.game.getGameEnded(gfa)
             if r != None:
+                r = -r
                 return [(x[0], x[1], r) for x in trainExamples]
 
     def learn(self):
