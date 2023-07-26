@@ -1,3 +1,5 @@
+from math import log
+
 import torch
 import numpy as np
 from FAdo.reex import *
@@ -21,6 +23,7 @@ class StateEliminationGame():
         if gfa is None:
             n, k, d = 7, 5, 0.1
             gfa = generate(n, k, d)
+        self.n, self.k, self.d = n, k, d
         return gfa
 
     def get_encoded_regex(self, regex):
@@ -73,13 +76,17 @@ class StateEliminationGame():
         for i in range(1, final_state):
             validMoves[i] = 1
         return validMoves
+    
+    def get_resulting_regex(self, gfa):
+        result = CConcat(CConcat(gfa.delta[0][1], CStar(gfa.delta[1][1])), gfa.delta[1][2]) if 1 in gfa.delta[1] else CConcat(gfa.delta[0][1], gfa.delta[1][2])
+        result = CDisj(gfa.delta[0][2], result) if 2 in gfa.delta[0] else result
+        return result
 
     def getGameEnded(self, gfa):
-        if len(gfa.States) == 2:
-            length = gfa.delta[0][1].treeLength()
-            AVG = 328.5862
-            STD = 149.44780839578556
-            reward = (AVG - length) / STD
+        if len(gfa.States) == 3:
+            result = self.get_resulting_regex(gfa)
+            length = result.treeLength()
+            reward = -log(length)
             return reward
         else:
             return None
