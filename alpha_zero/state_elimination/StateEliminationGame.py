@@ -55,9 +55,6 @@ class StateEliminationGame():
         graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
         return graph
 
-    def getBoardSize(self):
-        return (self.maxN + 2, self.maxN + 2)
-
     def getActionSize(self):
         return self.maxN + 2
 
