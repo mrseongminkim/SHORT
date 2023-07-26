@@ -29,14 +29,18 @@ class Coach():
         trainExamples = []
         gfa: GFA = self.game.get_initial_gfa()
         CToken.clear_memory()
-        episodeStep = 0
+        #episodeStep = 0
         while True:
-            episodeStep += 1
-            temp = 1
-            pi = self.mcts.getActionProb(gfa, temp=temp)
+            #episodeStep += 1
+            #temp = 1
+            pi = self.mcts.getActionProb(gfa)
             gfa_representation = self.game.gfa_to_tensor(gfa)
             trainExamples.append([gfa_representation, pi])
-            action = np.random.choice(len(pi), p=pi)
+            best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
+            best_action = np.random.choice(best_actions)
+            best_pi = [0] * len(pi)
+            best_pi[best_action] = 1
+            action = np.random.choice(len(best_pi), p=best_pi)
             gfa = self.game.getNextState(gfa, action)
             r = self.game.getGameEnded(gfa)
             if r != None:

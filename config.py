@@ -2,7 +2,7 @@ from torch.cuda import is_available
 from math import ceil
 
 #Test parameters
-SAMPLE_SIZE = 100
+SAMPLE_SIZE = 1
 
 #NFA parameters
 MIN_N = 3
@@ -23,11 +23,11 @@ NUMBER_OF_ITERATIONS = 20
 NUMBER_OF_EPISODES = 100
 TEMPERATURE_THRESHOLD = 0
 MAXIMUM_LENGTH_OF_QUEUE = 200_000
-NUMBER_OF_MCTS_SIMULATIONS = 100
+NUMBER_OF_MCTS_SIMULATIONS = 99999999999
 CPUCT = 1
 CHECKPOINT = "./alpha_zero/models/"
 LOAD_MODEL = False
-LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_20.pth.tar")
+LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_1.pth.tar")
 NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY = 20
 EPS = 1e-8
 LR = 0.001

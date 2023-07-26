@@ -124,14 +124,14 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             gfa = g.get_initial_gfa(data[n][i], n + MIN_N, 5, 0.1)
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
-                pi = mcts.getActionProb(gfa, temp=0)
+                pi = mcts.getActionProb(gfa)
                 action = np.random.choice(len(pi), p=pi)
                 gfa = g.getNextState(gfa, action)
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
-            #print("dead_end:", len(mcts.dead_end))
-            #print("result length:", result_length)
+            print("dead_end:", len(mcts.dead_end))
+            print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time

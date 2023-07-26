@@ -23,7 +23,7 @@ class MCTS():
     def normalize(self, q, q_max, q_min):
         return (q - q_min) / (q_max - q_min + EPS)
 
-    def getActionProb(self, gfa, temp=0):
+    def getActionProb(self, gfa):
         for _ in range(NUMBER_OF_MCTS_SIMULATIONS):
             _, dead_end, _ = self.search(gfa)
             if dead_end: break
@@ -39,18 +39,18 @@ class MCTS():
 
         if q_max == q_min:
             counts = [1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
-            temp = 1
         else:
             counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
 
+        '''
         if temp == 0 and q_max != q_min:
             bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
             bestA = np.random.choice(bestAs)
             probs = [0] * len(counts)
             probs[bestA] = 1
             return probs
-
-        counts = [x ** (1. / temp) for x in counts]
+        '''
+        #counts = [x ** (1. / temp) for x in counts]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
         return probs
