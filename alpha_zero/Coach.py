@@ -28,6 +28,8 @@ class Coach():
     def executeEpisode(self):
         trainExamples = []
         gfa: GFA = self.game.get_initial_gfa()
+        while self.game.getGameEnded(gfa) != None:
+            gfa: GFA = self.game.get_initial_gfa()
         CToken.clear_memory()
         #episodeStep = 0
         while True:
