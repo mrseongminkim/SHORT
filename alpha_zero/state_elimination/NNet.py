@@ -14,7 +14,6 @@ from config import *
 class NNetWrapper():
     def __init__(self, game):
         self.nnet = sennet(game)
-        self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
         if CUDA:
             self.nnet.cuda()
