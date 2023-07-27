@@ -86,6 +86,11 @@ class StateEliminationGame():
             length = result.treeLength()
             reward = -log(length)
             return reward
+        elif len(gfa.States) == 2:
+            assert 0 not in gfa.delta[0]
+            assert 1 not in gfa.delta[1]
+            length = gfa.delta[0][1].treeLength()
+            reward = -log(length)
         else:
             return None
 
