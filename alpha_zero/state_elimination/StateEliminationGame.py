@@ -21,7 +21,7 @@ class StateEliminationGame():
 
     def get_initial_gfa(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n, k, d = 5, 5, 0.1
+            n, k, d = 3, 5, 0.1
             gfa = generate(n, k, d)
         self.n, self.k, self.d = n, k, d
         return gfa
@@ -50,6 +50,7 @@ class StateEliminationGame():
                 edge_index[1].append(target)
                 edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + [source_state_number, target_state_number])
         x = torch.LongTensor(x)
+        assert num_nodes == len(x)
         edge_index = torch.LongTensor(edge_index)
         edge_attr = torch.LongTensor(edge_attr)
         graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
