@@ -28,8 +28,11 @@ class MCTS():
             _, dead_end, _ = self.search(gfa)
             if dead_end: break
         s = self.game.stringRepresentation(gfa)
-        #visits = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+        visits = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
         action_space = [self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa]
+        #print("visits:", visits)
+        #print("action_space:", action_space)
+        #exit()
         q_max = max(action_space)
         q_min = min(action_space)
         #print("q_max:", q_max)
@@ -65,7 +68,12 @@ class MCTS():
         if s not in self.Ps:
             gfa_representation = self.game.gfa_to_tensor(gfa)
             self.Ps[s], v = self.nnet.predict(gfa_representation)
-            v = -v.item() - 1
+            #NN should return positive value
+            if v > 0:
+                v = -v.item()
+            else:
+                print("If this line excuted after # of training, it indicates NN is not working properly")
+                v = v.item()
             valids = self.game.getValidMoves(gfa)
             self.Ps[s] = np.exp(self.Ps[s]) * valids
             sum_Ps_s = np.sum(self.Ps[s])
