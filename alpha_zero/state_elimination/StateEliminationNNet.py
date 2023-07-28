@@ -72,7 +72,6 @@ class StateEliminationNNet(nn.Module):
             if graph_index != prev:
                 prev = graph_index
                 idx = 0
-            new_x[graph_index][idx] = pi[i].item()
+            new_x[graph_index][idx] = pi[i]
             idx += 1
         return F.log_softmax(new_x, dim=1), v
-#Now optimality of training data is guaranteed, the problem is NN itself.
