@@ -1,7 +1,6 @@
 from math import log
 
 import torch
-import numpy as np
 from FAdo.reex import *
 from torch_geometric.data import Data
 
@@ -21,7 +20,7 @@ class StateEliminationGame():
 
     def get_initial_gfa(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n, k, d = 3, 5, 0.1
+            n, k, d = 7, 5, 0.1
             gfa = generate(n, k, d)
         self.n, self.k, self.d = n, k, d
         return gfa
@@ -33,6 +32,11 @@ class StateEliminationGame():
             encoded_regex = encoded_regex + [0] * (MAX_LEN - len(encoded_regex))
         assert len(encoded_regex) == MAX_LEN
         return encoded_regex
+    
+    def get_one_hot_vector(self, state_number):
+        one_hot_vector = [0] * (self.maxN + 3)
+        one_hot_vector[state_number] = 1
+        return one_hot_vector
 
     def gfa_to_tensor(self, gfa):
         num_nodes = len(gfa.States)
@@ -40,15 +44,15 @@ class StateEliminationGame():
         edge_index = [[], []]
         edge_attr = []
         for source in sorted(gfa.delta):
-            source_state_number = int(gfa.States[source])
+            source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
             is_initial_state = 1 if source == gfa.Initial else 0
             is_final_state = 1 if source in gfa.Final else 0
-            x.append([source_state_number, is_initial_state, is_final_state])
+            x.append(source_state_number + [is_initial_state, is_final_state])
             for target in gfa.delta[source]:
-                target_state_number = int(gfa.States[target])
+                target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
                 edge_index[0].append(source)
                 edge_index[1].append(target)
-                edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + [source_state_number, target_state_number])
+                edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
         x = torch.LongTensor(x)
         assert num_nodes == len(x)
         edge_index = torch.LongTensor(edge_index)
@@ -60,8 +64,9 @@ class StateEliminationGame():
         return self.maxN + 2
 
     def getNextState(self, gfa, action, duplicate=False, minimize=False):
+        initial_state = gfa.Initial
         final_state = list(gfa.Final)[0]
-        assert 0 < action < final_state
+        assert action < len(gfa.States) and action != final_state and action != initial_state
         if duplicate:
             eliminated_gfa = eliminate_with_minimization(gfa.dup(), action, minimize=minimize)
         else:
@@ -69,15 +74,20 @@ class StateEliminationGame():
         return eliminated_gfa
 
     def getValidMoves(self, gfa):
+        initial_state = gfa.Initial
         final_state = list(gfa.Final)[0]
         validMoves = [0 for i in range(self.maxN + 2)]
-        for i in range(1, final_state):
-            validMoves[i] = 1
+        for i in range(len(gfa.States)):
+            if i != initial_state and i != final_state:
+                validMoves[i] = 1
         return validMoves
     
     def get_resulting_regex(self, gfa):
-        result = CConcat(CConcat(gfa.delta[0][1], CStar(gfa.delta[1][1])), gfa.delta[1][2]) if 1 in gfa.delta[1] else CConcat(gfa.delta[0][1], gfa.delta[1][2])
-        result = CDisj(gfa.delta[0][2], result) if 2 in gfa.delta[0] else result
+        initial_state = gfa.Initial
+        final_state = list(gfa.Final)[0]
+        intermediate_state = 3 - (initial_state + final_state)
+        result = CConcat(CConcat(gfa.delta[initial_state][intermediate_state], CStar(gfa.delta[intermediate_state][intermediate_state])), gfa.delta[intermediate_state][final_state]) if intermediate_state in gfa.delta[intermediate_state] else CConcat(gfa.delta[initial_state][intermediate_state], gfa.delta[intermediate_state][final_state])
+        result = CDisj(gfa.delta[initial_state][final_state], result) if final_state in gfa.delta[initial_state] else result
         return result
 
     def getGameEnded(self, gfa):
@@ -87,9 +97,11 @@ class StateEliminationGame():
             reward = -log(length)
             return reward
         elif len(gfa.States) == 2:
-            assert 0 not in gfa.delta[0]
-            assert 1 not in gfa.delta[1]
-            length = gfa.delta[0][1].treeLength()
+            initial_state = gfa.Initial
+            final_state = list(gfa.Final)[0]
+            assert initial_state not in gfa.delta[initial_state]
+            assert final_state not in gfa.delta[final_state]
+            length = gfa.delta[initial_state][final_state].treeLength()
             reward = -log(length)
         else:
             return None

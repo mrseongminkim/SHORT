@@ -5,12 +5,13 @@ import gmpy2
 from FAdo.conversions import *
 
 from utils.fadomata import *
+
 from config import *
 
 def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz, type: str="gfa") -> GFA:
     '''
     return a NFA/GFA object following below conditions
-    1. 0 as initial and -1 as final
+    1. 0 as initial and -1 as final -> no longer holds.
     2. reduced by lr equivalence relation
     3. order of states is randomly shuffled
     4. non-returning and non-exsiting
@@ -40,12 +41,9 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
     #After reducing states, we can no longer guarantee the above condition thus we reorder states.
     fa = fa.trim()
     fa = fa.lrEquivNFA()
-    if len(fa.States) != n + 2:
-        #reorder: key: prev index, value: new index (delta wise)
-        fa.reorder({list(fa.Initial)[0] : 0, 0 : list(fa.Initial)[0], len(fa.States) - 1 : list(fa.Final)[0], list(fa.Final)[0] : len(fa.States) - 1})
-        fa.renameStates([str(i) for i in range(len(fa.States))])
     '''NFA is reduced'''
     shuffle_fa(fa)
+    rename_states(fa)
     '''NFA is randomly sorted'''
     if type == "gfa":
         fa = convert_nfa_to_gfa(fa)

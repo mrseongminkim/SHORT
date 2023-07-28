@@ -8,12 +8,21 @@ from FAdo.reex import *
 from utils.CToken import *
 from utils.inclusion_checker import *
 
+from config import *
+
+def rename_states(fa):
+    lst = [str(i) for i in range(1, MAX_STATES + 3)]
+    sampled_states_number = random.sample(lst, len(fa.States))
+    garbage_name = ['init' for _ in range(len(fa.States))]
+    fa.renameStates(garbage_name)
+    fa.renameStates(sampled_states_number)
+    return fa
+
 def shuffle_fa(fa):
-    final = list(fa.Final)[0]
-    order = {0 : 0, final : final}
-    lst = [x for x in range(1, final)]
+    order = {}
+    lst = [i for i in range(len(fa.States))]
     random.shuffle(lst)
-    for idx, val in enumerate(lst, start=1):
+    for idx, val in enumerate(lst):
         order[idx] = val
     fa.reorder(order)
     return fa
