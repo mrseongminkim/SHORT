@@ -39,7 +39,7 @@ class StateEliminationGame():
         x = []
         edge_index = [[], []]
         edge_attr = []
-        for source in gfa.delta:
+        for source in sorted(gfa.delta):
             source_state_number = int(gfa.States[source])
             is_initial_state = 1 if source == gfa.Initial else 0
             is_final_state = 1 if source in gfa.Final else 0
