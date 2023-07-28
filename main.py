@@ -125,7 +125,11 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
                 pi = mcts.getActionProb(gfa)
-                action = np.random.choice(len(pi), p=pi)
+                best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
+                best_action = np.random.choice(best_actions)
+                best_pi = [0] * len(pi)
+                best_pi[best_action] = 1
+                action = np.random.choice(len(best_pi), p=best_pi)
                 gfa = g.getNextState(gfa, action)
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
@@ -284,13 +288,13 @@ def test_heuristics(model_updated, type, minimization):
 
 #get_optimal_ordering()
 #generate_test_data("nfa")
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)
-#test_alpha_zero_with_mcts(True, "nfa", False)
-#test_alpha_zero_with_mcts(False, "nfa", False)
-train_alpha_zero()
+test_alpha_zero_without_mcts(True, "nfa", False)
+test_alpha_zero_without_mcts(False, "nfa", False)
+test_heuristics(True, "nfa", False)
+test_heuristics(False, "nfa", False)
+test_alpha_zero_with_mcts(True, "nfa", False)
+test_alpha_zero_with_mcts(False, "nfa", False)
+#train_alpha_zero()
 """
 
 
