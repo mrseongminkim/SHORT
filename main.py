@@ -1,14 +1,11 @@
 import time
 import logging
-import os
 import random
 import csv
 import itertools
-import sys
 from pickle import load, dump
 from statistics import mean, stdev
 
-import torch
 import numpy as np
 import coloredlogs
 from FAdo.conversions import *
@@ -134,8 +131,8 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
-            print("dead_end:", len(mcts.dead_end))
-            print("result length:", result_length)
+            #print("dead_end:", len(mcts.dead_end))
+            #print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -295,148 +292,3 @@ test_heuristics(False, "nfa", False)
 test_alpha_zero_with_mcts(True, "nfa", False)
 test_alpha_zero_with_mcts(False, "nfa", False)
 #train_alpha_zero()
-"""
-
-
-
-'''
-def test_optimal(model_updated, type, minimization):
-    if not model_updated:
-        with open("./result/optimal_" + type + "_" + str(minimization) + ".pkl", "rb") as fp:
-            exp = load(fp)
-        with open("./result/optimal_" + type + "_" + str(minimization) + ".csv", "w", newline="") as fp:
-            writer = csv.writer(fp)
-            for i in range(N_RANGE):
-                size_value = exp[i]
-                writer.writerow([size_value])
-        return
-    data = load_data(type)
-    exp = [0 for n in range(N_RANGE)]
-    for n in range(min(N_RANGE, 7)):
-        for i in range(SAMPLE_SIZE):
-            print('n: ' + str(n + MIN_N) + ', i:', i)
-            CToken.clear_memory()
-            gfa = data[n][i].dup()
-            order = [i for i in range(1, len(gfa.States) - 1)]
-            min_length = float("inf")
-            for perm in itertools.permutations(order):
-                result = eliminate_randomly(gfa, minimization, perm)
-                min_length = min(min_length, result.treeLength())
-                gfa = data[n][i].dup()
-            exp[n] += min_length
-        exp[n] /= SAMPLE_SIZE
-    with open("./result/optimal_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
-        dump(exp, fp)
-
-
-def test_alpha_zero_for_position_automata(model_updated):
-    model_updated = model_updated
-    if not model_updated and os.path.isfile('./result/alpha_zero_position_result.pkl'):
-        with open('./result/alpha_zero_position_result.pkl', 'rb') as fp:
-            exp = load(fp)
-        with open('./result/rl_position.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            writer.writerow([exp])
-        with open('./result/postion_original_length.pkl', 'rb') as fp:
-            original = load(fp)
-        with open('./result/original_position.csv', 'w', newline='') as fp:
-            writer = csv.writer(fp)
-            writer.writerow([original])
-    else:
-        data = load_data('position')
-        exp = 0
-        original = 0
-        g = Game()
-        nnet = nn(g)
-        mcts = MCTS(g, nnet, args)
-        def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
-        curPlayer = 1
-        if args.load_model:
-            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
-        else:
-            print("Can't test without pre-trained model")
-            exit()
-        for i in range(100):
-            mcts = MCTS(g, nnet, args)
-            print("i:", i)
-            gfa = data[i][0]
-            original_length = data[i][1]
-            rep_sw_length = eliminate_by_repeated_state_weight_heuristic(gfa.dup()).treeLength()
-            rand_length = eliminate_randomly(gfa.dup()).treeLength()
-            gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
-            while g.getGameEnded(gfa, curPlayer) == None:
-                action = player(g.getCanonicalForm(gfa, curPlayer))
-                valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-                if valids[action] == 0:
-                    assert valids[action] > 0
-                gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
-            exp += gfa.delta[0][1].treeLength()
-            original += original_length
-            print('original:', original_length)
-            print('lr:', gfa.delta[0][1].treeLength())
-            print('c6:', rep_sw_length)
-            print('random:', rand_length)
-        exp /= sample_size
-        original /= sample_size
-        with open('./result/alpha_zero_position_result.pkl', 'wb') as fp:
-            dump(exp, fp)
-        with open('./result/postion_original_length.pkl', 'wb') as fp:
-            dump(original, fp)
-
-
-def test_fig10():
-    gfa = load_data('fig10')
-    g = Game()
-    nnet = nn(g)
-    mcts = MCTS(g, nnet, args)
-    def player(x): return np.argmax(mcts.getActionProb(x, temp=0))
-    curPlayer = 1
-    if args.load_model:
-        nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
-    else:
-        print("Can't test without pre-trained model")
-        exit()
-    order = []
-    gfa = g.getInitBoard(gfa, len(gfa.States) - 2)
-    while g.getGameEnded(gfa, curPlayer) == None:
-        action = player(g.getCanonicalForm(gfa, curPlayer))
-        valids = g.getValidMoves(g.getCanonicalForm(gfa, curPlayer), curPlayer)
-        if valids[action] == 0:
-            assert valids[action] > 0
-        order.append(gfa.States[action])
-        gfa, curPlayer = g.getNextState(gfa, curPlayer, action)
-    print(order)
-
-
-def main():
-    if sys.argv[1] == "train":
-        train_alpha_zero()
-        exit()
-    
-    if sys.argv[2] == 'DFA':
-        type = 'dfa'
-    elif sys.argv[2] == 'NFA':
-        type = 'nfa'
-    else:
-        print("Specify the target FAs")
-        exit()
-    if sys.argv[3] == 'true':
-        minimization = True
-    elif sys.argv[3] == 'false':
-        minimization = False
-    else:
-        print("Specify whether enable or disable minimization")
-        exit()
-    
-    if sys.argv[1] == 'rl':
-        for n in range(3, 11):
-            test_alpha_zero(True, type, n, minimization)
-            test_alpha_zero(False, type, n, minimization)
-    elif sys.argv[1] == 'heuristics':
-        test_heuristics(True, type, minimization)
-        test_heuristics(False, type, minimization)
-
-#main()
-'''
-
-"""

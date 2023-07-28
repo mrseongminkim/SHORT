@@ -2,7 +2,7 @@ from torch.cuda import is_available
 from math import ceil
 
 #Test parameters
-SAMPLE_SIZE = 1
+SAMPLE_SIZE = 100
 
 #NFA parameters
 MIN_N = 3
