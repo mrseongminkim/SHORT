@@ -12,6 +12,7 @@ from utils.heuristics import *
 
 g = game.StateEliminationGame()
 
+reduced = 0
 minimization = False
 
 def get_regex(gfa: GFA) -> list[RegExp]:
@@ -20,22 +21,39 @@ def get_regex(gfa: GFA) -> list[RegExp]:
     bridge_state_name = decompose(gfa.dup())
     regex = set()
     #C1
-    regex.add(eliminate_randomly(gfa.dup(), minimization, random_order))
+    result = eliminate_randomly(gfa.dup(), minimization, random_order)
+    if reduced:
+        result = result.reduced()
+    regex.add(result)
     #C2
-    regex.add(eliminate_randomly(gfa.dup(), minimization, random_order, bridge_state_name))
+    result = eliminate_randomly(gfa.dup(), minimization, random_order, bridge_state_name)
+    if reduced:
+        result = result.reduced()
+    regex.add(result)
     #C3
-    regex.add(eliminate_by_state_weight_heuristic(gfa.dup(), minimization))
+    result = eliminate_by_state_weight_heuristic(gfa.dup(), minimization)
+    if reduced:
+        result = result.reduced()
+    regex.add(result)
     #C4
-    regex.add(eliminate_by_state_weight_heuristic(gfa.dup(), minimization, bridge_state_name))
+    result = eliminate_by_state_weight_heuristic(gfa.dup(), minimization, bridge_state_name)
+    if reduced:
+        result = result.reduced()
+    regex.add(result)
     #C5
-    regex.add(eliminate_by_repeated_state_weight_heuristic(gfa.dup(), minimization))
+    result = eliminate_by_repeated_state_weight_heuristic(gfa.dup(), minimization)
+    if reduced:
+        result = result.reduced()
+    regex.add(result)
     #C6
-    regex.add(eliminate_by_repeated_state_weight_heuristic(gfa.dup(), minimization, bridge_state_name))
+    result = eliminate_by_repeated_state_weight_heuristic(gfa.dup(), minimization, bridge_state_name)
+    if reduced:
+        result = result.reduced()
+    regex.add(result)
     #Sanity check
     for combination in combinations(regex, 2):
         regex1, regex2 = combination
         assert regex1.compare(regex2)
-    #Reduced?
     return list(regex)
 
 def get_positive_cases(regex: list) -> list[tuple]:
@@ -63,8 +81,9 @@ with open("./annotations_file.csv", "w", newline='') as fp:
     writer = csv.writer(fp)
     k = 5
     d = 0.1
-    while data_size < 420_000:
-        n = random.randint(3, 10)
+    while data_size < 520_000:
+        reduced = random.randint(0, 1)
+        n = random.randint(3, 5)
         first_gfa = generate(n, k, d, "gfa")
         second_gfa = generate(n, k, d, "gfa")
         first_regex = get_regex(first_gfa)
