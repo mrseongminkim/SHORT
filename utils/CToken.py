@@ -11,6 +11,7 @@ class CToken(RegExp):
     def __init__(self, regex: RegExp):
         self.hashed_value = hash(regex)
         self.tree_length = regex.treeLength()
+        self.Sigma = regex.Sigma
         CToken.token_to_regex[self.hashed_value] = regex
         CToken.token_to_string[self.hashed_value] = regex._strP()
         CToken.token_to_rpn[self.hashed_value] = regex.rpn()
