@@ -16,6 +16,11 @@ class CToken(RegExp):
         CToken.token_to_string[self.hashed_value] = regex._strP()
         CToken.token_to_rpn[self.hashed_value] = regex.rpn()
     
+    def reduced(self, has_epsilon=False):
+        return CToken.token_to_regex[self.hashed_value].reduced()
+
+    _reducedS = reduced
+    
     def rpn(self):
         return CToken.token_to_rpn[self.hashed_value]
 
