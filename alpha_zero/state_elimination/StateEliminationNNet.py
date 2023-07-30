@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GATv2Conv
-from torch_geometric.nn.pool import global_mean_pool
+
+from alpha_zero.set_transformer.model import *
 
 from alpha_zero.utils import *
 
@@ -28,55 +28,61 @@ class StateEliminationNNet(nn.Module):
         self.action_size = game.getActionSize()
         self.state_number_dim = MAX_STATES + 3
         self.lstm_dim = LSTM_DIMENSION
-
         self.embedding_with_lstm = EmbeddingWithLSTM()
         self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/embed_lstm.pth"))
+        self.set_transformer = SetTransformer(12223, NUMBER_OF_CHANNELS)
 
-        assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
-        self.conv1 = GATv2Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv4 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
+        self.value_head1 = nn.Linear(1024, 512)
+        self.value_head2 = nn.Linear(512, 256)
+        self.value_head3 = nn.Linear(256, 32)
+        self.value_head4 = nn.Linear(32, 1)
 
-        self.policy_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
-        self.policy_head2 = nn.Linear(32, 1)
-        self.value_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
-        self.value_head2 = nn.Linear(32, 1)
+        self.policy_head1 = nn.Linear(1024, 512)
+        self.policy_head2 = nn.Linear(512, 256)
+        self.policy_head3 = nn.Linear(256, 32)
+        self.policy_head4 = nn.Linear(32, 1)
+
+
 
     def forward(self, data):
-        regex = data.edge_attr[:, :MAX_LEN]
-        source_state_numbers = data.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
-        target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
+        state_number = data[:, :, :self.state_number_dim]
 
-        regex = self.embedding_with_lstm(regex)
-        regex = regex.mean(1)
+        is_initial = data[:, :, self.state_number_dim].unsqueeze(-1)
 
-        data.edge_attr = regex #intuitively, state numbers are not needed in this context.
+        is_final = data[:, :, self.state_number_dim + 1].unsqueeze(-1)
 
-        source_states = data.edge_index[0]
-        target_states = data.edge_index[1]
-        out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
-        in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
-        data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
+        in_transition_label = data[:, :, 55:55 + 50 * 52]
+        in_transition_label = in_transition_label.reshape(-1, MAX_LEN)
+        in_transition_label = self.embedding_with_lstm(in_transition_label)
+        in_transition_label = in_transition_label.mean(1)
 
-        data.x = F.relu(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
-        data.x = F.relu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)) + data.x
-        data.x = F.relu(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)) + data.x
-        data.x = F.relu(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)) + data.x
+        in_transition_state = data[:, :, 55 + 50 * 52:55 + 50 * 52 + 53 * 52]
+        in_transition_state = in_transition_state.reshape(-1, self.state_number_dim)
 
-        s = global_mean_pool(data.x, data.batch)
-        v = F.relu(self.value_head1(s))
-        v = self.value_head2(v)
+        out_transition_label = data[:, :, 55 + 50 * 52 + 53 * 52:55 + 50 * 52 + 53 * 52 + 50 * 52]
+        out_transition_label = out_transition_label.reshape(-1, MAX_LEN)
+        out_transition_label = self.embedding_with_lstm(out_transition_label)
+        out_transition_label = out_transition_label.mean(1)
 
-        pi = F.relu(self.policy_head1(data.x))
-        pi = self.policy_head2(pi)
-        new_x = torch.full((data.batch.max().item() + 1, self.action_size), -999.0).cuda()
-        prev, idx = -1, -1
-        for i in range(len(data.batch)):
-            graph_index = data.batch[i]
-            if graph_index != prev:
-                prev = graph_index
-                idx = 0
-            new_x[graph_index][idx] = pi[i]
-            idx += 1
-        return F.log_softmax(new_x, dim=1), v
+        out_transition_state = data[:, :, 55 + 50 * 52 + 53 * 52 + 50 * 52:]
+        out_transition_state = out_transition_state.reshape(-1, self.state_number_dim)
+
+        in_transition = torch.cat((in_transition_label, in_transition_state), -1)
+        in_transition = in_transition.reshape(-1, 52, 52 * 117)
+        out_transition = torch.cat((out_transition_label, out_transition_state), -1)
+        out_transition = out_transition.reshape(-1, 52, 52 * 117)
+
+        data = torch.cat((state_number, is_initial, is_final, in_transition, out_transition), dim=-1)
+        value, policy = self.set_transformer(data)
+
+        value = F.relu(self.value_head1(value))
+        value = F.relu(self.value_head2(value))
+        value = F.relu(self.value_head3(value))
+        value = self.value_head4(value)
+
+        policy = F.relu(self.policy_head1(policy))
+        policy = F.relu(self.policy_head2(policy))
+        policy = F.relu(self.policy_head3(policy))
+        policy = self.policy_head4(policy)
+
+        return F.log_softmax(policy.squeeze(-1), dim=1), value
