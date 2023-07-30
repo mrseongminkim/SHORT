@@ -72,7 +72,7 @@ class MCTS():
             if v > 0:
                 v = -v.item()
             else:
-                print("If this line excuted after # of training, it indicates NN is not working properly")
+                #print("If this line excuted after # of training, it indicates NN is not working properly")
                 v = v.item()
             valids = self.game.getValidMoves(gfa)
             self.Ps[s] = np.exp(self.Ps[s]) * valids

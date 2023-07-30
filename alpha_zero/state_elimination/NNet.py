@@ -5,6 +5,7 @@ import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 from torch_geometric.loader import DataLoader
+from torchviz import make_dot
 
 from alpha_zero.utils import *
 from alpha_zero.state_elimination.StateEliminationNNet import StateEliminationNNet as sennet
@@ -46,6 +47,8 @@ class NNetWrapper():
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
+                #make_dot((out_pis, out_vs), params=dict(self.nnet.named_parameters())).render("graph", format="png")
+                #exit()
 
     def predict(self, graph):
         batch_loader = DataLoader([graph], batch_size=1, shuffle=False)

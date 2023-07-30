@@ -8,21 +8,35 @@ from alpha_zero.utils import *
 
 from config import *
 
+class EmbeddingWithLSTM(nn.Module):
+    def __init__(self):
+        super(EmbeddingWithLSTM, self).__init__()
+        self.vocab_size = VOCAB_SIZE
+        self.regex_embedding_dim = REGEX_EMBEDDING_DIMENSION
+        self.lstm_dim = LSTM_DIMENSION
+        self.embed = nn.Embedding(self.vocab_size, self.regex_embedding_dim, padding_idx=0)
+        self.lstm = nn.LSTM(self.regex_embedding_dim, self.lstm_dim, batch_first=True, bidirectional=True)
+    
+    def forward(self, regex):
+        regex = self.embed(regex)
+        regex, _ = self.lstm(regex)
+        return regex
+
 class StateEliminationNNet(nn.Module):
     def __init__(self, game):
         super(StateEliminationNNet, self).__init__()
         self.action_size = game.getActionSize()
         self.state_number_dim = MAX_STATES + 3
-        self.regex_embedding_dim = REGEX_EMBEDDING_DIMENSION
-        self.regex_embed = nn.Embedding(VOCAB_SIZE, self.regex_embedding_dim)
         self.lstm_dim = LSTM_DIMENSION
-        self.lstm = nn.LSTM(self.regex_embedding_dim, self.lstm_dim, batch_first=True)
+
+        self.embedding_with_lstm = EmbeddingWithLSTM()
+        self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/embed_lstm.pth"))
 
         assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
-        self.conv1 = GATv2Conv(self.state_number_dim * 3 + self.lstm_dim * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
-        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
-        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
-        self.conv4 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION)
+        self.conv1 = GATv2Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
+        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
+        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
+        self.conv4 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
 
         self.policy_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
         self.policy_head2 = nn.Linear(32, 1)
@@ -30,12 +44,13 @@ class StateEliminationNNet(nn.Module):
         self.value_head2 = nn.Linear(32, 1)
 
     def forward(self, data):
-
         regex = data.edge_attr[:, :MAX_LEN]
         source_state_numbers = data.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
         target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
-        regex = self.regex_embed(regex)
-        regex = self.lstm(regex)[0][:, -1]
+
+        regex = self.embedding_with_lstm(regex)
+        regex = regex.mean(1)
+
         data.edge_attr = regex #intuitively, state numbers are not needed in this context.
 
         source_states = data.edge_index[0]
