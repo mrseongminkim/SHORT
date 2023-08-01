@@ -61,6 +61,9 @@ class NNetWrapper():
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
+        #print("targets:", targets[:, :9])
+        #print("outputs:", torch.exp(outputs[:, :9]))
+        #print("output:", outputs[:, :9])
         return -torch.sum(targets * outputs) / targets.size()[0]
 
     def loss_v(self, targets, outputs):

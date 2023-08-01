@@ -318,6 +318,6 @@ def test_heuristics(model_updated, type, minimization):
 #test_heuristics(False, "nfa", False)
 #test_alpha_zero_with_mcts(True, "nfa", False)
 #test_alpha_zero_with_mcts(False, "nfa", False)
-#train_alpha_zero()
+train_alpha_zero()
 
-single_data_for_train_alpha_zero()
+#single_data_for_train_alpha_zero()
