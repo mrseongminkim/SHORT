@@ -190,7 +190,9 @@ def eliminate_randomly(gfa: GFA, minimization: bool, random_order: list, bridge_
 
 def eliminate_by_state_weight_heuristic(gfa: GFA, minimization: bool, bridge_state_name: list=None) -> RegExp:
     pq = PriorityQueue()
-    for i in range(1, len(gfa.States) - 1):
+    for i in range(len(gfa.States)):
+        if i == gfa.Initial or i in gfa.Final:
+            continue
         pq.put((get_weight(gfa, i), i))
     order = []
     while not pq.empty():
@@ -203,7 +205,9 @@ def eliminate_by_repeated_state_weight_heuristic(gfa: GFA, minimization: bool, b
     for i in range(n):
         min_val = float("inf")
         min_idx = -1
-        for j in range(1, len(gfa.States) - 1):
+        for j in range(len(gfa.States)):
+            if j == gfa.Initial or j in gfa.Final:
+                continue
             if gfa.States[j] in bridge_state_name:
                 continue
             curr_val = get_weight(gfa, j)

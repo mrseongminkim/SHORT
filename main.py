@@ -51,6 +51,34 @@ def train_alpha_zero():
     log.info('Starting the learning process')
     c.learn()
 
+def single_data_for_train_alpha_zero():
+    "Let's check this can achieve overfitting"
+    log.info('Loading %s...', Game.__name__)
+    g = Game()
+    log.info('Loading %s...', nn.__name__)
+    nnet = nn(g)
+    log.info('Loading the Coach...')
+    c = Coach(g, nnet)
+    log.info('Starting the learning process')
+    gfa: GFA = g.get_initial_gfa()
+    mcts = MCTS(g, nnet)
+    train_gfa = g.gfa_to_tensor(gfa)
+    train_pi = None
+    train_v = None
+    while g.getGameEnded(gfa) == None:
+        pi = mcts.getActionProb(gfa)
+        if train_pi == None:
+            train_pi = pi
+        best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
+        best_action = np.random.choice(best_actions)
+        best_pi = [0] * len(pi)
+        best_pi[best_action] = 1
+        action = np.random.choice(len(best_pi), p=best_pi)
+        gfa = g.getNextState(gfa, action)
+    train_v = -g.getGameEnded(gfa)
+    train_data = [[train_gfa, train_pi, train_v]]
+    nnet.train(train_data)
+
 def test_alpha_zero_without_mcts(model_updated, type, minimize):
     if not model_updated:
         with open("./result/rl_greedy_" + type + "_" + str(minimize) + ".pkl", "rb") as fp:
@@ -209,8 +237,7 @@ def test_heuristics(model_updated, type, minimization):
             print('n: ' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i].dup()
-            assert 0 not in gfa.delta[0]
-            random_order = [i for i in range(1, len(gfa.States) - 1)]
+            random_order = [i for i in range(len(gfa.States)) if i != gfa.Initial and i not in gfa.Final]
             shuffle(random_order)
             decomposition_start_time = time.time()
             bridge_state_name = decompose(gfa)
@@ -291,4 +318,6 @@ def test_heuristics(model_updated, type, minimization):
 #test_heuristics(False, "nfa", False)
 #test_alpha_zero_with_mcts(True, "nfa", False)
 #test_alpha_zero_with_mcts(False, "nfa", False)
-train_alpha_zero()
+#train_alpha_zero()
+
+single_data_for_train_alpha_zero()
