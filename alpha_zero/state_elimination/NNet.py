@@ -16,6 +16,7 @@ class NNetWrapper():
     def __init__(self, game):
         self.nnet = sennet(game)
         self.action_size = game.getActionSize()
+        self.kullback = torch.nn.KLDivLoss(reduction="batchmean")
         if CUDA:
             self.nnet.cuda()
 
@@ -47,8 +48,6 @@ class NNetWrapper():
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
-                #make_dot((out_pis, out_vs), params=dict(self.nnet.named_parameters())).render("graph", format="png")
-                #exit()
 
     def predict(self, graph):
         batch_loader = DataLoader([graph], batch_size=1, shuffle=False)
@@ -61,10 +60,9 @@ class NNetWrapper():
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
-        #print("targets:", targets[:, :9])
-        #print("outputs:", torch.exp(outputs[:, :9]))
-        #print("output:", outputs[:, :9])
-        return -torch.sum(targets * outputs) / targets.size()[0]
+        print(" targets:", targets[0][:8])
+        print("outputs:", torch.exp(outputs[0][:8]))
+        return self.kullback(outputs, targets)
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]

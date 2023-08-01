@@ -2,7 +2,7 @@ from torch.cuda import is_available
 from math import ceil
 
 #Test parameters
-SAMPLE_SIZE = 10
+SAMPLE_SIZE = 1_000
 
 #NFA parameters
 MIN_N = 3
@@ -19,18 +19,18 @@ THRESHOLD = 5
 SEED = 210
 
 #Neural network and MCTS parameters
-NUMBER_OF_ITERATIONS = 99999999999999999999999
+NUMBER_OF_ITERATIONS = 20
 NUMBER_OF_EPISODES = 1_00
 TEMPERATURE_THRESHOLD = 0
 MAXIMUM_LENGTH_OF_QUEUE = 200_000
-NUMBER_OF_MCTS_SIMULATIONS = 1_000
+NUMBER_OF_MCTS_SIMULATIONS = 99999999999999999999
 CPUCT = 1.3
 CHECKPOINT = "./alpha_zero/models/"
 LOAD_MODEL = False
-LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_88.pth.tar")
+LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_20.pth.tar")
 NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY = 20
 EPS = 1e-8
-LR = 0.0001
+LR = 0.001
 DROUPOUT = 0.0
 EPOCHS = 20
 BATCH_SIZE = 128
