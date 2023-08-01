@@ -79,7 +79,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             gfa = data[n][i]
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
-                board = g.gfaToBoard(gfa)
+                board = g.gfa_to_tensor(gfa)
                 policy, _ = nnet.predict(board)
                 valid_moves = g.getValidMoves(gfa)
                 policy = policy * valid_moves
@@ -125,10 +125,114 @@ def get_sample_distribution(model_updated, minimization=False):
     with open("./result/distribution.pkl", "wb") as fp:
         dump(exp, fp)
 
+def test_heuristics(model_updated, type, minimization):
+    if not model_updated:
+        with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "rb") as fp:
+            exp = load(fp)
+        for c in range(6):
+            with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + "_C" + str(c + 1) + ".csv", "w", newline="") as fp:
+                writer = csv.writer(fp)
+                for i in range(N_RANGE):
+                    size_value = exp[c][i][0]
+                    time_value = exp[c][i][1]
+                    writer.writerow([size_value, time_value])
+        return
+    random.seed(SEED)
+    data = load_data(type)
+    exp = [[[0, 0] for n in range(N_RANGE)] for c in range(6)]
+    for n in range(N_RANGE):
+        for i in range(SAMPLE_SIZE):
+            print('n: ' + str(n + MIN_N) + ', i:', i)
+            CToken.clear_memory()
+            gfa = data[n][i].dup()
+            assert 0 not in gfa.delta[0]
+            random_order = [i for i in range(1, len(gfa.States) - 1)]
+            shuffle(random_order)
+            decomposition_start_time = time.time()
+            bridge_state_name = decompose(gfa)
+            decomposition_end_time = time.time()
+            decomposition_time = decomposition_end_time - decomposition_start_time
 
-train_alpha_zero()
-##test_alpha_zero_without_mcts(True, "nfa", "False")
-#test_alpha_zero_without_mcts(False, "nfa", "False")
+            # eliminate_randomly
+            gfa = data[n][i].dup()
+            start_time = time.time()
+            result = eliminate_randomly(gfa, minimization, random_order)
+            end_time = time.time()
+            result_time = end_time - start_time
+            result_size = result.treeLength()
+            exp[0][n][0] += result_size
+            exp[0][n][1] += result_time
+            c1_length = result_size
+            c1_regex = result
+
+            # decompose with eliminate_randomly
+            gfa = data[n][i].dup()
+            start_time = time.time()
+            result = eliminate_randomly(gfa, minimization, random_order, bridge_state_name)
+            end_time = time.time()
+            result_time = end_time - start_time + decomposition_time
+            result_size = result.treeLength()
+            exp[1][n][0] += result_size
+            exp[1][n][1] += result_time
+            c2_length = result_size
+            c2_regex = result
+
+            # eliminate_by_state_weight_heuristic
+            gfa = data[n][i].dup()
+            start_time = time.time()
+            result = eliminate_by_state_weight_heuristic(gfa, minimization)
+            end_time = time.time()
+            result_time = end_time - start_time
+            result_size = result.treeLength()
+            exp[2][n][0] += result_size
+            exp[2][n][1] += result_time
+            c3_length = result_size
+            c3_regex = result
+
+            # decompose + eliminate_by_state_weight_heuristic
+            gfa = data[n][i].dup()
+            start_time = time.time()
+            result = eliminate_by_state_weight_heuristic(gfa, minimization, bridge_state_name)
+            end_time = time.time()
+            result_time = end_time - start_time + decomposition_time
+            result_size = result.treeLength()
+            exp[3][n][0] += result_size
+            exp[3][n][1] += result_time
+            c4_length = result_size
+            c4_regex = result
+
+            # eliminate_by_repeated_state_weight_heuristic
+            gfa = data[n][i].dup()
+            start_time = time.time()
+            result = eliminate_by_repeated_state_weight_heuristic(gfa, minimization)
+            end_time = time.time()
+            result_time = end_time - start_time
+            result_size = result.treeLength()
+            exp[4][n][0] += result_size
+            exp[4][n][1] += result_time
+            c5_length = result_size
+            c5_regex = result
+
+            # decompose + eliminate_by_repeated_state_weight_heuristic
+            gfa = data[n][i].dup()
+            start_time = time.time()
+            result = eliminate_by_repeated_state_weight_heuristic(gfa, minimization, bridge_state_name)
+            end_time = time.time()
+            result_time = end_time - start_time + decomposition_time
+            result_size = result.treeLength()
+            exp[5][n][0] += result_size
+            exp[5][n][1] += result_time
+            c6_length = result_size
+            c6_regex = result
+        for c in range(6):
+            exp[c][n][0] /= SAMPLE_SIZE
+            exp[c][n][1] /= SAMPLE_SIZE
+    with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
+        dump(exp, fp)
+
+#train_alpha_zero()
+test_heuristics(True, "nfa", "False")
+test_heuristics(False, "nfa", "False")
 #exit()
 
 """
