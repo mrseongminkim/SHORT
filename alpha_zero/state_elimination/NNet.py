@@ -60,8 +60,9 @@ class NNetWrapper():
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
-        print(" targets:", targets[0][:8])
-        print("outputs:", torch.exp(outputs[0][:8]))
+        if VERBOSE:
+            print(" targets:", targets[0][:8])
+            print("outputs:", torch.exp(outputs[0][:8]))
         return self.kullback(outputs, targets)
 
     def loss_v(self, targets, outputs):
