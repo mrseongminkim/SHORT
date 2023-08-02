@@ -28,7 +28,7 @@ class MCTS():
             _, dead_end, _ = self.search(gfa)
             if dead_end: break
         s = self.game.stringRepresentation(gfa)
-        visits = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+        #visits = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
         action_space = [self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa]
         #print("visits:", visits)
         #print("action_space:", action_space)
@@ -44,6 +44,9 @@ class MCTS():
             counts = [1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
         else:
             counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
+            bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
+            bestA = np.random.choice(bestAs)
+            counts[bestA] += OPTIMAL_BONUS
 
         '''
         if temp == 0 and q_max != q_min:
@@ -53,7 +56,7 @@ class MCTS():
             probs[bestA] = 1
             return probs
         '''
-        #counts = [x ** (1. / temp) for x in counts]
+        counts = [x ** (TEMPERATURE) for x in counts]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
         return probs
