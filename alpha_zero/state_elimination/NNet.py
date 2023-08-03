@@ -49,6 +49,31 @@ class NNetWrapper():
                 total_loss.backward()
                 optimizer.step()
 
+    def test_valid_data(self, examples):
+        self.nnet.eval()
+        pi_losses = AverageMeter()
+        v_losses = AverageMeter()
+        batch_count = int(len(examples) / 1)
+        t = tqdm(range(batch_count), desc='Run for valid data')
+        i = 0
+        VERBOSE = True
+        for _ in t:
+            graphs, pis, vs = list(zip(*[examples[i]]))
+            i += 1
+            batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
+            batch = next(iter(batch_loader))
+            target_pis = torch.FloatTensor(np.array(pis))
+            target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
+            if CUDA:
+                batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+            out_pis, out_vs = self.nnet(batch)
+            l_pi = self.loss_pi(target_pis, out_pis)
+            l_v = self.loss_v(target_vs, out_vs)
+            pi_losses.update(l_pi.item(), len(graphs))
+            v_losses.update(l_v.item(), len(graphs))
+            t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
+        VERBOSE = False
+
     def predict(self, graph):
         batch_loader = DataLoader([graph], batch_size=1, shuffle=False)
         self.nnet.eval()
