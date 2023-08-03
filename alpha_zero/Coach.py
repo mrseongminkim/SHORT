@@ -24,6 +24,8 @@ class Coach():
         self.mcts = MCTS(self.game, self.nnet)
         self.trainExamplesHistory = []
         self.skipFirstSelfPlay = False
+        self.valid_data = []
+        self.load_valid_data()
 
     def executeEpisode(self):
         trainExamples = []
@@ -31,10 +33,7 @@ class Coach():
         while self.game.getGameEnded(gfa) != None:
             gfa: GFA = self.game.get_initial_gfa()
         CToken.clear_memory()
-        #episodeStep = 0
         while True:
-            #episodeStep += 1
-            #temp = 1
             pi = self.mcts.getActionProb(gfa)
             gfa_representation = self.game.gfa_to_tensor(gfa)
             trainExamples.append([gfa_representation, pi])
@@ -67,6 +66,8 @@ class Coach():
                 trainExamples.extend(e)
             shuffle(trainExamples)
             self.nnet.train(trainExamples)
+            log.info("Test for valid data")
+            self.nnet.test_valid_data(self.valid_data)
             log.info("ACCEPTING NEW MODEL")
             self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
 
@@ -96,3 +97,13 @@ class Coach():
                 self.trainExamplesHistory = Unpickler(f).load()
             log.info('Loading done!')
             self.skipFirstSelfPlay = True
+
+    def load_valid_data(self):
+        log.info("Get valid data")
+        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "valid_data.tar")
+        with open(examplesFile, "rb") as f:
+            valid_data = Unpickler(f).load()
+        self.valid_data = []
+        for e in valid_data:
+            self.valid_data.extend(e)
+        return
