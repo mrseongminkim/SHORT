@@ -96,7 +96,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 3: continue
+            #if n + MIN_N != 6: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -143,7 +143,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            if n + MIN_N != 3: continue
+            #if n + MIN_N != 6: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             mcts = MCTS(g, nnet)
@@ -315,7 +315,10 @@ def test_heuristics(model_updated, type, minimization):
         dump(exp, fp)
 
 import torch
-torch.set_printoptions(precision=4, sci_mode=False)
+import numpy
+torch.set_printoptions(precision=4, sci_mode=False, linewidth=999)
+np.set_printoptions(precision=4, linewidth=999, suppress=True)
+#train_alpha_zero()
 
 #get_optimal_ordering()
 #generate_test_data("nfa")
@@ -323,10 +326,9 @@ torch.set_printoptions(precision=4, sci_mode=False)
 #test_alpha_zero_without_mcts(False, "nfa", False)
 #test_heuristics(True, "nfa", False)
 #test_heuristics(False, "nfa", False)
-#test_alpha_zero_with_mcts(True, "nfa", False)
-#test_alpha_zero_with_mcts(False, "nfa", False)
+test_alpha_zero_with_mcts(True, "nfa", False)
+test_alpha_zero_with_mcts(False, "nfa", False)
 #import torch
 #torch.set_printoptions(precision=4, sci_mode=False)
-train_alpha_zero()
 
 #single_data_for_train_alpha_zero()

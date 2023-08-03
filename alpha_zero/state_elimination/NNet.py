@@ -19,6 +19,7 @@ class NNetWrapper():
         self.kullback = torch.nn.KLDivLoss(reduction="batchmean")
         if CUDA:
             self.nnet.cuda()
+        self.verbose = False
 
     def train(self, examples):
         optimizer = optim.AdamW(self.nnet.parameters(), lr=LR)
@@ -30,6 +31,10 @@ class NNetWrapper():
             batch_count = int(len(examples) / BATCH_SIZE)
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
+                if _ == 0:
+                    self.valid = True
+                else:
+                    self.valid = False
                 sample_ids = np.random.randint(len(examples), size=BATCH_SIZE)
                 graphs, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
@@ -53,13 +58,12 @@ class NNetWrapper():
         self.nnet.eval()
         pi_losses = AverageMeter()
         v_losses = AverageMeter()
-        batch_count = int(len(examples) / 1)
+        batch_count = int(len(examples))
         t = tqdm(range(batch_count), desc='Run for valid data')
-        i = 0
-        VERBOSE = True
+        self.verbose = True
         for _ in t:
-            graphs, pis, vs = list(zip(*[examples[i]]))
-            i += 1
+            sample_ids = [i for i in range(len(examples))]
+            graphs, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
             batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
             batch = next(iter(batch_loader))
             target_pis = torch.FloatTensor(np.array(pis))
@@ -72,7 +76,7 @@ class NNetWrapper():
             pi_losses.update(l_pi.item(), len(graphs))
             v_losses.update(l_v.item(), len(graphs))
             t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
-        VERBOSE = False
+        self.verbose = False
 
     def predict(self, graph):
         batch_loader = DataLoader([graph], batch_size=1, shuffle=False)
@@ -85,9 +89,9 @@ class NNetWrapper():
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
-        if VERBOSE:
-            print(" targets:", targets[0][:8])
-            print("outputs:", torch.exp(outputs[0][:8]))
+        if self.verbose:
+            print(" targets:", targets[0][:10])
+            print("outputs:", torch.exp(outputs[0][:10]))
         return self.kullback(outputs, targets)
 
     def loss_v(self, targets, outputs):

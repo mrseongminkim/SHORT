@@ -44,9 +44,9 @@ class MCTS():
             counts = [1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
         else:
             counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
-            bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
-            bestA = np.random.choice(bestAs)
-            counts[bestA] += OPTIMAL_BONUS
+        bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
+        bestA = bestAs[0]
+        counts[bestA] += OPTIMAL_BONUS
 
         '''
         if temp == 0 and q_max != q_min:
