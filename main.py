@@ -96,7 +96,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 6: continue
+            if n + MIN_N != VICTIM: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -104,7 +104,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             while g.getGameEnded(gfa) == None:
                 gfa_representation = g.gfa_to_tensor(gfa)
                 policy, _ = nnet.predict(gfa_representation)
-                #print("policy:", policy[:8])
+                print("mcts off\t:", policy[:8])
                 #return
                 valid_moves = g.getValidMoves(gfa)
                 policy = policy * valid_moves
@@ -143,7 +143,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 6: continue
+            if n + MIN_N != VICTIM: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             mcts = MCTS(g, nnet)
@@ -151,7 +151,8 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
                 pi = mcts.getActionProb(gfa)
-                #print("pi:", pi[:8])
+                pi = np.array(pi)
+                print("mcts on \t:", pi[:8])
                 #return
                 best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
                 best_action = np.random.choice(best_actions)
@@ -162,8 +163,8 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
-            print("dead_end:", len(mcts.dead_end))
-            print("result length:", result_length)
+            #print("dead_end:", len(mcts.dead_end))
+            #print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -201,25 +202,28 @@ def get_sample_distribution(model_updated, minimization=False):
 def get_optimal_ordering(minimization=False):
     data = load_data("nfa")
     for n in range(N_RANGE):
+        length = 0
         for i in range(SAMPLE_SIZE):
-            if n + MIN_N != 6: continue
-            print("i", i)
+            #if n + MIN_N != 6: continue
+            print(f"n: {n}, i: {i}")
             CToken.clear_memory()
             gfa = data[n][i]
             order = [i for i in range(len(gfa.States)) if i != gfa.Initial and i not in gfa.Final]
-            print("order:", order)
+            #print("order:", order)
             min_length = float("inf")
-            optimal_ordering = []
+            #optimal_ordering = []
             for perm in itertools.permutations(order):
                 result = eliminate_randomly(gfa.dup(), minimization, perm)
                 #print("perm:", [gfa.States[x] for x in perm])
                 #print("length:", result.treeLength())
                 if min_length > result.treeLength():
                     min_length = result.treeLength()
-                    optimal_ordering = perm
-            optimal_ordering = [gfa.States[x] for x in optimal_ordering]
-            print("min_length:", min_length)
-            print("optimal_ordering", optimal_ordering)
+                    #optimal_ordering = perm
+            #optimal_ordering = [gfa.States[x] for x in optimal_ordering]
+            #print("min_length:", min_length)
+            #print("optimal_ordering", optimal_ordering)
+            length += min_length
+        print(f"{n} opt length:", length / SAMPLE_SIZE)
 
 def test_heuristics(model_updated, type, minimization):
     if not model_updated:
@@ -318,16 +322,18 @@ import torch
 import numpy
 torch.set_printoptions(precision=4, sci_mode=False, linewidth=999)
 np.set_printoptions(precision=4, linewidth=999, suppress=True)
-#train_alpha_zero()
+train_alpha_zero()
 
 #get_optimal_ordering()
 #generate_test_data("nfa")
+#test_alpha_zero_with_mcts(True, "nfa", False)
+#test_alpha_zero_with_mcts(False, "nfa", False)
 #test_alpha_zero_without_mcts(True, "nfa", False)
 #test_alpha_zero_without_mcts(False, "nfa", False)
 #test_heuristics(True, "nfa", False)
 #test_heuristics(False, "nfa", False)
-test_alpha_zero_with_mcts(True, "nfa", False)
-test_alpha_zero_with_mcts(False, "nfa", False)
+#test_alpha_zero_with_mcts(True, "nfa", False)
+#test_alpha_zero_with_mcts(False, "nfa", False)
 #import torch
 #torch.set_printoptions(precision=4, sci_mode=False)
 

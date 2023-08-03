@@ -2,7 +2,7 @@ from torch.cuda import is_available
 from math import ceil
 
 #Test parameters
-SAMPLE_SIZE = 100
+SAMPLE_SIZE = 1#00
 
 #NFA parameters
 MIN_N = 3
@@ -21,14 +21,14 @@ SEED = 210
 #Neural network and MCTS parameters
 NUMBER_OF_ITERATIONS = 9999999999
 NUMBER_OF_EPISODES = 1_00
-TEMPERATURE = 2
+TEMPERATURE = 3
 MAXIMUM_LENGTH_OF_QUEUE = 200_000
-NUMBER_OF_MCTS_SIMULATIONS = 100
+NUMBER_OF_MCTS_SIMULATIONS = 999999999999999999
 CPUCT = 1.3
-OPTIMAL_BONUS = 2
+OPTIMAL_BONUS = 3
 CHECKPOINT = "./alpha_zero/models/"
-LOAD_MODEL = True
-LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_3.pth.tar")
+LOAD_MODEL = False
+LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_1.pth.tar")
 NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY = 999999999999
 EPS = 1e-8
 LR = 0.001
@@ -50,3 +50,5 @@ STATE_NUMBER_EMBEDDING_DIMENSION = ceil((MAX_STATES + 2) ** (1 / 4)) #3
 NUMBER_OF_HEADS = 4
 
 VERBOSE = False
+
+VICTIM = 8

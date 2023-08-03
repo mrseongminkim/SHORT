@@ -16,7 +16,6 @@ class NNetWrapper():
     def __init__(self, game):
         self.nnet = sennet(game)
         self.action_size = game.getActionSize()
-        self.kullback = torch.nn.KLDivLoss(reduction="batchmean")
         if CUDA:
             self.nnet.cuda()
         self.verbose = False
@@ -58,7 +57,7 @@ class NNetWrapper():
         self.nnet.eval()
         pi_losses = AverageMeter()
         v_losses = AverageMeter()
-        batch_count = int(len(examples))
+        batch_count = 1#int(len(examples))
         t = tqdm(range(batch_count), desc='Run for valid data')
         self.verbose = True
         for _ in t:
@@ -92,7 +91,7 @@ class NNetWrapper():
         if self.verbose:
             print(" targets:", targets[0][:10])
             print("outputs:", torch.exp(outputs[0][:10]))
-        return self.kullback(outputs, targets)
+        return -torch.sum(targets * outputs) / targets.size()[0]
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]
