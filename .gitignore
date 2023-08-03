@@ -4,3 +4,5 @@
 *.pdf
 graph_maker.py
 checkpoint*
+*.csv
+*.pkl
