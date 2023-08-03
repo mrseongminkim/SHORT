@@ -6,4 +6,3 @@ graph_maker.py
 checkpoint*
 *.csv
 *.pkl
-*.tar

@@ -82,6 +82,12 @@ class Coach():
         with open(filename, "wb+") as f:
             Pickler(f).dump(self.trainExamplesHistory)
         f.closed
+    
+    def load_initial_data(self):
+        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "first_data.tar")
+        with open(examplesFile, "rb") as f:
+            self.trainExamplesHistory = Unpickler(f).load()
+        self.skipFirstSelfPlay = True
 
     def loadTrainExamples(self):
         modelFile = os.path.join(LOAD_FOLDER_FILE[0], LOAD_FOLDER_FILE[1])
