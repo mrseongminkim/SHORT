@@ -33,7 +33,6 @@ def train_alpha_zero():
     print("Let's briefly check the important hyperparameters.")
     print("\tNUMBER_OF_MCTS_SIMULATIONS: ", NUMBER_OF_MCTS_SIMULATIONS)
     print("\tCPUCT: ", CPUCT)
-    print("\tCUDA: ", CUDA)
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
@@ -52,7 +51,6 @@ def train_alpha_zero():
     c.learn()
 
 def single_data_for_train_alpha_zero():
-    "Let's check this can achieve overfitting"
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
@@ -98,6 +96,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
+            #if n + MIN_N != 3: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -105,6 +104,8 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             while g.getGameEnded(gfa) == None:
                 gfa_representation = g.gfa_to_tensor(gfa)
                 policy, _ = nnet.predict(gfa_representation)
+                #print("policy:", policy[:8])
+                #return
                 valid_moves = g.getValidMoves(gfa)
                 policy = policy * valid_moves
                 if not policy.any():
@@ -142,7 +143,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 3 or i != 23: continue
+            if n + MIN_N != 3: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             mcts = MCTS(g, nnet)
@@ -150,6 +151,8 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
                 pi = mcts.getActionProb(gfa)
+                #print("pi:", pi[:8])
+                #return
                 best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
                 best_action = np.random.choice(best_actions)
                 best_pi = [0] * len(pi)
@@ -159,8 +162,8 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
-            #print("dead_end:", len(mcts.dead_end))
-            #print("result length:", result_length)
+            print("dead_end:", len(mcts.dead_end))
+            print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -199,11 +202,12 @@ def get_optimal_ordering(minimization=False):
     data = load_data("nfa")
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 6: continue
+            if n + MIN_N != 6: continue
             print("i", i)
             CToken.clear_memory()
             gfa = data[n][i]
-            order = [i for i in range(1, len(gfa.States) - 1)]
+            order = [i for i in range(len(gfa.States)) if i != gfa.Initial and i not in gfa.Final]
+            print("order:", order)
             min_length = float("inf")
             optimal_ordering = []
             for perm in itertools.permutations(order):
@@ -310,6 +314,9 @@ def test_heuristics(model_updated, type, minimization):
     with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
+import torch
+torch.set_printoptions(precision=4, sci_mode=False)
+
 #get_optimal_ordering()
 #generate_test_data("nfa")
 #test_alpha_zero_without_mcts(True, "nfa", False)
@@ -318,8 +325,8 @@ def test_heuristics(model_updated, type, minimization):
 #test_heuristics(False, "nfa", False)
 #test_alpha_zero_with_mcts(True, "nfa", False)
 #test_alpha_zero_with_mcts(False, "nfa", False)
-import torch
-torch.set_printoptions(precision=4, sci_mode=False)
+#import torch
+#torch.set_printoptions(precision=4, sci_mode=False)
 train_alpha_zero()
 
 #single_data_for_train_alpha_zero()
