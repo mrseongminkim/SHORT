@@ -1,6 +1,3 @@
-print("test")
-exit()
-
 import time
 import logging
 import random
