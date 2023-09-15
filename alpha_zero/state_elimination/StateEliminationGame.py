@@ -43,16 +43,18 @@ class StateEliminationGame():
         x = []
         edge_index = [[], []]
         edge_attr = []
-        for source in sorted(gfa.delta):
+        for source in range(len(gfa.States)):
             source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
+            #디버깅할 때는 보기 쉽게 [source] 어때
             is_initial_state = 1 if source == gfa.Initial else 0
             is_final_state = 1 if source in gfa.Final else 0
             x.append(source_state_number + [is_initial_state, is_final_state])
-            for target in gfa.delta[source]:
-                target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
-                edge_index[0].append(source)
-                edge_index[1].append(target)
-                edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
+            for target in range(len(gfa.States)):
+                if target in gfa.delta[source]:
+                    target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
+                    edge_index[0].append(source)
+                    edge_index[1].append(target)
+                    edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
         x = torch.LongTensor(x)
         assert num_nodes == len(x)
         edge_index = torch.LongTensor(edge_index)
@@ -86,16 +88,27 @@ class StateEliminationGame():
         initial_state = gfa.Initial
         final_state = list(gfa.Final)[0]
         intermediate_state = 3 - (initial_state + final_state)
-        result = CConcat(CConcat(gfa.delta[initial_state][intermediate_state], CStar(gfa.delta[intermediate_state][intermediate_state])), gfa.delta[intermediate_state][final_state]) if intermediate_state in gfa.delta[intermediate_state] else CConcat(gfa.delta[initial_state][intermediate_state], gfa.delta[intermediate_state][final_state])
-        result = CDisj(gfa.delta[initial_state][final_state], result) if final_state in gfa.delta[initial_state] else result
+
+        alpha = gfa.delta[initial_state][intermediate_state]
+        beta = CStar(gfa.delta[intermediate_state][intermediate_state]) if intermediate_state in gfa.delta[intermediate_state] else None
+        gamma = gfa.delta[intermediate_state][final_state]
+        direct_edge = gfa.delta[initial_state][final_state] if final_state in gfa.delta[initial_state] else None
+
+        result = CConcat(CConcat(alpha, beta), gamma) if beta is not None else CConcat(alpha, gamma)
+        result = CDisj(direct_edge, result) if direct_edge is not None else result
+
         return result
 
     def getGameEnded(self, gfa):
+        #state가 3이면 init-bridge-final의 linear한 형상을 가짐
+        #init -> final의 direct edge와 linear한 edge를 이어주면 됨
         if len(gfa.States) == 3:
             result = self.get_resulting_regex(gfa)
             length = result.treeLength()
+            #로그를 취해서 값이 너무 작아짐 -> 작은 차이가 없어지는 것이 문제
             reward = -log(length)
             return reward
+        #n=3인 GFA에서 간혹 나올 수 있어서 예외로 처리해줌
         elif len(gfa.States) == 2:
             initial_state = gfa.Initial
             final_state = list(gfa.Final)[0]
@@ -103,6 +116,8 @@ class StateEliminationGame():
             assert final_state not in gfa.delta[final_state]
             length = gfa.delta[initial_state][final_state].treeLength()
             reward = -log(length)
+            #return 문이 없었는데... 어차피 이 상황은 test에나 발생해서 문제 없었다.
+            return reward
         else:
             return None
 

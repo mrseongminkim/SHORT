@@ -10,6 +10,8 @@ from tqdm import tqdm
 from FAdo.conversions import *
 
 from alpha_zero.MCTS import MCTS
+from alpha_zero.state_elimination.NNet import NNetWrapper
+from alpha_zero.state_elimination.StateEliminationGame import StateEliminationGame
 
 from utils.CToken import *
 
@@ -19,34 +21,57 @@ log = logging.getLogger(__name__)
 
 class Coach():
     def __init__(self, game, nnet):
-        self.game = game
-        self.nnet = nnet
+        self.game: StateEliminationGame = game
+        self.nnet: NNetWrapper = nnet
         self.mcts = MCTS(self.game, self.nnet)
-        self.trainExamplesHistory = []
+        self.trainExamplesHistory: list = []
         self.skipFirstSelfPlay = False
-        self.valid_data = []
-        self.load_valid_data()
+        #self.load_valid_data()
 
     def executeEpisode(self):
         trainExamples = []
+        #데이터 생성/종료 확인은 문제가 없는 것 같음
         gfa: GFA = self.game.get_initial_gfa()
         while self.game.getGameEnded(gfa) != None:
             gfa: GFA = self.game.get_initial_gfa()
+        #CToken의 정보가 트레인시에 필요하다면 초기화하면 안 됨 확인해볼 것!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         CToken.clear_memory()
+        #위: 데이터 생성 / 아래: self-play
+        #여기서부터 집가서 할래...
         while True:
-            pi = self.mcts.getActionProb(gfa)
-            gfa_representation = self.game.gfa_to_tensor(gfa)
+            pi = self.mcts.getActionProb(gfa) #MCTS를 전체적으로 봐야함
+            #pi 구할 때도 결국 gfa_to_tensor 쓰고 predict를 쓰니까 일단 밑에 먼저 볼까
+            gfa_representation = self.game.gfa_to_tensor(gfa) #GFA -> feature extraction 과정이 다 보이고
+            #넣어줄 때는 best가 아닌 전부 선택가능한 pi를 넣어줌
             trainExamples.append([gfa_representation, pi])
             best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
-            best_action = np.random.choice(best_actions)
+            best_action = np.random.choice(best_actions) #이게 pi의 최댓값이랑 같은지 봐야 할 듯
             best_pi = [0] * len(pi)
             best_pi[best_action] = 1
             action = np.random.choice(len(best_pi), p=best_pi)
+            #action이랑 best_action이랑 같은지 봐야 할 듯
+            #굳이 이렇게 하는 이유가 있나...?
+            #다음 state로 제대로 삭제되는지 직접 해보는 것도 좋을듯
             gfa = self.game.getNextState(gfa, action)
+            #getGameEnded는 일단은 검증 완료함
             r = self.game.getGameEnded(gfa)
             if r != None:
+                #NN이 음수보다 양수를 리턴하게 시키고 싶어서 -r을 해줌
                 r = -r
+                #graph, pi, v 순서로 저장
                 return [(x[0], x[1], r) for x in trainExamples]
+    
+    def make_fake_data(self):
+        "graph, pis, vs가 제대로 나눠지는지 확인하기 위한 가짜 데이터"
+        import torch
+        from torch_geometric.data import Data
+        fake_data = []
+        for i in range(256):
+            x_0 = Data(x=torch.LongTensor([i]))
+            x_1 = [i, i]
+            x_2 = i
+            fake_data.append((x_0, x_1, x_2))
+        return fake_data
 
     def learn(self):
         for i in range(1, NUMBER_OF_ITERATIONS + 1):
@@ -57,6 +82,7 @@ class Coach():
                     self.mcts = MCTS(self.game, self.nnet)
                     iterationTrainExamples += self.executeEpisode()
                 self.trainExamplesHistory.append(iterationTrainExamples)
+            #여기부터는 학습 - 검증 완료
             if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
                 log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
                 self.trainExamplesHistory.pop(0)
@@ -66,8 +92,8 @@ class Coach():
                 trainExamples.extend(e)
             shuffle(trainExamples)
             self.nnet.train(trainExamples)
-            log.info("Test for valid data")
-            self.nnet.test_valid_data(self.valid_data)
+            #log.info("Testing for valid data")
+            #self.nnet.test_valid_data(self.valid_data)
             log.info("ACCEPTING NEW MODEL")
             self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
 
@@ -84,7 +110,7 @@ class Coach():
         f.closed
     
     def load_initial_data(self):
-        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "first_data.tar")
+        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "checkpoint_4.pth.tar.examples")
         with open(examplesFile, "rb") as f:
             self.trainExamplesHistory = Unpickler(f).load()
         self.skipFirstSelfPlay = True
@@ -105,11 +131,10 @@ class Coach():
             self.skipFirstSelfPlay = True
 
     def load_valid_data(self):
-        log.info("Get valid data")
         examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "valid_data.tar")
         with open(examplesFile, "rb") as f:
             valid_data = Unpickler(f).load()
         self.valid_data = []
         for e in valid_data:
             self.valid_data.extend(e)
-        return
+        log.info("Valid data loaded")

@@ -19,6 +19,7 @@ class NNetWrapper():
         if CUDA:
             self.nnet.cuda()
         self.verbose = False
+        self.kld = torch.nn.KLDivLoss(reduction='batchmean')
 
     def train(self, examples):
         optimizer = optim.AdamW(self.nnet.parameters(), lr=LR)
@@ -27,19 +28,16 @@ class NNetWrapper():
             self.nnet.train()
             pi_losses = AverageMeter()
             v_losses = AverageMeter()
-            batch_count = int(len(examples) / BATCH_SIZE)
+            batch_count = len(examples) // BATCH_SIZE
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
-                if _ == 0:
-                    self.valid = True
-                else:
-                    self.valid = False
                 sample_ids = np.random.randint(len(examples), size=BATCH_SIZE)
                 graphs, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
                 batch = next(iter(batch_loader))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
+                #batch로 인해서 문제 안 생긴다.
                 if CUDA:
                     batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
                 out_pis, out_vs = self.nnet(batch)
@@ -57,7 +55,7 @@ class NNetWrapper():
         self.nnet.eval()
         pi_losses = AverageMeter()
         v_losses = AverageMeter()
-        batch_count = 1#int(len(examples))
+        batch_count = 1
         t = tqdm(range(batch_count), desc='Run for valid data')
         self.verbose = True
         for _ in t:
@@ -67,6 +65,7 @@ class NNetWrapper():
             batch = next(iter(batch_loader))
             target_pis = torch.FloatTensor(np.array(pis))
             target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
+            #batch로 인해서 문제 안 생긴다.
             if CUDA:
                 batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
             out_pis, out_vs = self.nnet(batch)
@@ -89,9 +88,10 @@ class NNetWrapper():
 
     def loss_pi(self, targets, outputs):
         if self.verbose:
-            print(" targets:", targets[0][:10])
+            print("targets:", targets[0][:10])
             print("outputs:", torch.exp(outputs[0][:10]))
-        return -torch.sum(targets * outputs) / targets.size()[0]
+        #return -torch.sum(targets * outputs) / targets.size()[0]
+        return self.kld(outputs, targets)
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]

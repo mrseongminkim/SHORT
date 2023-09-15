@@ -1,7 +1,14 @@
+#솔직히 제일 의심가기도 하면서 - 잘 작동하는 것 같기는 함
+#언제나 옵티멀 경로를 뽑아내니까
+#다만 리워드가 로그스케일이고 차이가 적어서 문제가 있긴 함
+#의심 가는 부분도 많다.
+
 import logging
 import math
 
 import numpy as np
+
+from alpha_zero.state_elimination.StateEliminationGame import StateEliminationGame
 
 from config import *
 
@@ -9,54 +16,43 @@ log = logging.getLogger(__name__)
 
 class MCTS():
     def __init__(self, game, nnet):
-        self.game = game
+        self.game: StateEliminationGame = game
         self.nnet = nnet
-        self.Qsa = {}
+        self.Qsa = {} #음의 로그 값
         self.Nsa = {}
         self.Ns = {}
         self.Ps = {}
         self.Es = {}
         self.Vs = {}
+        #error-prone
         self.dead_end = set()
         self.actual_reward = set()
 
     def normalize(self, q, q_max, q_min):
+        #q_max, q_min 모두 음의 로그 값임
         return (q - q_min) / (q_max - q_min + EPS)
 
     def getActionProb(self, gfa):
         for _ in range(NUMBER_OF_MCTS_SIMULATIONS):
             _, dead_end, _ = self.search(gfa)
-            if dead_end: break
+            if dead_end:
+                break
         s = self.game.stringRepresentation(gfa)
-        #visits = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
         action_space = [self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa]
-        #print("visits:", visits)
-        #print("action_space:", action_space)
-        #exit()
         q_max = max(action_space)
         q_min = min(action_space)
-        #print("q_max:", q_max)
-        #print("q_min:", q_min)
-        #print("visits:", visits)
-        #print("action_space:", action_space)
-
         if q_max == q_min:
-            counts = [1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
+            #1 -> 2로 바꾼 이유: 밑에서 q_max일때 2가 나오길래
+            counts = [2 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
         else:
             counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
-        bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
-        bestA = bestAs[0]
-        counts[bestA] += OPTIMAL_BONUS
-
-        '''
-        if temp == 0 and q_max != q_min:
-            bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
-            bestA = np.random.choice(bestAs)
-            probs = [0] * len(counts)
-            probs[bestA] = 1
-            return probs
-        '''
-        counts = [x ** (TEMPERATURE) for x in counts]
+        #bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
+        #bestA = bestAs[0]
+        #이걸를 정말 주는게 맞는가 의문이 계속 든다.
+        #counts[bestA] += OPTIMAL_BONUS
+        #이렇게 되면 사실상 가장 극값만 나오게 됨
+        #진짜 문제는 다른 곳에 있는 것 같다.
+        #counts = [x ** (TEMPERATURE) for x in counts]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
         return probs
@@ -67,10 +63,14 @@ class MCTS():
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(gfa)
         if self.Es[s] != None:
+            #dead_end이면서 actual reward
             return self.Es[s], True, True
         if s not in self.Ps:
+            #처음 방문한 노드
             gfa_representation = self.game.gfa_to_tensor(gfa)
             self.Ps[s], v = self.nnet.predict(gfa_representation)
+            #그리고 이 v는 NN이 GFA의 양의 로그 스케일을 출력했다 가정
+            #한 마디로 NN은 안 좋은 경로일 수록 큰 양수를 출력하게 함
             #NN should return positive value
             if v > 0:
                 v = -v.item()
@@ -91,12 +91,12 @@ class MCTS():
             n = self.game.n
             k = self.game.k
             d = self.game.d
+            #논문 다시 보고 수정할 것
             worst_case = (4 ** n) * k * d
             for a in range(self.game.getActionSize()):
                 if valids[a]:
                     self.Nsa[(s, a)] = 0
                     self.Qsa[(s, a)] = -math.log(worst_case)
-            #print("v:", v)
             return v, False, False
         valids = self.Vs[s]
         cur_best = -float('inf')

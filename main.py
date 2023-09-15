@@ -6,6 +6,7 @@ import itertools
 from pickle import load, dump
 from statistics import mean, stdev
 
+import torch
 import numpy as np
 import coloredlogs
 from FAdo.conversions import *
@@ -22,6 +23,9 @@ from alpha_zero.state_elimination.NNet import NNetWrapper as nn
 
 from config import *
 
+torch.set_printoptions(precision=4, sci_mode=False, linewidth=64)
+np.set_printoptions(precision=4, linewidth=64, suppress=True)
+
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
 
@@ -30,9 +34,6 @@ def generate_test_data(type: str):
         generate_test_nfas()
 
 def train_alpha_zero():
-    print("Let's briefly check the important hyperparameters.")
-    print("\tNUMBER_OF_MCTS_SIMULATIONS: ", NUMBER_OF_MCTS_SIMULATIONS)
-    print("\tCPUCT: ", CPUCT)
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
@@ -47,7 +48,7 @@ def train_alpha_zero():
     if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
-    c.load_initial_data()
+    #c.load_initial_data()
     log.info('Starting the learning process')
     c.learn()
 
@@ -60,6 +61,7 @@ def single_data_for_train_alpha_zero():
     c = Coach(g, nnet)
     log.info('Starting the learning process')
     gfa: GFA = g.get_initial_gfa()
+    gfa_original = gfa.dup()
     mcts = MCTS(g, nnet)
     train_gfa = g.gfa_to_tensor(gfa)
     train_pi = None
@@ -74,9 +76,14 @@ def single_data_for_train_alpha_zero():
         best_pi[best_action] = 1
         action = np.random.choice(len(best_pi), p=best_pi)
         gfa = g.getNextState(gfa, action)
+        print(gfa.delta)
     train_v = -g.getGameEnded(gfa)
     train_data = [[train_gfa, train_pi, train_v]]
-    nnet.train(train_data)
+
+    examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "libera_me.pkl")
+    with open(examplesFile, "wb") as f:
+        dump((gfa_original, train_data), f)
+    #nnet.train(train_data)
 
 def test_alpha_zero_without_mcts(model_updated, type, minimize):
     if not model_updated:
@@ -319,11 +326,37 @@ def test_heuristics(model_updated, type, minimization):
     with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
-import torch
-import numpy
-torch.set_printoptions(precision=4, sci_mode=False, linewidth=999)
-np.set_printoptions(precision=4, linewidth=999, suppress=True)
-train_alpha_zero()
+def libera_me():
+    examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "libera_me.pkl")
+    with open(examplesFile, "rb") as f:
+        gfa, train_data = load(f)
+    graph, pi, v = train_data[0]
+
+    print("pi:", pi)
+    print("v:", v)
+
+    return
+    g = Game()
+    nnet = nn(g)
+    assert LOAD_MODEL
+    nnet.load_checkpoint(CHECKPOINT, LOAD_FOLDER_FILE[1])
+    train_gfa, train_pi, train_v = train_data[0]
+
+    print(gfa_original.States)
+    print(gfa_original.Initial)
+    print(gfa_original.Final)
+    print(gfa_original.delta)
+
+    print(train_gfa)
+
+    pi, v = nnet.predict(train_gfa)
+
+    print("pi", pi)
+    print("train_pi", train_pi)
+
+
+single_data_for_train_alpha_zero()
+#train_alpha_zero()
 
 #get_optimal_ordering()
 #generate_test_data("nfa")
@@ -337,5 +370,4 @@ train_alpha_zero()
 #test_alpha_zero_with_mcts(False, "nfa", False)
 #import torch
 #torch.set_printoptions(precision=4, sci_mode=False)
-
 #single_data_for_train_alpha_zero()

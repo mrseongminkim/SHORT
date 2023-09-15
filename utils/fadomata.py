@@ -11,6 +11,7 @@ from utils.inclusion_checker import *
 from config import *
 
 def rename_states(fa):
+    #0은 존재하지 않는 것, init과 final 또한 MAX_STATES + 2 이하인 정수로 매핑됨
     lst = [str(i) for i in range(1, MAX_STATES + 3)]
     sampled_states_number = random.sample(lst, len(fa.States))
     garbage_name = ['init' for _ in range(len(fa.States))]
@@ -280,6 +281,7 @@ def convert_nfa_to_gfa(nfa: NFA) -> GFA:
         for c in sorted(nfa.delta[s].keys(), reverse=False):
             for s1 in nfa.delta[s][c]:
                 gfa.addTransition(s, c, s1)
+    #empty transition이 생기는 이유(final에서 특히)
     for i in range(len(gfa.States)):
         if i not in gfa.delta:
             gfa.delta[i] = {}

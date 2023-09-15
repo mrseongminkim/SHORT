@@ -31,6 +31,8 @@ class StateEliminationNNet(nn.Module):
 
         self.embedding_with_lstm = EmbeddingWithLSTM()
         self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/embed_lstm.pth"))
+        for param in self.embedding_with_lstm.parameters():
+            param.requires_grad = False
 
         self.bn1 = nn.BatchNorm1d(NUMBER_OF_CHANNELS)
         self.bn2 = nn.BatchNorm1d(NUMBER_OF_CHANNELS)
@@ -65,21 +67,28 @@ class StateEliminationNNet(nn.Module):
 
         source_states = data.edge_index[0]
         target_states = data.edge_index[1]
+
+        assert target_state_numbers.shape[0] == regex.shape[0]
+        assert source_state_numbers.shape[0] == regex.shape[0]
+
         out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
         in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
         data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
 
         data.x = F.relu(self.bn1(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        data.x = F.relu(self.bn2(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
-        data.x = F.relu(self.bn3(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
-        data.x = F.relu(self.bn4(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
-        data.x = F.relu(self.bn5(self.conv5(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
+        #data.x = F.relu(self.bn2(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
+        #data.x = F.relu(self.bn3(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
+        #data.x = F.relu(self.bn4(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
+        #data.x = F.relu(self.bn5(self.conv5(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))) + data.x
 
         s = global_mean_pool(data.x, data.batch)
-        v = F.relu(self.bn_value(self.value_head1(s)))
+
+        #v = F.relu(self.bn_value(self.value_head1(s)))
+        v = F.relu(self.value_head1(s))
         v = self.value_head2(v)
 
-        pi = F.relu(self.bn_policy(self.policy_head1(data.x)))
+        #pi = F.relu(self.bn_policy(self.policy_head1(data.x)))
+        pi = F.relu(self.policy_head1(data.x))
         pi = self.policy_head2(pi)
         new_x = torch.full((data.batch.max().item() + 1, self.action_size), -999.0).cuda()
         prev, idx = -1, -1
@@ -90,4 +99,5 @@ class StateEliminationNNet(nn.Module):
                 idx = 0
             new_x[graph_index][idx] = pi[i]
             idx += 1
+        #print("new_x:", new_x[0, :10])
         return F.log_softmax(new_x, dim=1), v
