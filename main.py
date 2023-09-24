@@ -23,8 +23,8 @@ from alpha_zero.state_elimination.NNet import NNetWrapper as nn
 
 from config import *
 
-torch.set_printoptions(precision=4, sci_mode=False, linewidth=64)
-np.set_printoptions(precision=4, linewidth=64, suppress=True)
+torch.set_printoptions(precision=4, sci_mode=False, linewidth=512)
+np.set_printoptions(precision=4, linewidth=512, suppress=True)
 
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
@@ -76,14 +76,14 @@ def single_data_for_train_alpha_zero():
         best_pi[best_action] = 1
         action = np.random.choice(len(best_pi), p=best_pi)
         gfa = g.getNextState(gfa, action)
-        print(gfa.delta)
+        #print(gfa.delta)
     train_v = -g.getGameEnded(gfa)
     train_data = [[train_gfa, train_pi, train_v]]
 
     examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "libera_me.pkl")
     with open(examplesFile, "wb") as f:
         dump((gfa_original, train_data), f)
-    #nnet.train(train_data)
+    nnet.train(train_data)
 
 def test_alpha_zero_without_mcts(model_updated, type, minimize):
     if not model_updated:
@@ -330,32 +330,28 @@ def libera_me():
     examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "libera_me.pkl")
     with open(examplesFile, "rb") as f:
         gfa, train_data = load(f)
-    graph, pi, v = train_data[0]
+    graph, y_pi, y_v = train_data[0]
+    y_pi = np.array(y_pi)
 
-    print("pi:", pi)
-    print("v:", v)
+    print("States:", gfa.States)
+    print("delta:", gfa.delta)
 
-    return
     g = Game()
     nnet = nn(g)
     assert LOAD_MODEL
     nnet.load_checkpoint(CHECKPOINT, LOAD_FOLDER_FILE[1])
-    train_gfa, train_pi, train_v = train_data[0]
 
-    print(gfa_original.States)
-    print(gfa_original.Initial)
-    print(gfa_original.Final)
-    print(gfa_original.delta)
+    pi, v = nnet.predict(graph)
 
-    print(train_gfa)
-
-    pi, v = nnet.predict(train_gfa)
-
-    print("pi", pi)
-    print("train_pi", train_pi)
-
-
+    '''
+    print("pi:", pi[:8])
+    print("y_pi:", y_pi[:8])
+    print("train_pi", v)
+    print("y_v", y_v)
+    '''
+    
 single_data_for_train_alpha_zero()
+#libera_me()
 #train_alpha_zero()
 
 #get_optimal_ordering()

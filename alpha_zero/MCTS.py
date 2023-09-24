@@ -46,13 +46,14 @@ class MCTS():
             counts = [2 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
         else:
             counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
-        #bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
+        counts = np.array(counts)
+        bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
         #bestA = bestAs[0]
         #이걸를 정말 주는게 맞는가 의문이 계속 든다.
-        #counts[bestA] += OPTIMAL_BONUS
+        counts[bestAs] += OPTIMAL_BONUS
         #이렇게 되면 사실상 가장 극값만 나오게 됨
         #진짜 문제는 다른 곳에 있는 것 같다.
-        #counts = [x ** (TEMPERATURE) for x in counts]
+        counts = [x ** (TEMPERATURE) for x in counts]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
         return probs
