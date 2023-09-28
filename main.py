@@ -83,7 +83,9 @@ def single_data_for_train_alpha_zero():
     examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "libera_me.pkl")
     with open(examplesFile, "wb") as f:
         dump((gfa_original, train_data), f)
-    nnet.train(train_data)
+    
+    print(train_pi)
+    #nnet.train(train_data)
 
 def test_alpha_zero_without_mcts(model_updated, type, minimize):
     if not model_updated:
@@ -349,21 +351,5 @@ def libera_me():
     print("train_pi", v)
     print("y_v", y_v)
     '''
-    
-single_data_for_train_alpha_zero()
-#libera_me()
-#train_alpha_zero()
 
-#get_optimal_ordering()
-#generate_test_data("nfa")
-#test_alpha_zero_with_mcts(True, "nfa", False)
-#test_alpha_zero_with_mcts(False, "nfa", False)
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)
-#test_alpha_zero_with_mcts(True, "nfa", False)
-#test_alpha_zero_with_mcts(False, "nfa", False)
-#import torch
-#torch.set_printoptions(precision=4, sci_mode=False)
-#single_data_for_train_alpha_zero()
+train_alpha_zero()

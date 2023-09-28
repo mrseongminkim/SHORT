@@ -25,6 +25,10 @@ class NNetWrapper():
         optimizer = optim.AdamW(self.nnet.parameters(), lr=LR)
         for epoch in range(EPOCHS):
             print('EPOCH ::: ' + str(epoch + 1))
+            if epoch == EPOCHS - 1:
+                self.verbose = True
+            else:
+                self.verbose = False
             #print(self.nnet.policy_head1.weight)
             self.nnet.train()
             pi_losses = AverageMeter()
@@ -51,6 +55,7 @@ class NNetWrapper():
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
+                self.verbose = False
 
     def test_valid_data(self, examples):
         self.nnet.eval()
@@ -88,11 +93,11 @@ class NNetWrapper():
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
-        if VERBOSE:
-            print("targets:", targets[0][:10])
-            print("outputs:", torch.exp(outputs[0][:10]))
-        return -torch.sum(targets * outputs) / targets.size()[0]
-        #return self.kld(outputs, targets)
+        if self.verbose:
+            print("targets:", targets[0][:12])
+            print("outputs:", torch.exp(outputs[0][:12]))
+        #return -torch.sum(targets * outputs) / targets.size()[0]
+        return self.kld(outputs, targets)
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]

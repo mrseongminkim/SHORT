@@ -48,15 +48,15 @@ class StateEliminationNNet(nn.Module):
         self.conv4 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
         self.conv5 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
 
-        self.policy_head1 = nn.Linear(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS)
-        self.policy_head2 = nn.Linear(NUMBER_OF_CHANNELS, 32)
-        self.policy_head3 = nn.Linear(32, 16)
-        self.policy_head4 = nn.Linear(16, 8)
-        self.policy_head5 = nn.Linear(8, 4)
-        self.policy_head6 = nn.Linear(4, 2)
-        self.policy_head7 = nn.Linear(2, 1)
+        self.policy_head1 = nn.Linear(289, 128)
+        self.policy_head2 = nn.Linear(128, 64)
+        self.policy_head3 = nn.Linear(64, 32)
+        self.policy_head4 = nn.Linear(32, 1)
+        #self.policy_head5 = nn.Linear(16, 8)
+        #self.policy_head6 = nn.Linear(8, 4)
+        #self.policy_head7 = nn.Linear(4, 1)
 
-        self.value_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
+        self.value_head1 = nn.Linear(289, 32)
         self.value_head2 = nn.Linear(32, 1)
 
     def forward(self, data):
@@ -78,15 +78,16 @@ class StateEliminationNNet(nn.Module):
         out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
         in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
         data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
-        
+
 
 
         #data.x는 source_state_number: 50, init: 1, final: 1, in_transitions: 117, out_transitions: 117
-        data.x = F.relu(self.bn1(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        data.x = F.relu(self.bn2(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        data.x = F.relu(self.bn3(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        data.x = F.relu(self.bn4(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        data.x = F.relu(self.bn5(self.conv5(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        #이 과정이 학습을 방해할 수 있음
+        #data.x = F.relu(self.bn1(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        #data.x = F.relu(self.bn2(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        #data.x = F.relu(self.bn3(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        #data.x = F.relu(self.bn4(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        #data.x = F.relu(self.bn5(self.conv5(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
 
         #print("data.x:", data.x)
         #print("sum: ", data.x.sum(1))
@@ -97,23 +98,16 @@ class StateEliminationNNet(nn.Module):
         v = F.relu(self.value_head1(s))
         v = self.value_head2(v)
 
-        for i in range(data.x.shape[0]):
-            print(f"data.x[{i}]:", data.x[i])
-        print(data.x.shape)
+        #for i in range(data.x.shape[0]):
+        #    print(f"data.x[{i}]:", data.x[i])
+        #print(data.x.shape)
         pi = F.relu(self.policy_head1(data.x))
-        print(pi.shape)
         pi = F.relu(self.policy_head2(pi))
-        print(pi.shape)
         pi = F.relu(self.policy_head3(pi))
-        print(pi.shape)
-        pi = F.relu(self.policy_head4(pi))
-        print(pi.shape)
-        pi = F.relu(self.policy_head5(pi))
-        print("pi5:", pi.shape)
-        pi = F.relu(self.policy_head6(pi))
-        print("pi6:", pi.shape)
-        pi = self.policy_head7(pi)
-        print("pi7:", pi)
+        pi = self.policy_head4(pi)
+        #pi = F.relu(self.policy_head5(pi))
+        #pi = F.relu(self.policy_head6(pi))
+        #pi = self.policy_head7(pi)
         
         #print("pi2:", pi.sum(1))
         new_x = torch.full((data.batch.max().item() + 1, self.action_size), -999.0).cuda()
@@ -125,5 +119,5 @@ class StateEliminationNNet(nn.Module):
                 idx = 0
             new_x[graph_index][idx] = pi[i]
             idx += 1
-        print("new_x:", new_x[0, :10])
+        #print("new_x:", new_x[0, :10])
         return F.log_softmax(new_x, dim=1), v
