@@ -36,6 +36,24 @@ class MCTS():
         #MCTS가 잘못인지 보려면 특정 조건을 만족하는 pi를 반환하고 뉴럴넷이 잘 학습하는지 보자
         #특정 조건은 잘 학습하는데 리워드 기반은 못 한다면 MCTS가 잘못이다.
 
+        #Case: init 부터 hop이 큰 것부터 지우기
+        from collections import deque
+        counts = np.array([0 for _ in range(self.game.getActionSize())])
+        visited = set([gfa.Initial])
+        q = deque([gfa.Initial])
+        while q:
+            cur = q.popleft()
+            for next in gfa.delta[cur]:
+                if next not in visited:
+                    counts[next] = counts[cur] + 1
+                    q.append(next)
+                    visited.add(next)
+        counts[list(gfa.Final)[0]] = 0
+        counts_sum = float(sum(counts))
+        probs = [x / counts_sum for x in counts]
+        return probs
+
+
         #'''
         #Case: state weight가 큰 것먼저 지우게 하기
         from utils.fadomata import get_weight

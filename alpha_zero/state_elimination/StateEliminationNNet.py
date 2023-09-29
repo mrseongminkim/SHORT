@@ -48,15 +48,15 @@ class StateEliminationNNet(nn.Module):
         self.conv4 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
         self.conv5 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
 
-        self.policy_head1 = nn.Linear(289, 128)
-        self.policy_head2 = nn.Linear(128, 64)
-        self.policy_head3 = nn.Linear(64, 32)
-        self.policy_head4 = nn.Linear(32, 1)
+        self.policy_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
+        self.policy_head2 = nn.Linear(32, 1)
+        #self.policy_head3 = nn.Linear(64, 32)
+        #self.policy_head4 = nn.Linear(32, 1)
         #self.policy_head5 = nn.Linear(16, 8)
         #self.policy_head6 = nn.Linear(8, 4)
         #self.policy_head7 = nn.Linear(4, 1)
 
-        self.value_head1 = nn.Linear(289, 32)
+        self.value_head1 = nn.Linear(NUMBER_OF_CHANNELS, 32)
         self.value_head2 = nn.Linear(32, 1)
 
     def forward(self, data):
@@ -83,9 +83,9 @@ class StateEliminationNNet(nn.Module):
 
         #data.x는 source_state_number: 50, init: 1, final: 1, in_transitions: 117, out_transitions: 117
         #이 과정이 학습을 방해할 수 있음
-        #data.x = F.relu(self.bn1(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        #data.x = F.relu(self.bn2(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
-        #data.x = F.relu(self.bn3(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        data.x = F.relu(self.bn1(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        data.x = F.relu(self.bn2(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
+        data.x = F.relu(self.bn3(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
         #data.x = F.relu(self.bn4(self.conv4(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
         #data.x = F.relu(self.bn5(self.conv5(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr)))
 
@@ -102,9 +102,9 @@ class StateEliminationNNet(nn.Module):
         #    print(f"data.x[{i}]:", data.x[i])
         #print(data.x.shape)
         pi = F.relu(self.policy_head1(data.x))
-        pi = F.relu(self.policy_head2(pi))
-        pi = F.relu(self.policy_head3(pi))
-        pi = self.policy_head4(pi)
+        pi = self.policy_head2(pi)
+        #pi = F.relu(self.policy_head3(pi))
+        #pi = self.policy_head4(pi)
         #pi = F.relu(self.policy_head5(pi))
         #pi = F.relu(self.policy_head6(pi))
         #pi = self.policy_head7(pi)
