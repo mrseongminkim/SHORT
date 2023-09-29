@@ -110,7 +110,7 @@ class Coach():
         f.closed
     
     def load_initial_data(self):
-        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "checkpoint_4.pth.tar.examples")
+        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "initial_data.pkl")
         with open(examplesFile, "rb") as f:
             self.trainExamplesHistory = Unpickler(f).load()
         self.skipFirstSelfPlay = True

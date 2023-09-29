@@ -20,7 +20,7 @@ class StateEliminationGame():
 
     def get_initial_gfa(self, gfa=None, n=None, k=None, d=None):
         if gfa is None:
-            n, k, d = 6, 5, 0.1
+            n, k, d = 5, 5, 0.1
             gfa = generate(n, k, d)
         self.n, self.k, self.d = n, k, d
         return gfa

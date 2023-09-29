@@ -33,9 +33,7 @@ class MCTS():
         return (q - q_min) / (q_max - q_min + EPS)
 
     def getActionProb(self, gfa):
-        #MCTS가 잘못인지 보려면 특정 조건을 만족하는 pi를 반환하고 뉴럴넷이 잘 학습하는지 보자
-        #특정 조건은 잘 학습하는데 리워드 기반은 못 한다면 MCTS가 잘못이다.
-
+        '''
         #Case: init 부터 hop이 큰 것부터 지우기
         from collections import deque
         counts = np.array([0 for _ in range(self.game.getActionSize())])
@@ -53,8 +51,6 @@ class MCTS():
         probs = [x / counts_sum for x in counts]
         return probs
 
-
-        #'''
         #Case: state weight가 큰 것먼저 지우게 하기
         from utils.fadomata import get_weight
         counts = np.array([0 for _ in range(self.game.getActionSize())])
@@ -64,7 +60,6 @@ class MCTS():
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
         return probs
-        #'''
 
         #Case: state 숫자가 큰 것 지우게 하기
         counts = np.array([0 for _ in range(self.game.getActionSize())])
@@ -75,6 +70,8 @@ class MCTS():
         probs = [x / counts_sum for x in counts]
         #print(probs)
         return probs
+        '''
+
         for _ in range(NUMBER_OF_MCTS_SIMULATIONS):
             _, dead_end, _ = self.search(gfa)
             if dead_end:
@@ -89,13 +86,13 @@ class MCTS():
         else:
             counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
         counts = np.array(counts)
-        bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
+        #bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
         #bestA = bestAs[0]
         #이걸를 정말 주는게 맞는가 의문이 계속 든다.
-        counts[bestAs] += OPTIMAL_BONUS
+        #counts[bestAs] += OPTIMAL_BONUS
         #이렇게 되면 사실상 가장 극값만 나오게 됨
         #진짜 문제는 다른 곳에 있는 것 같다.
-        counts = [x ** (TEMPERATURE) for x in counts]
+        #counts = [x ** (TEMPERATURE) for x in counts]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
         return probs
