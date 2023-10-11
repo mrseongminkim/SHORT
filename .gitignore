@@ -4,5 +4,6 @@
 *.pdf
 graph_maker.py
 checkpoint*
-.venv
+*.csv
 *.pkl
+.venv

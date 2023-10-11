@@ -6,6 +6,7 @@ import itertools
 from pickle import load, dump
 from statistics import mean, stdev
 
+import torch
 import numpy as np
 import coloredlogs
 from FAdo.conversions import *
@@ -22,6 +23,9 @@ from alpha_zero.state_elimination.NNet import NNetWrapper as nn
 
 from config import *
 
+torch.set_printoptions(precision=4, sci_mode=False, linewidth=512)
+np.set_printoptions(precision=4, linewidth=512, suppress=True)
+
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
 
@@ -30,10 +34,6 @@ def generate_test_data(type: str):
         generate_test_nfas()
 
 def train_alpha_zero():
-    print("Let's briefly check the important hyperparameters.")
-    print("\tNUMBER_OF_MCTS_SIMULATIONS: ", NUMBER_OF_MCTS_SIMULATIONS)
-    print("\tCPUCT: ", CPUCT)
-    print("\tCUDA: ", CUDA)
     log.info('Loading %s...', Game.__name__)
     g = Game()
     log.info('Loading %s...', nn.__name__)
@@ -48,6 +48,7 @@ def train_alpha_zero():
     if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
+    #c.load_initial_data()
     log.info('Starting the learning process')
     c.learn()
 
@@ -283,12 +284,4 @@ def test_heuristics(model_updated, type, minimization):
     with open("./result/heuristics_greedy_" + type + "_" + str(minimization) + ".pkl", "wb") as fp:
         dump(exp, fp)
 
-#get_optimal_ordering()
-#generate_test_data("nfa")
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)
-#test_alpha_zero_with_mcts(True, "nfa", False)
-#test_alpha_zero_with_mcts(False, "nfa", False)
 train_alpha_zero()
