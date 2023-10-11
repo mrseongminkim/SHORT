@@ -56,6 +56,8 @@ class NNetWrapper():
                 total_loss.backward()
                 optimizer.step()
                 self.verbose = False
+            print("pi loss:", pi_losses.avg)
+            print("v loss:", v_losses.avg)
 
     def test_valid_data(self, examples):
         self.nnet.eval()

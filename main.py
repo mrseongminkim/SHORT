@@ -106,7 +106,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            if n + MIN_N != VICTIM: continue
+            #if n + MIN_N != VICTIM: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -114,7 +114,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             while g.getGameEnded(gfa) == None:
                 gfa_representation = g.gfa_to_tensor(gfa)
                 policy, _ = nnet.predict(gfa_representation)
-                print("mcts off\t:", policy[:8])
+                #print("mcts off\t:", policy[:10])
                 #return
                 valid_moves = g.getValidMoves(gfa)
                 policy = policy * valid_moves
@@ -126,6 +126,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
+            #print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -162,7 +163,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             while g.getGameEnded(gfa) == None:
                 pi = mcts.getActionProb(gfa)
                 pi = np.array(pi)
-                print("mcts on \t:", pi[:8])
+                print("mcts on \t:", pi[:10])
                 #return
                 best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
                 best_action = np.random.choice(best_actions)
@@ -174,7 +175,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
             #print("dead_end:", len(mcts.dead_end))
-            #print("result length:", result_length)
+            print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -353,3 +354,9 @@ def libera_me():
     '''
 
 train_alpha_zero()
+
+#test_alpha_zero_without_mcts(True, "nfa", False)
+#test_alpha_zero_without_mcts(False, "nfa", False)
+
+#test_heuristics(True, "nfa", False)
+#test_heuristics(False, "nfa", False)
