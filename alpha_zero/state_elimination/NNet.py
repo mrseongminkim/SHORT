@@ -4,8 +4,6 @@ import torch
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
-from torch_geometric.loader import DataLoader
-from torchviz import make_dot
 
 from alpha_zero.utils import *
 from alpha_zero.state_elimination.StateEliminationNNet import StateEliminationNNet as sennet
@@ -19,7 +17,6 @@ class NNetWrapper():
         if CUDA:
             self.nnet.cuda()
         self.verbose = False
-        self.kld = torch.nn.KLDivLoss(reduction='batchmean')
 
     def train(self, examples):
         optimizer = optim.AdamW(self.nnet.parameters(), lr=LR)
@@ -29,7 +26,6 @@ class NNetWrapper():
                 self.verbose = True
             else:
                 self.verbose = False
-            #print(self.nnet.policy_head1.weight)
             self.nnet.train()
             pi_losses = AverageMeter()
             v_losses = AverageMeter()
@@ -37,20 +33,18 @@ class NNetWrapper():
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
                 sample_ids = np.random.randint(len(examples), size=BATCH_SIZE)
-                graphs, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
-                batch = next(iter(batch_loader))
+                gfas, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+                gfas = torch.LongTensor(np.array(gfas))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
-                #batch로 인해서 문제 안 생긴다.
                 if CUDA:
-                    batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
-                out_pis, out_vs = self.nnet(batch)
+                    gfas, target_pis, target_vs = gfas.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                out_pis, out_vs = self.nnet(gfas)
                 l_pi = self.loss_pi(target_pis, out_pis)
                 l_v = self.loss_v(target_vs, out_vs)
                 total_loss = l_pi + l_v
-                pi_losses.update(l_pi.item(), len(graphs))
-                v_losses.update(l_v.item(), len(graphs))
+                pi_losses.update(l_pi.item(), gfas.size(0))
+                v_losses.update(l_v.item(), gfas.size(0))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
                 optimizer.zero_grad()
                 total_loss.backward()
@@ -68,38 +62,34 @@ class NNetWrapper():
         self.verbose = True
         for _ in t:
             sample_ids = [i for i in range(len(examples))]
-            graphs, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-            batch_loader = DataLoader(graphs, batch_size=len(graphs), shuffle=False)
-            batch = next(iter(batch_loader))
+            gfas, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+            gfas = torch.LongTensor(np.array(gfas))
             target_pis = torch.FloatTensor(np.array(pis))
             target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
-            #batch로 인해서 문제 안 생긴다.
             if CUDA:
-                batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
-            out_pis, out_vs = self.nnet(batch)
+                gfas, target_pis, target_vs = gfas.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+            out_pis, out_vs = self.nnet(gfas)
             l_pi = self.loss_pi(target_pis, out_pis)
             l_v = self.loss_v(target_vs, out_vs)
-            pi_losses.update(l_pi.item(), len(graphs))
-            v_losses.update(l_v.item(), len(graphs))
+            pi_losses.update(l_pi.item(), gfas.size(0))
+            v_losses.update(l_v.item(), gfas.size(0))
             t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
         self.verbose = False
 
-    def predict(self, graph):
-        batch_loader = DataLoader([graph], batch_size=1, shuffle=False)
+    def predict(self, gfa):
         self.nnet.eval()
         with torch.no_grad():
-            batch = next(iter(batch_loader))
             if CUDA:
-                batch.contiguous().cuda()
-            pi, v = self.nnet(batch)
+                gfa = torch.LongTensor(np.array(gfa)).unsqueeze(0)
+                gfa = gfa.contiguous().cuda()
+            pi, v = self.nnet(gfa)
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
         if self.verbose:
             print("targets:", targets[0][:12])
             print("outputs:", torch.exp(outputs[0][:12]))
-        #return -torch.sum(targets * outputs) / targets.size()[0]
-        return self.kld(outputs, targets)
+        return -torch.sum(targets * outputs) / targets.size()[0]
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]

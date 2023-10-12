@@ -48,7 +48,7 @@ def train_alpha_zero():
     if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
-    c.load_initial_data()
+    #c.load_initial_data()
     log.info('Starting the learning process')
     c.learn()
 
@@ -354,9 +354,3 @@ def libera_me():
     '''
 
 train_alpha_zero()
-
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
-
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)

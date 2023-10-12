@@ -1,8 +1,8 @@
 from math import log
+from collections import defaultdict
 
 import torch
 from FAdo.reex import *
-from torch_geometric.data import Data
 
 from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
@@ -25,7 +25,9 @@ class StateEliminationGame():
         self.n, self.k, self.d = n, k, d
         return gfa
 
-    def get_encoded_regex(self, regex):
+    def get_encoded_regex(self, regex=None):
+        if regex == None:
+            return [0] * MAX_LEN
         #NB: This technique cannot be applied to GFA with an alphabet size of more than 9.
         encoded_regex = [word_to_ix[word] for word in list(regex.rpn().replace("@epsilon", "@").replace("'", ""))[:MAX_LEN]]
         if len(encoded_regex) < MAX_LEN:
@@ -38,29 +40,53 @@ class StateEliminationGame():
         one_hot_vector[state_number] = 1
         return one_hot_vector
 
+    def get_transitions(self, gfa):
+        in_transitions = defaultdict(set)
+        out_transitions = defaultdict(set)
+        for i in gfa.delta:
+            for j in gfa.delta[i]:
+                in_transitions[j].add(i)
+                out_transitions[i].add(j)
+        return in_transitions, out_transitions
+
     def gfa_to_tensor(self, gfa):
-        num_nodes = len(gfa.States)
-        x = []
-        edge_index = [[], []]
-        edge_attr = []
-        for source in range(len(gfa.States)):
-            source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
-            #디버깅할 때는 보기 쉽게 [source] 어때
-            is_initial_state = 1 if source == gfa.Initial else 0
-            is_final_state = 1 if source in gfa.Final else 0
-            x.append(source_state_number + [is_initial_state, is_final_state])
-            for target in range(len(gfa.States)):
-                if target in gfa.delta[source]:
-                    target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
-                    edge_index[0].append(source)
-                    edge_index[1].append(target)
-                    edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
-        x = torch.LongTensor(x)
-        assert num_nodes == len(x)
-        edge_index = torch.LongTensor(edge_index)
-        edge_attr = torch.LongTensor(edge_attr)
-        graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
-        return graph
+        action_size = self.getActionSize()
+        in_transitions, out_transitions = self.get_transitions(gfa)
+        tensor = []
+        for i in range(action_size):
+            if i < len(gfa.States):
+                source_state_number = self.get_one_hot_vector(int(gfa.States[i]))
+            else:
+                source_state_number = self.get_one_hot_vector(0)
+            is_initial_state = [1] if i == gfa.Initial else [0]
+            is_final_state = [1] if i in gfa.Final else [0]
+            in_transition = []
+            in_transition_state = []
+            out_transition = []
+            out_transition_state = []
+            for j in range(action_size):
+                if j == len(gfa.States):
+                    in_transition += self.get_encoded_regex() * (action_size - len(gfa.States))
+                    out_transition += self.get_encoded_regex() * (action_size - len(gfa.States))
+                    in_transition_state += self.get_one_hot_vector(0) * (action_size - len(gfa.States))
+                    out_transition_state += self.get_one_hot_vector(0) * (action_size - len(gfa.States))
+                    break
+                #이거 그냥 delta 쓰면 되잖아;;;
+                if j in in_transitions[i]:
+                    in_transition += self.get_encoded_regex(gfa.delta[j][i])
+                    in_transition_state += self.get_one_hot_vector(int(gfa.States[j]))
+                else:
+                    in_transition += self.get_encoded_regex()
+                    in_transition_state += self.get_one_hot_vector(0)
+                if j in out_transitions[i]:
+                    out_transition += self.get_encoded_regex(gfa.delta[i][j])
+                    out_transition_state += self.get_one_hot_vector(int(gfa.States[j]))
+                else:
+                    out_transition += self.get_encoded_regex()
+                    out_transition_state += self.get_one_hot_vector(0)
+            state_information = source_state_number + is_initial_state + is_final_state + in_transition + in_transition_state + out_transition + out_transition_state
+            tensor.append(state_information)
+        return tensor
 
     def getActionSize(self):
         return self.maxN + 2
@@ -78,7 +104,7 @@ class StateEliminationGame():
     def getValidMoves(self, gfa):
         initial_state = gfa.Initial
         final_state = list(gfa.Final)[0]
-        validMoves = [0 for i in range(self.maxN + 2)]
+        validMoves = [0 for _ in range(self.maxN + 2)]
         for i in range(len(gfa.States)):
             if i != initial_state and i != final_state:
                 validMoves[i] = 1
@@ -88,27 +114,20 @@ class StateEliminationGame():
         initial_state = gfa.Initial
         final_state = list(gfa.Final)[0]
         intermediate_state = 3 - (initial_state + final_state)
-
         alpha = gfa.delta[initial_state][intermediate_state]
         beta = CStar(gfa.delta[intermediate_state][intermediate_state]) if intermediate_state in gfa.delta[intermediate_state] else None
         gamma = gfa.delta[intermediate_state][final_state]
         direct_edge = gfa.delta[initial_state][final_state] if final_state in gfa.delta[initial_state] else None
-
         result = CConcat(CConcat(alpha, beta), gamma) if beta is not None else CConcat(alpha, gamma)
         result = CDisj(direct_edge, result) if direct_edge is not None else result
-
         return result
 
     def getGameEnded(self, gfa):
-        #state가 3이면 init-bridge-final의 linear한 형상을 가짐
-        #init -> final의 direct edge와 linear한 edge를 이어주면 됨
         if len(gfa.States) == 3:
             result = self.get_resulting_regex(gfa)
             length = result.treeLength()
-            #로그를 취해서 값이 너무 작아짐 -> 작은 차이가 없어지는 것이 문제
             reward = -log(length)
             return reward
-        #n=3인 GFA에서 간혹 나올 수 있어서 예외로 처리해줌
         elif len(gfa.States) == 2:
             initial_state = gfa.Initial
             final_state = list(gfa.Final)[0]
@@ -116,7 +135,6 @@ class StateEliminationGame():
             assert final_state not in gfa.delta[final_state]
             length = gfa.delta[initial_state][final_state].treeLength()
             reward = -log(length)
-            #return 문이 없었는데... 어차피 이 상황은 test에나 발생해서 문제 없었다.
             return reward
         else:
             return None
