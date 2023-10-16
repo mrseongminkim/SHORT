@@ -82,11 +82,10 @@ class Coach():
                     self.mcts = MCTS(self.game, self.nnet)
                     iterationTrainExamples += self.executeEpisode()
                 self.trainExamplesHistory.append(iterationTrainExamples)
-            #여기부터는 학습 - 검증 완료
             if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
                 log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
                 self.trainExamplesHistory.pop(0)
-            #self.saveTrainExamples(i - 1)
+            self.saveTrainExamples(i - 1)
             trainExamples = []
             for e in self.trainExamplesHistory:
                 trainExamples.extend(e)
@@ -95,8 +94,7 @@ class Coach():
             log.info("Testing for valid data")
             self.nnet.test_valid_data(self.valid_data)
             log.info("ACCEPTING NEW MODEL")
-            self.nnet.save_checkpoint(folder=CHECKPOINT, filename="ass")
-            #self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
+            self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

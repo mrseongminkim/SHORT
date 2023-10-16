@@ -23,8 +23,8 @@ from alpha_zero.state_elimination.NNet import NNetWrapper as nn
 
 from config import *
 
-torch.set_printoptions(precision=4, sci_mode=False, linewidth=512)
-np.set_printoptions(precision=4, linewidth=512, suppress=True)
+torch.set_printoptions(precision=4, sci_mode=False, linewidth=1024)
+np.set_printoptions(precision=4, linewidth=1024, suppress=True)
 
 log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')
@@ -48,7 +48,7 @@ def train_alpha_zero():
     if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
-    c.load_initial_data()
+    #c.load_initial_data()
     log.info('Starting the learning process')
     c.learn()
 
@@ -106,7 +106,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != VICTIM: continue
+            #if n + MIN_N != VICTIM or i != 28: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -117,9 +117,15 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
                 #print("mcts off\t:", policy[:10])
                 #return
                 valid_moves = g.getValidMoves(gfa)
+                #print("States:", gfa.States)
+                #print("raw policy: ", policy)
+                raw_policy = policy
                 policy = policy * valid_moves
                 if not policy.any():
                     print("Poor prediction")
+                    print("policy:", raw_policy)
+                    print("valid_moves:", valid_moves)
+                    exit()
                     policy = valid_moves
                 action = np.argmax(policy)
                 eliminate_with_minimization(gfa, action, minimize=minimize)

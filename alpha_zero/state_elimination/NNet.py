@@ -56,8 +56,8 @@ class NNetWrapper():
                 total_loss.backward()
                 optimizer.step()
                 self.verbose = False
-            print("pi loss:", pi_losses.avg)
-            print("v loss:", v_losses.avg)
+            #print("pi loss:", pi_losses.avg)
+            #print("v loss:", v_losses.avg)
 
     def test_valid_data(self, examples):
         self.nnet.eval()
@@ -98,8 +98,8 @@ class NNetWrapper():
         if self.verbose:
             print("targets:", targets[0][:12])
             print("outputs:", torch.exp(outputs[0][:12]))
-        #return -torch.sum(targets * outputs) / targets.size()[0]
-        return self.kld(outputs, targets)
+        return -torch.sum(targets * outputs) / targets.size()[0]
+        #return self.kld(outputs, targets)
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]
