@@ -76,6 +76,7 @@ class Coach():
     def learn(self):
         for i in range(1, NUMBER_OF_ITERATIONS + 1):
             log.info(f"Starting Iter #{i} ...")
+            print(f"Iter {i}")
             if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=MAXIMUM_LENGTH_OF_QUEUE)
                 for _ in tqdm(range(NUMBER_OF_EPISODES), desc="Self Play"):
@@ -85,7 +86,8 @@ class Coach():
             if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
                 log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
                 self.trainExamplesHistory.pop(0)
-            self.saveTrainExamples(i - 1)
+            if i % 100 == 0:
+                self.saveTrainExamples(i - 1)
             trainExamples = []
             for e in self.trainExamplesHistory:
                 trainExamples.extend(e)

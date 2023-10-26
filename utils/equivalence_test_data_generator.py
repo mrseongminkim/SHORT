@@ -10,27 +10,33 @@ from utils.fadomata import convert_nfa_to_gfa, shuffle_fa
 annotation_file = open("./equivalence_test_data/annotations_file.csv", "w", newline="")
 writer = csv.writer(annotation_file)
 
+NUM_OF_ORDER = 10
+NUM_OF_ELIM = 10
+
+#Total: 1,350,000
+#Positive case: 675,000
+#Negative case: 675,000
+
 #there will be 2 * 90 * number_of_pairs of data cases (accept / reject)
 #there will be 2 * 10 * number_of_pairs NFAs
-number_of_pairs = 556
-count = 0
-
+#number_of_pairs = 556
+#count = 0
 for _ in range(number_of_pairs):
-    nfa_1: NFA = generate(8, 5, 0.1, "nfa")
-    nfa_2: NFA = generate(8, 5, 0.1, "nfa")
+    nfa_1: NFA = generate(10, 5, 0.1, "nfa")
+    nfa_2: NFA = generate(10, 5, 0.1, "nfa")
     nfa_1.Sigma = {'0', '1', '2', '3', '4', '5'}
     nfa_2.Sigma = {'0', '1', '2', '3', '4', '5'}
     while nfa_1 == nfa_2:
-        nfa_2: NFA = generate(8, 5, 0.1, "nfa")
+        nfa_2: NFA = generate(10, 5, 0.1, "nfa")
         nfa_2.Sigma = {'0', '1', '2', '3', '4', '5'}
     nfa_1: GFA = convert_nfa_to_gfa(nfa_1)
     nfa_2: GFA = convert_nfa_to_gfa(nfa_2)
     #now nfa_1 and nfa_2 are different
 
     nfa_1_equivalences = [nfa_1.dup()]
-    for __ in range(4):
+    for __ in range(NUM_OF_ORDER):
         nfa_1_equivalences.append(shuffle_fa(nfa_1.dup()))
-    for i in range(5):
+    for i in range(NUM_OF_ELIM):
         nfa_1.eliminateState(1)
         nfa_1_equivalences.append(nfa_1)
     #nfa_1's equivalences

@@ -1,4 +1,5 @@
 import os
+import logging
 
 import torch
 import torch.optim as optim
@@ -12,6 +13,8 @@ from alpha_zero.state_elimination.StateEliminationNNet import StateEliminationNN
 
 from config import *
 
+log = logging.getLogger(__name__)
+
 class NNetWrapper():
     def __init__(self, game):
         self.nnet = sennet(game)
@@ -23,8 +26,9 @@ class NNetWrapper():
 
     def train(self, examples):
         optimizer = optim.AdamW(self.nnet.parameters(), lr=LR)
+        pi_loss = 0
         for epoch in range(EPOCHS):
-            print('EPOCH ::: ' + str(epoch + 1))
+            log.info('EPOCH ::: ' + str(epoch + 1))
             if epoch == EPOCHS - 1:
                 self.verbose = True
             else:
@@ -52,10 +56,12 @@ class NNetWrapper():
                 pi_losses.update(l_pi.item(), len(graphs))
                 v_losses.update(l_v.item(), len(graphs))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
+                pi_loss = pi_losses
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
                 self.verbose = False
+        print("train_loss:", pi_loss)
             #print("pi loss:", pi_losses.avg)
             #print("v loss:", v_losses.avg)
 
@@ -73,7 +79,6 @@ class NNetWrapper():
             batch = next(iter(batch_loader))
             target_pis = torch.FloatTensor(np.array(pis))
             target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
-            #batch로 인해서 문제 안 생긴다.
             if CUDA:
                 batch, target_pis, target_vs = batch.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
             out_pis, out_vs = self.nnet(batch)
@@ -82,6 +87,7 @@ class NNetWrapper():
             pi_losses.update(l_pi.item(), len(graphs))
             v_losses.update(l_v.item(), len(graphs))
             t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
+            print("valid_loss:", pi_losses)
         self.verbose = False
 
     def predict(self, graph):
@@ -96,8 +102,8 @@ class NNetWrapper():
 
     def loss_pi(self, targets, outputs):
         if self.verbose:
-            print("targets:", targets[0][:12])
-            print("outputs:", torch.exp(outputs[0][:12]))
+            print("targets:", targets[0][:8])
+            print("outputs:", torch.exp(outputs[0][:8]))
         return -torch.sum(targets * outputs) / targets.size()[0]
         #return self.kld(outputs, targets)
 
@@ -110,7 +116,7 @@ class NNetWrapper():
             print("Checkpoint Directory does not exist! Making directory {}".format(folder))
             os.mkdir(folder)
         else:
-            print("Checkpoint Directory exists!")
+            log.info("Checkpoint Directory exists!")
         torch.save({"state_dict": self.nnet.state_dict()}, filepath)
 
     def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
