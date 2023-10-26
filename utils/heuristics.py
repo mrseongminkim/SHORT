@@ -18,7 +18,7 @@ def reorder(gfa, bridges_states):
         curr = stack.pop()
         if curr == n - 1:
             break
-        if curr in bridges_states:
+        if curr in bridges_states and curr not in reordered_bridge_states:
             reordered_bridge_states.append(curr)
         for i in gfa.delta[curr]:
             if not visited[i]:
@@ -34,7 +34,7 @@ def get_bridge_states(gfa: GFA) -> set:
         for target in gfa.delta[source]:
             graph.add_edge(source, target)
     bridges = nx.algorithms.articulation_points(graph)
-    bridges_states = [i for i in bridges if i != 0 and i != len(gfa) - 1]
+    bridges_states = [i for i in bridges if i != gfa.Initial and i not in gfa.Final]
     new = gfa.dup()
     for i in new.delta:
         if i in new.delta[i]:
@@ -51,14 +51,11 @@ def get_bridge_states(gfa: GFA) -> set:
             dead_end.append(i)
     bridges_states = [x for x in bridges_states if x not in dead_end]
     bridges_states = reorder(gfa, bridges_states)
-    #print("states", gfa.States)
-    #print("delta", gfa.delta)
-    #print("original bridges:", bridges_states)
     return bridges_states
 
 
 def decompose(gfa: GFA) -> list:
-    bridge_state_name = [] #name of the state, not index of the state
+    bridge_state_name = [] #name of the state, not the index of the state
     subautomata = decompose_vertically(gfa, bridge_state_name)
     for subautomaton in subautomata:
         bridge_state_name += decompose_horizontally(subautomaton)
@@ -89,7 +86,7 @@ def make_vertical_subautomaton(gfa: GFA, initial_state: int, final_state: int) -
 
 
 #check all reachable states from given state, not necessarily includes final state
-#done reviewing
+#Okay
 def check_all_reachable_states(gfa: GFA, state: int, final_state: int, reachable_states: list):
     if state not in reachable_states:
         reachable_states.append(state)
