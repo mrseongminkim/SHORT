@@ -1,0 +1,10 @@
+Train on 1300000, validate on 50000 samples.
+Train - Epoch 1, loss: 0.19214216486017144
+Valid - Epoch 1, loss: 0.19179692291381473
+Train - Epoch 2, loss: 0.19213311254540968
+Valid - Epoch 2, loss: 0.19179742730053975
+Train - Epoch 3, loss: 0.19212294219479228
+Valid - Epoch 3, loss: 0.19179860631003529
+Train - Epoch 4, loss: 0.19211775510666942
+Valid - Epoch 4, loss: 0.19180033595391724
+Train - Epoch 5, loss: 0.1921068732784226

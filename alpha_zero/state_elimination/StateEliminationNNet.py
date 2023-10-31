@@ -31,9 +31,9 @@ class StateEliminationNNet(nn.Module):
         self.lstm_dim = LSTM_DIMENSION
 
         self.embedding_with_lstm = EmbeddingWithLSTM()
-        self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/embed_lstm.pth"))
-        #for param in self.embedding_with_lstm.parameters():
-        #    param.requires_grad = False
+        self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/0.191.pth"))
+        for param in self.embedding_with_lstm.parameters():
+            param.requires_grad = False
 
         assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
         self.conv1 = GATv2Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)

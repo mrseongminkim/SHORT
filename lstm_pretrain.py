@@ -1,4 +1,6 @@
+from tqdm import tqdm
 from ast import literal_eval
+from pickle import load, dump
 
 import pandas as pd
 import torch
@@ -26,26 +28,19 @@ class EmbeddingWithLSTM(nn.Module):
 class RegexNNet(nn.Module):
     def __init__(self):
         super(RegexNNet, self).__init__()
-        self.vocab_size = VOCAB_SIZE
-        self.regex_embedding_dim = REGEX_EMBEDDING_DIMENSION
         self.lstm_dim = LSTM_DIMENSION
         self.embedding_lstm = EmbeddingWithLSTM()
-        self.fc1 = nn.Linear(self.lstm_dim * 2, 32) #64 -> 32
-        self.fc2 = nn.Linear(32, 1)
-        nn.init.xavier_uniform_(self.fc1.weight)
-        nn.init.xavier_uniform_(self.fc2.weight)
-    
+        self.embedding_lstm.load_state_dict(torch.load("0.191.pth"))
+
     def sub_forward(self, x):
-        x = self.embedding_lstm(x) #여기서 뷰를 해줘야하나? #이거 결과 벡터가 어케됨 #mean(1)
-        x = F.relu(self.fc1(x))
+        x = self.embedding_lstm(x)
+        x = x[:, -1]
         return x
 
     def forward(self, x1, x2):
         x1 = self.sub_forward(x1)
         x2 = self.sub_forward(x2)
-        diff = torch.abs(x1 - x2)
-        scores = self.fc2(diff)
-        return scores
+        return x1, x2
 
 class RegexDataset(Dataset):
     def __init__(self, annotations_file):
@@ -60,15 +55,25 @@ class RegexDataset(Dataset):
         regex1 = torch.LongTensor(self.data.iloc[idx, 0])
         regex2 = torch.LongTensor(self.data.iloc[idx, 1])
         label = self.data.iloc[idx, 2]
+        if label == 0:
+            label = -1
         return regex1, regex2, label
 
-epochs = 200
-batch_size = 128
-lr = 0.1
+torch.autograd.set_detect_anomaly(True)
 
-train_size =  1_300_000 #500_000
-valid_size = 50_000 #20_000
-regex_data = RegexDataset("./annotations_file.csv")
+train_size = 1_300_000
+valid_size = 50_000
+#regex_data = RegexDataset("./annotations_file.csv")
+#with open("./annotations_file.pkl", "wb") as f:
+#    dump(regex_data, f)
+with open("./annotations_file.pkl", "rb") as f:
+    regex_data = load(f)
+
+epochs = 999999999999999999999999999999999
+batch_size = 64
+#0.0005로 75에폭까지 돌리고
+#0.00001로 다시 돌림
+lr = 0.00000001
 
 train_data = Subset(regex_data, torch.arange(train_size))
 valid_data = Subset(regex_data, torch.arange(train_size, train_size + valid_size))
@@ -76,8 +81,9 @@ train = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 valid = DataLoader(valid_data, batch_size=batch_size, shuffle=False)
 
 model = RegexNNet().cuda()
-criterion = torch.nn.BCEWithLogitsLoss()
-optimizer = optim.SGD(model.parameters(), lr=lr)
+criterion = torch.nn.CosineEmbeddingLoss()
+optimizer = optim.AdamW(model.parameters(), lr=lr)
+#scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=1)
 
 minimum_loss = float("inf")
 print(f"Train on {train_size}, validate on {valid_size} samples.")
@@ -85,12 +91,12 @@ for epoch in range(epochs):
     model.train()
     total_loss = 0
     count = 0
-    for regex1, regex2, label in train:
+    for regex1, regex2, label in tqdm(train):
         regex1 = regex1.cuda()
         regex2 = regex2.cuda()
         label = label.cuda()
-        result = model(regex1, regex2)
-        loss = criterion(result, label)
+        x1, x2 = model(regex1, regex2)
+        loss = criterion(input1=x1, input2=x2, target=label)
         total_loss += loss.item()
         count += 1
         optimizer.zero_grad()
@@ -101,15 +107,16 @@ for epoch in range(epochs):
         model.eval()
         total_loss = 0
         count = 0
-        for regex1, regex2, label in valid:
+        for regex1, regex2, label in tqdm(valid):
             regex1 = regex1.cuda()
             regex2 = regex2.cuda()
             label = label.cuda()
-            result = model(regex1, regex2)
-            loss = criterion(result, label)
+            x1, x2 = model(regex1, regex2)
+            loss = criterion(x1, x2, label)
             total_loss += loss.item()
             count += 1
         print(f"Valid - Epoch {epoch + 1}, loss: {total_loss / count}")
         if total_loss < minimum_loss:
             minimum_loss = total_loss
-            torch.save(model.embedding_lstm.state_dict(), f"./{epoch}embed_lstm.pth")
+            torch.save(model.embedding_lstm.state_dict(), f"./{epoch + 1}embed_lstm.pth")
+        #scheduler.step(total_loss / count)
