@@ -39,6 +39,27 @@ class StateEliminationGame():
         return one_hot_vector
 
     def gfa_to_tensor(self, gfa):
+        import numpy as np
+        num_nodes = self.getActionSize()
+        x = np.zeros((num_nodes, num_nodes), dtype=int)
+        edge_index = [[], []]
+        edge_attr = []
+        for source in gfa.delta:
+            for target in gfa.delta[source]:
+                length = gfa.delta[source][target].treeLength()
+                x[source][target] = length
+                edge_index[0].append(source)
+                edge_index[1].append(target)
+                edge_attr.append(length)
+                edge_index[1].append(source)
+                edge_index[0].append(target)
+                edge_attr.append(length)
+        x = torch.FloatTensor(x)
+        edge_index = torch.LongTensor(edge_index)
+        edge_attr = torch.LongTensor(edge_attr)
+        graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
+        return graph
+        '''
         num_nodes = self.getActionSize()
         x = []
         edge_index = [[], []]
@@ -68,6 +89,7 @@ class StateEliminationGame():
         edge_attr = torch.LongTensor(edge_attr)
         graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
         return graph
+        '''
 
     '''
     def gfa_to_tensor(self, gfa):

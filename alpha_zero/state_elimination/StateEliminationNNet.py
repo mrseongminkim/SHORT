@@ -30,31 +30,48 @@ class StateEliminationNNet(nn.Module):
         self.state_number_dim = MAX_STATES + 3
         self.lstm_dim = LSTM_DIMENSION
 
+        '''
         self.embedding_with_lstm = EmbeddingWithLSTM()
         self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/0.191.pth"))
         for param in self.embedding_with_lstm.parameters():
             param.requires_grad = False
+        '''
 
+        #self.action_size = 52
+        NUMBER_OF_CHANNELS = 52
+        NUMBER_OF_HEADS = 4
         assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
-        self.conv1 = GATv2Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
+        self.conv1 = GATv2Conv(self.action_size, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=1)
+        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=1)
+        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=1)
 
-        self.policy_head1 = nn.Linear(256, 128)
-        self.policy_head2 = nn.Linear(128, 64)
-        self.policy_head3 = nn.Linear(64, 32)
-        self.policy_head4 = nn.Linear(32, 16)
-        self.policy_head5 = nn.Linear(16, 8)
-        self.policy_head6 = nn.Linear(8, 4)
-        self.policy_head7 = nn.Linear(4, 2)
-        self.policy_head8 = nn.Linear(2, 1)
+        self.policy_head1 = nn.Linear(52, 32)
+        self.policy_head2 = nn.Linear(32, 16)
+        self.policy_head3 = nn.Linear(16, 1)
 
-        self.value_head1 = nn.Linear(256, 128)
-        self.value_head2 = nn.Linear(128, 64)
-        self.value_head3 = nn.Linear(64, 32)
-        self.value_head4 = nn.Linear(32, 1)
+        self.value_head1 = nn.Linear(52, 32)
+        self.value_head2 = nn.Linear(32, 16)
+        self.value_head3 = nn.Linear(16, 1)
 
     def forward(self, data):
+        data.x = F.elu(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
+        data.x = F.elu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
+        data.x = F.elu(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
+
+        pi = F.elu(self.policy_head1(data.x))
+        pi = F.elu(self.policy_head2(pi))
+        pi = self.policy_head3(pi)
+        pi = pi.view(-1, self.action_size)
+
+        s = global_mean_pool(data.x, data.batch)
+        v = F.elu(self.value_head1(s))
+        v = F.elu(self.value_head2(v))
+        v = self.value_head3(v)
+
+        return F.log_softmax(pi, dim=1), v
+
+
+        
         regex = data.edge_attr[:, :MAX_LEN]
         source_state_numbers = data.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
         target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
