@@ -60,7 +60,10 @@ class StateEliminationNNet(nn.Module):
         target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
 
         regex = self.embedding_with_lstm(regex)
-        regex = regex.mean(1)
+        regex = regex[:, -1]
+
+        print("len:", regex.size())
+        exit()
 
         data.edge_attr = regex
 
@@ -70,6 +73,27 @@ class StateEliminationNNet(nn.Module):
         out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
         in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
         data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
+
+        '''
+        target_state_numbers(53) + regex(64) - total 117
+        같은 source_states를 가지는 (target_state_numbers, regex)를 평균을 낸다.
+
+        평균 때문에 생기는 손실은 제외하면 다음과 같은 문제가 생길 수 있는가?
+
+        #구분되지 않는 transition이 생길 수 있는가?
+        0에서 C를 읽고 2를 가는 것과 3에서 C를 읽고 2를 가는 것은 구분되지 않는다.
+        0과 3번 노드 둘 다 똑같은 state_id_format(2) + regex_vector(C)를 가지게 된다.
+        다만, 이 경우에 어떤 state에서 출발하는지는 data.x의 정보로 알 수 있어서 문제 되지 않을 것 같다.
+
+        0에서 C를 읽고 2를 가는 것과 [out_transition 정보: target_state_number(2)와 regex(C)]와
+        2에서 C를 읽고 0을 가는 것 [in_transition 정보: source_state_number(2)와 regex(C)]는 구분되지 않는다.
+        다만, concat을 할 때에 indexing 정보로 구분이 되기에 문제 되지 않을 것 같다.
+
+        #평균을 내지 않고 나열했을 때
+            out과 in을 같이 더해주기에 총 117 * 53 * 2 = 6,201 * 2 = 12,402 차원이 추가된다.
+        #평균을 해줬을 때
+            117 * 2 = 234만 추가된다.
+        '''
 
         data.x = F.elu(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
         data.x = F.elu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr) + data.x)
