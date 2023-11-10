@@ -86,15 +86,15 @@ class Coach():
             if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
                 log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
                 self.trainExamplesHistory.pop(0)
-            if i % 100 == 0:
+            if i == 1 or i % 100 == 0:
                 self.saveTrainExamples(i - 1)
             trainExamples = []
             for e in self.trainExamplesHistory:
                 trainExamples.extend(e)
             shuffle(trainExamples)
             self.nnet.train(trainExamples)
-            log.info("Testing for valid data")
-            self.nnet.test_valid_data(self.valid_data)
+            #log.info("Testing for valid data")
+            #self.nnet.test_valid_data(self.valid_data)
             log.info("ACCEPTING NEW MODEL")
             self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
 

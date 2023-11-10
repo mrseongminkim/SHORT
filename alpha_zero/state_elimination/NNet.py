@@ -66,6 +66,7 @@ class NNetWrapper():
             #print("v loss:", v_losses.avg)
 
     def test_valid_data(self, examples):
+        return
         self.nnet.eval()
         pi_losses = AverageMeter()
         v_losses = AverageMeter()

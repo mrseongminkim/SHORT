@@ -125,7 +125,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
                     print("Poor prediction")
                     print("policy:", raw_policy)
                     print("valid_moves:", valid_moves)
-                    exit()
+                    #exit()
                     policy = valid_moves
                 action = np.argmax(policy)
                 eliminate_with_minimization(gfa, action, minimize=minimize)
@@ -359,10 +359,12 @@ def libera_me():
     print("y_v", y_v)
     '''
 
-train_alpha_zero()
+#train_alpha_zero()
 
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
+#generate_test_data("nfa")
 
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)
+test_alpha_zero_without_mcts(True, "nfa", False)
+test_alpha_zero_without_mcts(False, "nfa", False)
+
+test_heuristics(True, "nfa", False)
+test_heuristics(False, "nfa", False)
