@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GATv2Conv
+from alpha_zero.state_elimination.gatv3 import GATv3Conv
+#from torch_geometric.nn import GATv2Conv
 from torch_geometric.nn.norm import BatchNorm
 from torch_geometric.nn.pool import global_mean_pool
 
@@ -36,9 +37,9 @@ class StateEliminationNNet(nn.Module):
             param.requires_grad = False
 
         assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
-        self.conv1 = GATv2Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv2 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
-        self.conv3 = GATv2Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2)
+        self.conv1 = GATv3Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
 
         self.policy_head1 = nn.Linear(256, 128)
         self.policy_head2 = nn.Linear(128, 64)
@@ -61,9 +62,6 @@ class StateEliminationNNet(nn.Module):
 
         regex = self.embedding_with_lstm(regex)
         regex = regex[:, -1]
-
-        print("len:", regex.size())
-        exit()
 
         data.edge_attr = regex
 
