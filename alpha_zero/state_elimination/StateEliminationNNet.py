@@ -99,9 +99,9 @@ class StateEliminationNNet(nn.Module):
         v = F.elu(self.value_head3(v))
         v = self.value_head4(v)
 
-        pi = F.tanh(self.policy_head1(data.x))
-        pi = F.tanh(self.policy_head2(pi))
-        pi = F.tanh(self.policy_head3(pi))
+        pi = F.elu(self.policy_head1(data.x))
+        pi = F.elu(self.policy_head2(pi))
+        pi = F.elu(self.policy_head3(pi))
         pi = self.policy_head4(pi)
         pi = pi.view(-1, self.action_size)
 

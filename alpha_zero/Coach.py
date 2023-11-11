@@ -34,7 +34,6 @@ class Coach():
         gfa: GFA = self.game.get_initial_gfa()
         while self.game.getGameEnded(gfa) != None:
             gfa: GFA = self.game.get_initial_gfa()
-        #CToken의 정보가 트레인시에 필요하다면 초기화하면 안 됨 확인해볼 것!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         CToken.clear_memory()
         #위: 데이터 생성 / 아래: self-play
         #여기서부터 집가서 할래...

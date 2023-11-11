@@ -71,30 +71,15 @@ class MCTS():
         #print(probs)
         return probs
         '''
-
         for _ in range(NUMBER_OF_MCTS_SIMULATIONS):
             _, dead_end, _ = self.search(gfa)
             if dead_end:
                 break
         s = self.game.stringRepresentation(gfa)
-        action_space = [self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa]
-        q_max = max(action_space)
-        q_min = min(action_space)
-        if q_max == q_min:
-            #1 -> 2로 바꾼 이유: 밑에서 q_max일때 2가 나오길래
-            counts = [2 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
-        else:
-            counts = [self.normalize(self.Qsa[(s, a)], q_max, q_min) + 1 if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
-        counts = np.array(counts)
-        #bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
-        #bestA = bestAs[0]
-        #이걸를 정말 주는게 맞는가 의문이 계속 든다.
-        #counts[bestAs] += OPTIMAL_BONUS
-        #이렇게 되면 사실상 가장 극값만 나오게 됨
-        #진짜 문제는 다른 곳에 있는 것 같다.
-        #counts = [x ** (TEMPERATURE) for x in counts]
-        counts_sum = float(sum(counts))
-        probs = [x / counts_sum for x in counts]
+        c = max([self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa])
+        denom = sum([np.e ** (self.Qsa[(s, a)] - c) for a in range(self.game.getActionSize()) if (s, a) in self.Qsa])
+        numer = [np.e ** (self.Qsa[(s, a)] - c) if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
+        probs = [x / denom if x != 0 else 0 for x in numer]
         return probs
 
     def search(self, gfa):
@@ -113,6 +98,7 @@ class MCTS():
             #한 마디로 NN은 안 좋은 경로일 수록 큰 양수를 출력하게 함
             #NN should return positive value
             if v > 0:
+                #v는 -길이
                 v = -v.item()
             else:
                 #print("If this line excuted after # of training, it indicates NN is not working properly")
@@ -136,17 +122,18 @@ class MCTS():
             for a in range(self.game.getActionSize()):
                 if valids[a]:
                     self.Nsa[(s, a)] = 0
-                    self.Qsa[(s, a)] = -math.log(worst_case)
+                    self.Qsa[(s, a)] = -worst_case
             return v, False, False
         valids = self.Vs[s]
         cur_best = -float('inf')
         action_space = [self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa]
-        q_max = max(action_space)
-        q_min = min(action_space)
+        #q_max = max(action_space)
+        #q_min = min(action_space)
         best_act = -1
         for a in range(self.game.getActionSize()):
             if valids[a] and (s, a) not in self.dead_end:
-                exploitation = self.normalize(self.Qsa[(s, a)], q_max, q_min)
+                exploitation = self.Qsa[(s, a)]
+                #exploitation = self.normalize(self.Qsa[(s, a)], q_max, q_min)
                 exploration = CPUCT * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS) / (1 + self.Nsa[(s, a)])
                 u = exploitation + exploration
                 if u > cur_best:
@@ -154,7 +141,7 @@ class MCTS():
                     best_act = a
         a = best_act
         if a == -1:
-            return q_min, True, True
+            return max(action_space), True, True
         next_gfa = self.game.getNextState(gfa, a, duplicate=True)
         v, dead_end, actual_reward = self.search(next_gfa)
         if dead_end:

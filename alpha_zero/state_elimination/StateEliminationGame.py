@@ -137,16 +137,17 @@ class StateEliminationGame():
         if len(gfa.States) == 3:
             result = self.get_resulting_regex(gfa)
             length = result.treeLength()
-            #로그를 취해서 값이 너무 작아짐 -> 작은 차이가 없어지는 것이 문제
+            return -length
             reward = -log(length)
             return reward
-        #n=3인 GFA에서 간혹 나올 수 있어서 예외로 처리해줌
         elif len(gfa.States) == 2:
             initial_state = gfa.Initial
             final_state = list(gfa.Final)[0]
             assert initial_state not in gfa.delta[initial_state]
             assert final_state not in gfa.delta[final_state]
             length = gfa.delta[initial_state][final_state].treeLength()
+            #not using log scaled version
+            return -length
             reward = -log(length)
             #return 문이 없었는데... 어차피 이 상황은 test에나 발생해서 문제 없었다.
             return reward
