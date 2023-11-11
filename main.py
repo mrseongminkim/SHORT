@@ -361,8 +361,8 @@ def libera_me():
 
 train_alpha_zero()
 
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
+test_alpha_zero_without_mcts(True, "nfa", False)
+test_alpha_zero_without_mcts(False, "nfa", False)
 
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)
+test_heuristics(True, "nfa", False)
+test_heuristics(False, "nfa", False)

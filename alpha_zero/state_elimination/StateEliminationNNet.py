@@ -44,11 +44,7 @@ class StateEliminationNNet(nn.Module):
         self.policy_head1 = nn.Linear(256, 128)
         self.policy_head2 = nn.Linear(128, 64)
         self.policy_head3 = nn.Linear(64, 32)
-        self.policy_head4 = nn.Linear(32, 16)
-        self.policy_head5 = nn.Linear(16, 8)
-        self.policy_head6 = nn.Linear(8, 4)
-        self.policy_head7 = nn.Linear(4, 2)
-        self.policy_head8 = nn.Linear(2, 1)
+        self.policy_head4 = nn.Linear(32, 1)
 
         self.value_head1 = nn.Linear(256, 128)
         self.value_head2 = nn.Linear(128, 64)
@@ -94,8 +90,8 @@ class StateEliminationNNet(nn.Module):
         '''
 
         data.x = F.elu(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
-        data.x = F.elu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr) + data.x)
-        data.x = F.elu(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr) + data.x)
+        data.x = F.elu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
+        data.x = F.elu(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
 
         s = global_mean_pool(data.x, data.batch)
         v = F.elu(self.value_head1(s))
@@ -103,14 +99,10 @@ class StateEliminationNNet(nn.Module):
         v = F.elu(self.value_head3(v))
         v = self.value_head4(v)
 
-        pi = F.elu(self.policy_head1(data.x))
-        pi = F.elu(self.policy_head2(pi))
-        pi = F.elu(self.policy_head3(pi))
-        pi = F.elu(self.policy_head4(pi))
-        pi = F.elu(self.policy_head5(pi))
-        pi = F.elu(self.policy_head6(pi))
-        pi = F.elu(self.policy_head7(pi))
-        pi = self.policy_head8(pi)
+        pi = F.tanh(self.policy_head1(data.x))
+        pi = F.tanh(self.policy_head2(pi))
+        pi = F.tanh(self.policy_head3(pi))
+        pi = self.policy_head4(pi)
         pi = pi.view(-1, self.action_size)
 
         '''
