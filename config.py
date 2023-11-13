@@ -27,8 +27,8 @@ NUMBER_OF_MCTS_SIMULATIONS = 99999999999999999
 CPUCT = 1.3
 OPTIMAL_BONUS = 3
 CHECKPOINT = "./alpha_zero/models/"
-LOAD_MODEL = False
-LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_205.pth.tar") #189
+LOAD_MODEL = True
+LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_301.pth.tar") #189
 NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY = 999999999999
 EPS = 1e-8
 LR = 0.001
@@ -51,4 +51,4 @@ NUMBER_OF_HEADS = 4
 
 VERBOSE = False
 
-VICTIM = 7
+VICTIM = 6

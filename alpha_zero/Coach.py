@@ -30,15 +30,13 @@ class Coach():
 
     def executeEpisode(self):
         trainExamples = []
-        #데이터 생성/종료 확인은 문제가 없는 것 같음
         gfa: GFA = self.game.get_initial_gfa()
         while self.game.getGameEnded(gfa) != None:
             gfa: GFA = self.game.get_initial_gfa()
         CToken.clear_memory()
-        #위: 데이터 생성 / 아래: self-play
-        #여기서부터 집가서 할래...
         while True:
-            pi = self.mcts.getActionProb(gfa) #MCTS를 전체적으로 봐야함
+            pi = self.mcts.getActionProb(gfa)
+
             #pi 구할 때도 결국 gfa_to_tensor 쓰고 predict를 쓰니까 일단 밑에 먼저 볼까
             gfa_representation = self.game.gfa_to_tensor(gfa) #GFA -> feature extraction 과정이 다 보이고
             #넣어줄 때는 best가 아닌 전부 선택가능한 pi를 넣어줌

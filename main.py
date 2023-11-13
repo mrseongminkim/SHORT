@@ -161,6 +161,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
             if n + MIN_N != VICTIM: continue
+            if i != 0: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             mcts = MCTS(g, nnet)
@@ -168,6 +169,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
                 pi = mcts.getActionProb(gfa)
+                exit()
                 pi = np.array(pi)
                 print("mcts on \t:", pi[:10])
                 #return
@@ -221,7 +223,8 @@ def get_optimal_ordering(minimization=False):
     for n in range(N_RANGE):
         length = 0
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != 6: continue
+            if n + MIN_N != VICTIM: continue
+            if i != 0: continue
             print(f"n: {n}, i: {i}")
             CToken.clear_memory()
             gfa = data[n][i]
@@ -229,13 +232,17 @@ def get_optimal_ordering(minimization=False):
             #print("order:", order)
             min_length = float("inf")
             #optimal_ordering = []
+            possible_length = set()
             for perm in itertools.permutations(order):
                 result = eliminate_randomly(gfa.dup(), minimization, perm)
                 #print("perm:", [gfa.States[x] for x in perm])
                 #print("length:", result.treeLength())
+                possible_length.add(result.treeLength())
                 if min_length > result.treeLength():
                     min_length = result.treeLength()
                     #optimal_ordering = perm
+            print("possible lengths:", possible_length)
+            return
             #optimal_ordering = [gfa.States[x] for x in optimal_ordering]
             #print("min_length:", min_length)
             #print("optimal_ordering", optimal_ordering)
@@ -359,10 +366,13 @@ def libera_me():
     print("y_v", y_v)
     '''
 
-train_alpha_zero()
+#train_alpha_zero()
 
-test_alpha_zero_without_mcts(True, "nfa", False)
-test_alpha_zero_without_mcts(False, "nfa", False)
+get_optimal_ordering(False)
+test_alpha_zero_with_mcts(True, "nfa", False)
 
-test_heuristics(True, "nfa", False)
-test_heuristics(False, "nfa", False)
+#test_alpha_zero_without_mcts(True, "nfa", False)
+#test_alpha_zero_without_mcts(False, "nfa", False)
+
+#test_heuristics(True, "nfa", False)
+#test_heuristics(False, "nfa", False)

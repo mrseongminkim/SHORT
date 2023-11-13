@@ -1,8 +1,3 @@
-#솔직히 제일 의심가기도 하면서 - 잘 작동하는 것 같기는 함
-#언제나 옵티멀 경로를 뽑아내니까
-#다만 리워드가 로그스케일이고 차이가 적어서 문제가 있긴 함
-#의심 가는 부분도 많다.
-
 import logging
 import math
 
@@ -18,90 +13,54 @@ class MCTS():
     def __init__(self, game, nnet):
         self.game: StateEliminationGame = game
         self.nnet = nnet
-        self.Qsa = {} #음의 로그 값
+        self.Qsa = {} #Qsa에는 길이의 반수가 들어간다.
         self.Nsa = {}
         self.Ns = {}
         self.Ps = {}
         self.Es = {}
         self.Vs = {}
-        #error-prone
         self.dead_end = set()
         self.actual_reward = set()
 
-    def normalize(self, q, q_max, q_min):
-        #q_max, q_min 모두 음의 로그 값임
-        return (q - q_min) / (q_max - q_min + EPS)
+    #def normalize(self, q, q_max, q_min):
+    #    return (q - q_min) / (q_max - q_min + EPS)
 
     def getActionProb(self, gfa):
-        '''
-        #Case: init 부터 hop이 큰 것부터 지우기
-        from collections import deque
-        counts = np.array([0 for _ in range(self.game.getActionSize())])
-        visited = set([gfa.Initial])
-        q = deque([gfa.Initial])
-        while q:
-            cur = q.popleft()
-            for next in gfa.delta[cur]:
-                if next not in visited:
-                    counts[next] = counts[cur] + 1
-                    q.append(next)
-                    visited.add(next)
-        counts[list(gfa.Final)[0]] = 0
-        counts_sum = float(sum(counts))
-        probs = [x / counts_sum for x in counts]
-        return probs
-
-        #Case: state weight가 큰 것먼저 지우게 하기
-        from utils.fadomata import get_weight
-        counts = np.array([0 for _ in range(self.game.getActionSize())])
-        for i in range(len(gfa.States)):
-            if i != gfa.Initial and i not in gfa.Final:
-                counts[i] = get_weight(gfa, i)
-        counts_sum = float(sum(counts))
-        probs = [x / counts_sum for x in counts]
-        return probs
-
-        #Case: state 숫자가 큰 것 지우게 하기
-        counts = np.array([0 for _ in range(self.game.getActionSize())])
-        for i in range(len(gfa.States)):
-            if i != gfa.Initial and i not in gfa.Final:
-                counts[i] = int(gfa.States[i])
-        counts_sum = float(sum(counts))
-        probs = [x / counts_sum for x in counts]
-        #print(probs)
-        return probs
-        '''
         for _ in range(NUMBER_OF_MCTS_SIMULATIONS):
             _, dead_end, _ = self.search(gfa)
             if dead_end:
                 break
         s = self.game.stringRepresentation(gfa)
+
+        print("validation:", [-self.Qsa[(s, a)] if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
+
         c = max([self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa])
         denom = sum([np.e ** (self.Qsa[(s, a)] - c) for a in range(self.game.getActionSize()) if (s, a) in self.Qsa])
         numer = [np.e ** (self.Qsa[(s, a)] - c) if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())]
         probs = [x / denom if x != 0 else 0 for x in numer]
         return probs
 
-    def search(self, gfa):
-        #returns reward, is_dead_end, is_actual_reward
+    def search(self, gfa): # -> reward, is_dead_end, is_actual_reward
         s = self.game.stringRepresentation(gfa)
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(gfa)
+            self.Es[s] = self.game.getGameEnded(gfa) #길이의 반수를 반환한다.
         if self.Es[s] != None:
-            #dead_end이면서 actual reward
+            #길이의 반수, dead_end이면서 actual reward
+            #self.Es[s]는 음수
             return self.Es[s], True, True
         if s not in self.Ps:
             #처음 방문한 노드
             gfa_representation = self.game.gfa_to_tensor(gfa)
             self.Ps[s], v = self.nnet.predict(gfa_representation)
-            #그리고 이 v는 NN이 GFA의 양의 로그 스케일을 출력했다 가정
-            #한 마디로 NN은 안 좋은 경로일 수록 큰 양수를 출력하게 함
-            #NN should return positive value
+            '''
+            NN이 양수 길이를 반환하도록 하였기에 이를 다시 반전시킨다.
+            v는 음수
+            '''
             if v > 0:
                 #v는 -길이
                 v = -v.item()
             else:
-                #print("If this line excuted after # of training, it indicates NN is not working properly")
+                print("If this line excuted after # of training, it indicates value head is not working properly")
                 v = v.item()
             valids = self.game.getValidMoves(gfa)
             self.Ps[s] = np.exp(self.Ps[s]) * valids
@@ -141,6 +100,10 @@ class MCTS():
                     best_act = a
         a = best_act
         if a == -1:
+            #모든 action이 valid하지 않거나(일어나면 안 된다) or 이미 모든 하위 노드들을 방문했을 때
+            #현재 시점에서 달성할 수 있는 최고의 값을 리포트해야한다.
+            #다 음수값이니 맥스하면 된다.
+            #여기서 최종적으로 반환이 된다.
             return max(action_space), True, True
         next_gfa = self.game.getNextState(gfa, a, duplicate=True)
         v, dead_end, actual_reward = self.search(next_gfa)
