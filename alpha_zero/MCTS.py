@@ -32,7 +32,7 @@ class MCTS():
                 break
         s = self.game.stringRepresentation(gfa)
 
-        print("validation:", [-self.Qsa[(s, a)] if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
+        #print("validation:", [-self.Qsa[(s, a)] if (s, a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
 
         c = max([self.Qsa[(s, a)] for a in range(self.game.getActionSize()) if (s, a) in self.Qsa])
         denom = sum([np.e ** (self.Qsa[(s, a)] - c) for a in range(self.game.getActionSize()) if (s, a) in self.Qsa])
@@ -60,7 +60,7 @@ class MCTS():
                 #v는 -길이
                 v = -v.item()
             else:
-                print("If this line excuted after # of training, it indicates value head is not working properly")
+                #print("If this line excuted after # of training, it indicates value head is not working properly")
                 v = v.item()
             valids = self.game.getValidMoves(gfa)
             self.Ps[s] = np.exp(self.Ps[s]) * valids

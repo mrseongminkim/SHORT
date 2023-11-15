@@ -26,7 +26,7 @@ class Coach():
         self.mcts = MCTS(self.game, self.nnet)
         self.trainExamplesHistory: list = []
         self.skipFirstSelfPlay = False
-        self.load_valid_data()
+        #self.load_valid_data()
 
     def executeEpisode(self):
         trainExamples = []
@@ -55,6 +55,7 @@ class Coach():
             if r != None:
                 #NN이 음수보다 양수를 리턴하게 시키고 싶어서 -r을 해줌
                 r = -r
+                assert r >= 0
                 #graph, pi, v 순서로 저장
                 return [(x[0], x[1], r) for x in trainExamples]
     
@@ -83,15 +84,15 @@ class Coach():
             if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
                 log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
                 self.trainExamplesHistory.pop(0)
-            if i % 100 == 0:
+            if i % 100 == 0 or i == 1:
                 self.saveTrainExamples(i - 1)
             trainExamples = []
             for e in self.trainExamplesHistory:
                 trainExamples.extend(e)
             shuffle(trainExamples)
             self.nnet.train(trainExamples)
-            log.info("Testing for valid data")
-            self.nnet.test_valid_data(self.valid_data)
+            #log.info("Testing for valid data")
+            #self.nnet.test_valid_data(self.valid_data)
             log.info("ACCEPTING NEW MODEL")
             self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
 
@@ -108,7 +109,7 @@ class Coach():
         f.closed
     
     def load_initial_data(self):
-        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "checkpoint_ass.pth.tar.examples")
+        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "initial_data.tar")
         with open(examplesFile, "rb") as f:
             self.trainExamplesHistory = Unpickler(f).load()
         self.skipFirstSelfPlay = True

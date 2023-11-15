@@ -106,7 +106,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            #if n + MIN_N != VICTIM or i != 28: continue
+            if n + MIN_N != VICTIM_STATE or i != VICTIM_IDX: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             gfa = data[n][i]
@@ -120,7 +120,10 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
                 #print("States:", gfa.States)
                 #print("raw policy: ", policy)
                 raw_policy = policy
+                print("policy:", policy[:7])
                 policy = policy * valid_moves
+                #print("policy:", policy[:7])
+                return
                 if not policy.any():
                     print("Poor prediction")
                     print("policy:", raw_policy)
@@ -132,7 +135,7 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
             end_time = time.time()
             result = g.get_resulting_regex(gfa)
             result_length = result.treeLength()
-            #print("result length:", result_length)
+            print("result length:", result_length)
             result_time = end_time - start_time
             exp[n][0] += result_length
             exp[n][1] += result_time
@@ -160,8 +163,7 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
-            if n + MIN_N != VICTIM: continue
-            if i != 0: continue
+            if n + MIN_N != VICTIM_STATE or i != VICTIM_IDX: continue
             print('n:' + str(n + MIN_N) + ', i:', i)
             CToken.clear_memory()
             mcts = MCTS(g, nnet)
@@ -169,9 +171,14 @@ def test_alpha_zero_with_mcts(model_updated, type, minimize):
             start_time = time.time()
             while g.getGameEnded(gfa) == None:
                 pi = mcts.getActionProb(gfa)
-                exit()
+                print("Init:", gfa.Initial)
+                print("Final:", gfa.Final)
+                print("states:", gfa.States)
+                print("delta:", gfa.delta)
+                print("pi:", pi[:7])
+                return
                 pi = np.array(pi)
-                print("mcts on \t:", pi[:10])
+                #print("mcts on \t:", pi[:10])
                 #return
                 best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
                 best_action = np.random.choice(best_actions)
@@ -368,10 +375,10 @@ def libera_me():
 
 #train_alpha_zero()
 
-get_optimal_ordering(False)
+#get_optimal_ordering(False)
 test_alpha_zero_with_mcts(True, "nfa", False)
-
-#test_alpha_zero_without_mcts(True, "nfa", False)
+print("done")
+test_alpha_zero_without_mcts(True, "nfa", False)
 #test_alpha_zero_without_mcts(False, "nfa", False)
 
 #test_heuristics(True, "nfa", False)

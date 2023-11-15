@@ -132,6 +132,7 @@ class GATv3Conv(MessagePassing):
         fill_value: Union[float, Tensor, str] = 'mean',
         bias: bool = True,
         share_weights: bool = False,
+        include_edge_attr: bool = False,
         **kwargs,
     ):
         super().__init__(node_dim=0, **kwargs)
@@ -146,6 +147,7 @@ class GATv3Conv(MessagePassing):
         self.edge_dim = edge_dim
         self.fill_value = fill_value
         self.share_weights = share_weights
+        self.include_edge_attr = include_edge_attr
 
         if isinstance(in_channels, int):
             self.lin_l = Linear(in_channels, heads * out_channels, bias=bias,
@@ -166,7 +168,7 @@ class GATv3Conv(MessagePassing):
 
         self.att = Parameter(torch.Tensor(1, heads, out_channels))
         #attention for edge (regex)
-        self.edge_att = Parameter(torch.Tensor(1, heads, out_channels))
+        #self.edge_att = Parameter(torch.Tensor(1, heads, out_channels))
 
         if edge_dim is not None:
             self.lin_edge = Linear(edge_dim, heads * out_channels, bias=False,
@@ -283,6 +285,11 @@ class GATv3Conv(MessagePassing):
                 size_i: Optional[int]) -> Tensor:
         x = x_i + x_j
 
+        #print("len:", x_i.size())
+        #print("x_i:", x_i[:6])
+        #print(index)
+        #exit()
+
         if edge_attr is not None:
             if edge_attr.dim() == 1:
                 edge_attr = edge_attr.view(-1, 1)
@@ -296,7 +303,9 @@ class GATv3Conv(MessagePassing):
         alpha = softmax(alpha, index, ptr, size_i)
         self._alpha = alpha
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
-        return (x_j + edge_attr) * alpha.unsqueeze(-1)
+        if self.include_edge_attr:
+            return (x_j + edge_attr) * alpha.unsqueeze(-1)
+        return x_j * alpha.unsqueeze(-1)
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '
