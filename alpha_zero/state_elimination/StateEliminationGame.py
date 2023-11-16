@@ -45,21 +45,18 @@ class StateEliminationGame():
         edge_attr = []
         for source in range(num_nodes):
             if source < len(gfa.States):
-                #source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
+                source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
                 is_initial_state = 1 if source == gfa.Initial else 0
                 is_final_state = 1 if source in gfa.Final else 0
-                x.append([is_initial_state, is_final_state])
-                #x.append(source_state_number + [is_initial_state, is_final_state])
+                x.append(source_state_number + [is_initial_state, is_final_state])
                 for target in range(len(gfa.States)):
                     if target in gfa.delta[source]:
-                        #target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
+                        target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
                         edge_index[0].append(source)
                         edge_index[1].append(target)
-                        edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]))
-                        #edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
+                        edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
             else:
-                x.append([0, 0])
-                #x.append(self.get_one_hot_vector(0) + [0, 0])
+                x.append(self.get_one_hot_vector(0) + [0, 0])
         x = torch.FloatTensor(x)
         edge_index = torch.LongTensor(edge_index)
         edge_attr = torch.LongTensor(edge_attr)

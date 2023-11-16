@@ -26,7 +26,7 @@ class Coach():
         self.mcts = MCTS(self.game, self.nnet)
         self.trainExamplesHistory: list = []
         self.skipFirstSelfPlay = False
-        #self.load_valid_data()
+        self.load_valid_data()
 
     def executeEpisode(self):
         trainExamples = []
@@ -91,8 +91,8 @@ class Coach():
                 trainExamples.extend(e)
             shuffle(trainExamples)
             self.nnet.train(trainExamples)
-            #log.info("Testing for valid data")
-            #self.nnet.test_valid_data(self.valid_data)
+            log.info("Testing for valid data")
+            self.nnet.test_valid_data(self.valid_data)
             log.info("ACCEPTING NEW MODEL")
             self.nnet.save_checkpoint(folder=CHECKPOINT, filename=self.getCheckpointFile(i))
 

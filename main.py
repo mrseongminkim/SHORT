@@ -48,7 +48,7 @@ def train_alpha_zero():
     if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
-    #c.load_initial_data()
+    c.load_initial_data()
     log.info('Starting the learning process')
     c.learn()
 
@@ -373,12 +373,12 @@ def libera_me():
     print("y_v", y_v)
     '''
 
-#train_alpha_zero()
+train_alpha_zero()
 
 #get_optimal_ordering(False)
-test_alpha_zero_with_mcts(True, "nfa", False)
-print("done")
-test_alpha_zero_without_mcts(True, "nfa", False)
+#test_alpha_zero_with_mcts(True, "nfa", False)
+#print("done")
+#test_alpha_zero_without_mcts(True, "nfa", False)
 #test_alpha_zero_without_mcts(False, "nfa", False)
 
 #test_heuristics(True, "nfa", False)

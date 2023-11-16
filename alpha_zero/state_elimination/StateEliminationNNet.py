@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from alpha_zero.state_elimination.gatv3 import GATv3Conv
+#from alpha_zero.state_elimination.gatv3 import GATv3Conv
 #from torch_geometric.nn.norm import BatchNorm
 from torch_geometric.nn.pool import global_mean_pool
 
@@ -35,11 +35,11 @@ class StateEliminationNNet(nn.Module):
         for param in self.embedding_with_lstm.parameters():
             param.requires_grad = False
 
-        assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
+        #assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
         #self.conv1 = GATv3Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
-        self.conv1 = GATv3Conv(2, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False, include_edge_attr=True)
-        self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
-        self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        #self.conv1 = GATv3Conv(2, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False, include_edge_attr=True)
+        #self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        #self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
         #self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
         #self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
 
@@ -53,26 +53,39 @@ class StateEliminationNNet(nn.Module):
         self.value_head3 = nn.Linear(64, 32)
         self.value_head4 = nn.Linear(32, 1)
 
+        self.linear1 = nn.Linear(289, 256)
+        self.linear2 = nn.Linear(256, 128)
+        self.linear3 = nn.Linear(128, 64)
+        self.linear4 = nn.Linear(64, 32)
+        self.linear5 = nn.Linear(32, 1)
+
+
     def forward(self, data):
-        data.edge_attr = self.embedding_with_lstm(data.edge_attr)
-        data.edge_attr = data.edge_attr[:, -1]
+        regex = data.edge_attr[:, :MAX_LEN]
+        source_state_numbers = data.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
+        target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
 
+        regex = self.embedding_with_lstm(regex)
+        regex = regex[:, -1]
 
-        #regex = data.edge_attr[:, :MAX_LEN]
-        #source_state_numbers = data.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
-        #target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
+        data.edge_attr = regex
 
-        #regex = self.embedding_with_lstm(regex)
-        #regex = regex[:, -1]
+        source_states = data.edge_index[0]
+        target_states = data.edge_index[1]
 
-        #data.edge_attr = regex
-
-        #source_states = data.edge_index[0]
-        #target_states = data.edge_index[1]
-
-        #out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
-        #in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
+        out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
+        in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
         #data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
+        data = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
+        data = F.elu(self.linear1(data))
+        data = F.elu(self.linear2(data))
+        data = F.elu(self.linear3(data))
+        data = F.elu(self.linear4(data))
+        data = self.linear5(data)
+        data = data.view(-1, self.action_size)
+        value = data.mean(dim=-1)
+        return F.log_softmax(data, dim=1), value
+        
 
         #자 이제 GAT내에서 어떤 일이 일어나는지를 보여줄게
         #data.x는 일단 2만을 가지고 있음(insignificant)
