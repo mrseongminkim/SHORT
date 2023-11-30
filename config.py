@@ -28,7 +28,7 @@ CPUCT = 1.3
 OPTIMAL_BONUS = 3
 CHECKPOINT = "./alpha_zero/models/"
 LOAD_MODEL = False
-LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_72.pth.tar") #189
+LOAD_FOLDER_FILE = ("./alpha_zero/models/", "checkpoint_239.pth.tar") #189
 NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY = 999999999999
 EPS = 1e-8
 LR = 0.001
@@ -39,7 +39,7 @@ CUDA = is_available()
 NUMBER_OF_CHANNELS = 256
 
 #regex-board parameters
-MAX_LEN = 50
+MAX_LEN = 500#50
 VOCAB_SIZE = 16
 REGEX_EMBEDDING_DIMENSION = ceil(VOCAB_SIZE ** (1 / 4)) #2
 LSTM_DIMENSION = 32

@@ -10,6 +10,21 @@ from utils.inclusion_checker import *
 
 from config import *
 
+def reverse_gfa(gfa: GFA):
+    rev = GFA()
+    rev.setSigma(gfa.Sigma)
+    rev.States = gfa.States[:]
+    rev.setFinal([gfa.Initial])
+    rev.setInitial(int(gfa.Final))
+    rev.predecessors = {}
+    for i in range(len(gfa.States)):
+        rev.predecessors[i] = set([])
+        rev.delta[i] = {}
+    for source in gfa.delta:
+        for target in gfa.delta[source]:
+            rev.addTransition(target, gfa.delta[source][target], source)
+    return rev
+
 def rename_states(fa):
     #0은 존재하지 않는 것, init과 final 또한 MAX_STATES + 2 이하인 정수로 매핑됨
     lst = [str(i) for i in range(1, MAX_STATES + 3)]

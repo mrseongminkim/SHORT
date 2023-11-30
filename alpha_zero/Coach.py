@@ -36,9 +36,7 @@ class Coach():
         CToken.clear_memory()
         while True:
             pi = self.mcts.getActionProb(gfa)
-
-            #pi 구할 때도 결국 gfa_to_tensor 쓰고 predict를 쓰니까 일단 밑에 먼저 볼까
-            gfa_representation = self.game.gfa_to_tensor(gfa) #GFA -> feature extraction 과정이 다 보이고
+            gfa_representation = self.game.gfa_to_tensor(gfa) #tuple
             #넣어줄 때는 best가 아닌 전부 선택가능한 pi를 넣어줌
             trainExamples.append([gfa_representation, pi])
             best_actions = np.array(np.argwhere(pi == np.max(pi))).flatten()
@@ -109,7 +107,7 @@ class Coach():
         f.closed
     
     def load_initial_data(self):
-        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "initial_data.tar")
+        examplesFile = os.path.join(LOAD_FOLDER_FILE[0], "checkpoint_0.pth.tar.examples")
         with open(examplesFile, "rb") as f:
             self.trainExamplesHistory = Unpickler(f).load()
         self.skipFirstSelfPlay = True

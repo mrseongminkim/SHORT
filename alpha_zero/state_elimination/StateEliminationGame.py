@@ -2,10 +2,12 @@ from math import log
 
 import torch
 from FAdo.reex import *
+from FAdo.conversions import GFA
 from torch_geometric.data import Data
 
 from utils.random_nfa_generator import generate
 from utils.heuristics import eliminate_with_minimization
+from utils.fadomata import reverse_gfa
 
 from config import *
 
@@ -38,30 +40,45 @@ class StateEliminationGame():
         one_hot_vector[state_number] = 1
         return one_hot_vector
 
-    def gfa_to_tensor(self, gfa):
+    def gfa_to_tensor(self, gfa: GFA):
         num_nodes = self.getActionSize()
-        x = []
-        edge_index = [[], []]
-        edge_attr = []
+        left_x = []
+        left_edge_index = [[], []]
+        left_edge_attr = []
+        right_x = []
+        right_edge_index = [[], []]
+        right_edge_attr = []
         for source in range(num_nodes):
             if source < len(gfa.States):
                 source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
                 is_initial_state = 1 if source == gfa.Initial else 0
                 is_final_state = 1 if source in gfa.Final else 0
-                x.append(source_state_number + [is_initial_state, is_final_state])
+                left_x.append(source_state_number + [is_initial_state, is_final_state])
+                right_x.append(source_state_number + [is_final_state, is_initial_state])
+                #reverse를 하면 init은 final이 되고 final은 init이 된다.
                 for target in range(len(gfa.States)):
                     if target in gfa.delta[source]:
                         target_state_number = self.get_one_hot_vector(int(gfa.States[target]))
-                        edge_index[0].append(source)
-                        edge_index[1].append(target)
-                        edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
+                        left_edge_index[0].append(source)
+                        left_edge_index[1].append(target)
+                        #source to target (original)
+                        right_edge_index[0].append(target)
+                        right_edge_index[1].append(source)
+                        #target to source (reversed)
+                        left_edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + source_state_number + target_state_number)
+                        #right_edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]) + target_state_number + source_state_number)
             else:
-                x.append(self.get_one_hot_vector(0) + [0, 0])
-        x = torch.FloatTensor(x)
-        edge_index = torch.LongTensor(edge_index)
-        edge_attr = torch.LongTensor(edge_attr)
-        graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
-        return graph
+                left_x.append(self.get_one_hot_vector(0) + [0, 0])
+                right_x.append(self.get_one_hot_vector(0) + [0, 0])
+        left_x = torch.FloatTensor(left_x)
+        left_edge_index = torch.LongTensor(left_edge_index)
+        left_edge_attr = torch.LongTensor(left_edge_attr)
+        left_graph = Data(x=left_x, edge_index=left_edge_index, edge_attr=left_edge_attr, num_nodes=num_nodes)
+        right_x = torch.FloatTensor(right_x)
+        right_edge_index = torch.LongTensor(right_edge_index)
+        right_edge_attr = torch.LongTensor(right_edge_attr)
+        right_graph = Data(x=right_x, edge_index=right_edge_index, edge_attr=right_edge_attr, num_nodes=num_nodes)
+        return (left_graph, right_graph)
 
     '''
     def gfa_to_tensor(self, gfa):

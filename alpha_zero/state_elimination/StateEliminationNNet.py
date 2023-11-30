@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from alpha_zero.state_elimination.gatv3 import GATv3Conv
+from alpha_zero.state_elimination.gatv3 import GATv3Conv
 #from torch_geometric.nn.norm import BatchNorm
 from torch_geometric.nn.pool import global_mean_pool
 
@@ -32,98 +32,91 @@ class StateEliminationNNet(nn.Module):
 
         self.embedding_with_lstm = EmbeddingWithLSTM()
         self.embedding_with_lstm.load_state_dict(torch.load("./alpha_zero/state_elimination/0.191.pth"))
-        for param in self.embedding_with_lstm.parameters():
-            param.requires_grad = False
-
-        #assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
-        #self.conv1 = GATv3Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        #for param in self.embedding_with_lstm.parameters():
+        #    param.requires_grad = True
+        
+        assert NUMBER_OF_CHANNELS % NUMBER_OF_HEADS == 0
+        self.conv1 = GATv3Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
         #self.conv1 = GATv3Conv(2, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False, include_edge_attr=True)
-        #self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
-        #self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
-        #self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
-        #self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.conv4 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.conv5 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
 
-        self.policy_head1 = nn.Linear(256, 128)
-        self.policy_head2 = nn.Linear(128, 64)
-        self.policy_head3 = nn.Linear(64, 32)
-        self.policy_head4 = nn.Linear(32, 1)
+        self.right_conv1 = GATv3Conv(self.state_number_dim * 3 + self.lstm_dim * 2 * 2 + 2, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        #self.right_conv1 = GATv3Conv(2, NUMBER_OF_CHANNELS, heads=1, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False, include_edge_attr=True)
+        self.right_conv2 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.right_conv3 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.right_conv4 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
+        self.right_conv5 = GATv3Conv(NUMBER_OF_CHANNELS, NUMBER_OF_CHANNELS // NUMBER_OF_HEADS, heads=NUMBER_OF_HEADS, edge_dim=LSTM_DIMENSION * 2, add_self_loops=False)
 
-        self.value_head1 = nn.Linear(256, 128)
-        self.value_head2 = nn.Linear(128, 64)
-        self.value_head3 = nn.Linear(64, 32)
-        self.value_head4 = nn.Linear(32, 1)
+        self.policy_head1 = nn.Linear(512, 256)
+        self.policy_head2 = nn.Linear(256, 128)
+        self.policy_head3 = nn.Linear(128, 64)
+        self.policy_head4 = nn.Linear(64, 32)
+        self.policy_head5 = nn.Linear(32, 16)
+        self.policy_head6 = nn.Linear(16, 1)
 
-        self.linear1 = nn.Linear(289, 256)
-        self.linear2 = nn.Linear(256, 128)
-        self.linear3 = nn.Linear(128, 64)
-        self.linear4 = nn.Linear(64, 32)
-        self.linear5 = nn.Linear(32, 1)
+        self.value_head1 = nn.Linear(512, 256)
+        self.value_head2 = nn.Linear(256, 128)
+        self.value_head3 = nn.Linear(128, 64)
+        self.value_head4 = nn.Linear(64, 32)
+        self.value_head5 = nn.Linear(32, 16)
+        self.value_head6 = nn.Linear(16, 1)
 
 
-    def forward(self, data):
-        regex = data.edge_attr[:, :MAX_LEN]
-        source_state_numbers = data.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
-        target_state_numbers = data.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
 
+    def forward(self, left_batch, right_batch):
+        regex = left_batch.edge_attr[:, :MAX_LEN]
         regex = self.embedding_with_lstm(regex)
         regex = regex[:, -1]
+        #Last Time Step Pooling <-> Mean Pooling
+        source_state_numbers = left_batch.edge_attr[:, MAX_LEN:MAX_LEN + MAX_STATES + 3]
+        target_state_numbers = left_batch.edge_attr[:, MAX_LEN + MAX_STATES + 3:]
 
-        data.edge_attr = regex
+        left_batch.edge_attr = regex
+        right_batch.edge_attr = regex
 
-        source_states = data.edge_index[0]
-        target_states = data.edge_index[1]
+        source_states = left_batch.edge_index[0]
+        target_states = left_batch.edge_index[1]
 
-        out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, data.x.size()[0])
-        in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, data.x.size()[0])
-        #data.x = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
-        data = torch.cat((data.x, in_transitions, out_transitions), dim=-1)
-        data = F.elu(self.linear1(data))
-        data = F.elu(self.linear2(data))
-        data = F.elu(self.linear3(data))
-        data = F.elu(self.linear4(data))
-        data = self.linear5(data)
-        data = data.view(-1, self.action_size)
-        value = data.mean(dim=-1)
-        return F.log_softmax(data, dim=1), value
-        
+        left_out_transitions = global_mean_pool(torch.cat((target_state_numbers, regex), dim=-1), source_states, left_batch.x.size()[0])
+        left_in_transitions = global_mean_pool(torch.cat((source_state_numbers, regex), dim=-1), target_states, left_batch.x.size()[0])
 
-        #자 이제 GAT내에서 어떤 일이 일어나는지를 보여줄게
-        #data.x는 일단 2만을 가지고 있음(insignificant)
-        #일단 이 2를 가지는 것을 CHANNELS만큼의 벡터로 변환함(여기서 의문점)
+        left_batch.x = torch.cat((left_batch.x, left_in_transitions, left_out_transitions), dim=-1)
+        right_batch.x = torch.cat((right_batch.x, left_out_transitions, left_in_transitions), dim=-1)
 
-        data.x = F.elu(self.conv1(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
-        data.x = F.elu(self.conv2(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
-        data.x = F.elu(self.conv3(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr))
+        left = F.elu(self.conv1(x=left_batch.x, edge_index=left_batch.edge_index, edge_attr=left_batch.edge_attr))
+        left = F.elu(self.conv2(x=left, edge_index=left_batch.edge_index, edge_attr=left_batch.edge_attr))
+        left = F.elu(self.conv3(x=left, edge_index=left_batch.edge_index, edge_attr=left_batch.edge_attr))
+        left = F.elu(self.conv4(x=left, edge_index=left_batch.edge_index, edge_attr=left_batch.edge_attr))
+        left = F.elu(self.conv5(x=left, edge_index=left_batch.edge_index, edge_attr=left_batch.edge_attr))
 
-        #print("data.x:", data.x)
+        right = F.elu(self.conv1(x=right_batch.x, edge_index=right_batch.edge_index, edge_attr=right_batch.edge_attr))
+        right = F.elu(self.conv2(x=right, edge_index=right_batch.edge_index, edge_attr=right_batch.edge_attr))
+        right = F.elu(self.conv3(x=right, edge_index=right_batch.edge_index, edge_attr=right_batch.edge_attr))
+        right = F.elu(self.conv4(x=right, edge_index=right_batch.edge_index, edge_attr=right_batch.edge_attr))
+        right = F.elu(self.conv5(x=right, edge_index=right_batch.edge_index, edge_attr=right_batch.edge_attr))
 
-        s = global_mean_pool(data.x, data.batch)
+        data = torch.cat((left, right), dim=-1)
+        #batch * 512
+
+        #value는 전혀 학습하지 못 한다.
+        s = global_mean_pool(data, left_batch.batch)
         v = F.elu(self.value_head1(s))
         v = F.elu(self.value_head2(v))
         v = F.elu(self.value_head3(v))
-        v = self.value_head4(v)
+        v = F.elu(self.value_head4(v))
+        v = F.elu(self.value_head5(v))
+        v = self.value_head6(v)
 
-        pi = F.elu(self.policy_head1(data.x))
+        #policy는 0.6에서 학습이 멈춘다.
+        pi = F.elu(self.policy_head1(data))
         pi = F.elu(self.policy_head2(pi))
         pi = F.elu(self.policy_head3(pi))
-        pi = self.policy_head4(pi)
-        #print("init:", pi[1])
-        #print("final:", pi[3])
-        #print("final:", pi[50])
+        pi = F.elu(self.policy_head4(pi))
+        pi = F.elu(self.policy_head5(pi))
+        pi = self.policy_head6(pi)
         pi = pi.view(-1, self.action_size)
-
-        #print("pi:", pi[0][:7])
-
-        '''
-        new_x = torch.full((data.batch.max().item() + 1, self.action_size), -999.0).cuda()
-        prev, idx = -1, -1
-        for i in range(len(data.batch)):
-            graph_index = data.batch[i]
-            if graph_index != prev:
-                prev = graph_index
-                idx = 0
-            new_x[graph_index][idx] = pi[i]
-            idx += 1
-        '''
 
         return F.log_softmax(pi, dim=1), v
