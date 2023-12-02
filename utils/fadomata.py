@@ -15,7 +15,7 @@ def reverse_gfa(gfa: GFA):
     rev.setSigma(gfa.Sigma)
     rev.States = gfa.States[:]
     rev.setFinal([gfa.Initial])
-    rev.setInitial(int(gfa.Final))
+    rev.setInitial(list(gfa.Final)[0])
     rev.predecessors = {}
     for i in range(len(gfa.States)):
         rev.predecessors[i] = set([])
