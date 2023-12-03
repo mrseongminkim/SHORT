@@ -22,7 +22,8 @@ def reverse_gfa(gfa: GFA):
         rev.delta[i] = {}
     for source in gfa.delta:
         for target in gfa.delta[source]:
-            rev.addTransition(target, gfa.delta[source][target], source)
+            rev.predecessors[source].add(target)
+            rev.delta[target][source] = copy.deepcopy(gfa.delta[source][target])
     return rev
 
 def rename_states(fa):
