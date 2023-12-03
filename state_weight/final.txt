@@ -1,0 +1,7 @@
+Train on 370051, validate on 478 samples.
+Train - Epoch 1, loss: 4.334930157962399
+result: tensor([     3.1077,      6.2190,      0.0240,     -0.0780,     28.2235,     -0.0012,     -0.0012,     -0.0012], device='cuda:0', grad_fn=<SliceBackward0>)
+label: tensor([ 2.,  6.,  0.,  0., 20.,  0.,  0.,  0.], device='cuda:0')
+Valid - Epoch 1, loss: 21.16023313999176
+result: tensor([    50.0586,     57.8873,     -0.0458,     25.1845,      0.0466,     13.9229,      0.0010,      0.0010], device='cuda:0')
+label: tensor([62., 62.,  0., 30.,  0., 12.,  0.,  0.], device='cuda:0')

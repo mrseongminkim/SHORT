@@ -9,8 +9,15 @@ from SHORT.utils.random_nfa_generator import generate
 from SHORT.utils.heuristics import eliminate_with_minimization
 from SHORT.utils.fadomata import reverse_gfa
 
+from SHORT.config import *
+
+#0 as emptyness, 5 + max(ALPHABET) should be input size of embedding dimension
+word_to_ix = {'@': 1, '+': 2, '*': 3, '.': 4}
+for i in range(max(ALPHABET)):
+    word_to_ix[str(i)] = i + 5
+
 class StateEliminationGame():
-    def __init__(self, maxN=5):
+    def __init__(self, maxN=MAX_STATES):
         self.maxN = maxN
 
     def get_initial_gfa(self, gfa=None, n=None, k=None, d=None):
@@ -19,6 +26,14 @@ class StateEliminationGame():
         gfa = generate(n, k, d)
         self.n, self.k, self.d = n, k, d
         return gfa
+
+    def get_encoded_regex(self, regex):
+        #NB: This technique cannot be applied to GFA with an alphabet size of more than 9.
+        encoded_regex = [word_to_ix[word] for word in list(regex.rpn().replace("@epsilon", "@").replace("'", ""))[:MAX_LEN]]
+        if len(encoded_regex) < MAX_LEN:
+            encoded_regex = encoded_regex + [0] * (MAX_LEN - len(encoded_regex))
+        assert len(encoded_regex) == MAX_LEN
+        return encoded_regex
 
     def get_one_hot_vector(self, state_number):
         one_hot_vector = [0] * (self.maxN + 3) #init, final, non-existing node
@@ -33,31 +48,40 @@ class StateEliminationGame():
 
     #forward_only
     def gfa_to_graph(self, gfa: GFA):
-        num_nodes = self.getActionSize() #7 - 5 original node and initial and final
+        num_nodes = self.getActionSize() #52
         x = []
         edge_index = [[], []]
+        edge_attr = []
         for source in range(num_nodes):
             if source < len(gfa.States):
                 source_state_number = self.get_one_hot_vector(int(gfa.States[source]))
                 is_initial_state = 1 if source == gfa.Initial else 0
                 is_final_state = 1 if source in gfa.Final else 0
-                delta = []
+                connectivity = [0] * (self.maxN + 3)
+                length = [0] * (self.maxN + 3)
+                regex = [0] * (self.maxN + 3)
                 for target in range(num_nodes):
                     if target in gfa.delta[source]:
                         edge_index[0].append(source)
                         edge_index[1].append(target)
-                        delta += self.get_one_hot_vector(int(gfa.States[target])) + [gfa.delta[source][target].treeLength()]
-                    else:
-                        delta += self.get_one_hot_vector(0) + [0]
-                x.append(source_state_number + [is_initial_state, is_final_state] + delta)
+                        target_id = int(gfa.States[target])
+                        connectivity[target_id] = 1
+                        length[target_id] = gfa.delta[source][target].treeLength()
+                        edge_attr.append(self.get_encoded_regex(gfa.delta[source][target]))
+                transition = connectivity + length + regex
+                x.append(source_state_number + [is_initial_state, is_final_state] + transition)
             else:
                 source_state_number = self.get_one_hot_vector(0)
                 is_initial_state = is_final_state = 0
-                delta = (self.get_one_hot_vector(0) + [0]) * num_nodes
-                x.append(source_state_number + [is_initial_state, is_final_state] + delta)
+                connectivity = [0] * (self.maxN + 3)
+                length = [0] * (self.maxN + 3)
+                regex = [0] * (self.maxN + 3)
+                transition = connectivity + length + regex
+                x.append(source_state_number + [is_initial_state, is_final_state] + transition)
         x = torch.FloatTensor(x)
         edge_index = torch.LongTensor(edge_index)
-        graph = Data(x=x, edge_index=edge_index, num_nodes=num_nodes)
+        edge_attr = torch.LongTensor(edge_attr)
+        graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes)
         return graph
 
     '''
