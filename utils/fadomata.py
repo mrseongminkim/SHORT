@@ -127,34 +127,29 @@ def print_counter():
     all_count_concat = 0
     all_count_disj = 0
 
+
 def eliminate(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
-    if st in gfa.delta and st in gfa.delta[st]:
-        r2 = copy.copy(reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
-        del gfa.delta[st][st]
-    else:
-        r2 = None
-    for s in gfa.delta:
-        if st not in gfa.delta[s]:
-            continue
-        r1 = copy.copy(gfa.delta[s][st])
-        del gfa.delta[s][st]
-        for s1 in gfa.delta[st]:
-            r3 = copy.copy(gfa.delta[st][s1])
-            if r2 is not None:
-                r = reex.CConcat(r1, reex.CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
-            else:
-                r = reex.CConcat(r1, r3, copy.copy(gfa.Sigma))
-            if s1 in gfa.delta[s]:
-                new_regex = reex.CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
-                if tokenize and new_regex.treeLength() > CToken.threshold:
-                    gfa.delta[s][s1] = CToken(new_regex)
+    #i as a intransition node
+    #j as a outtransition node
+    for i in gfa.predecessors[st]:
+        for j in gfa.delta[st]:
+            if i != st and j != st:
+                #in transition
+                rex = gfa.delta[i][st]
+                #self loop
+                if st in gfa.delta[st]:
+                    rex = reex.CConcat(rex, reex.CStar(gfa.delta[st][st], copy(gfa.Sigma)), copy(gfa.Sigma))
+                #out transition
+                rex = reex.CConcat(rex, gfa.delta[st][j], copy(gfa.Sigma))
+                #if there was already transition
+                if j in gfa.delta[i]:
+                    rex = reex.CDisj(gfa.delta[i][j], rex, copy(gfa.Sigma))
+                if tokenize and rex.treeLength() > CToken.threshold:
+                    gfa.delta[i][j] = CToken(rex)
                 else:
-                    gfa.delta[s][s1] = new_regex
-            else:
-                if tokenize and r.treeLength() > CToken.threshold:
-                    gfa.delta[s][s1] = CToken(r)
-                else:
-                    gfa.delta[s][s1] = r
+                    gfa.delta[i][j] = rex
+                #deleting st from predecessors happens in deleteState
+                gfa.predecessors[j].add(i)
     if delete_state:
         gfa.deleteState(st)
     else:
