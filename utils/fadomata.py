@@ -156,80 +156,74 @@ def eliminate(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
         del gfa.delta[st]
     return gfa
 
-
+#이제 여기에 predecessor를 추가하면 됩니다 ㅎ
 def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True, minimize: bool=True):
     if not minimize:
         return eliminate(gfa, st, delete_state, tokenize)
-    global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
-    if st in gfa.delta and st in gfa.delta[st]:
-        if isinstance(gfa.delta[st][st], CStar) or is_epsilon(gfa.delta[st][st]):
-            save_count_star += 1
-            r2 = copy.copy(gfa.delta[st][st])
-        else:
-            r2 = copy.copy(CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
+    self_loop = None
+    if st in gfa.delta[st]:
+        skip_star = int(isinstance(gfa.delta[st][st], CStar) or is_epsilon(gfa.delta[st][st]))
+        save_count_star += skip_star
+        self_loop = copy.copy(gfa.delta[st][st]) if skip_star else copy.copy(CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)))
         del gfa.delta[st][st]
+        gfa.predecessors[st].remove(st)
         all_count_star += 1
-    else:
-        r2 = None
-    for s in gfa.delta:
-        if st not in gfa.delta[s]:
-            continue
-        r1 = copy.copy(gfa.delta[s][st])
-        del gfa.delta[s][st]
-        for s1 in gfa.delta[st]:
-            r3 = copy.copy(gfa.delta[st][s1])
-            if r2 is not None:
-                if is_included(r2, r1) == 1 or is_included(r2, r3) == 1:
+    for i in gfa.predecessors[st]:
+        in_transition = copy.copy(gfa.delta[i][st])
+        for j in gfa.delta[st]:
+            out_transition = copy.copy(gfa.delta[st][j])
+            if self_loop:
+                if is_included(self_loop, in_transition) == 1 or is_included(self_loop, out_transition) == 1:
                     save_count_concat += 2
-                    r = CConcat(r1, r3, copy.copy(gfa.Sigma))
-                elif is_epsilon(r1) and is_epsilon(r3):
+                    r = CConcat(in_transition, out_transition, copy.copy(gfa.Sigma))
+                elif is_epsilon(in_transition) and is_epsilon(out_transition):
                     save_count_concat += 2
-                    r = r2
-                elif is_epsilon(r1):
+                    r = self_loop
+                elif is_epsilon(in_transition):
                     save_count_concat += 1
-                    r = CConcat(r2, r3, copy.copy(gfa.Sigma))
-                elif is_epsilon(r3):
+                    r = CConcat(self_loop, out_transition, copy.copy(gfa.Sigma))
+                elif is_epsilon(out_transition):
                     save_count_concat += 1
-                    r = CConcat(r1, r2, copy.copy(gfa.Sigma))
+                    r = CConcat(in_transition, self_loop, copy.copy(gfa.Sigma))
                 else:
-                    r = CConcat(r1, CConcat(r2, r3, copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
+                    r = CConcat(CConcat(in_transition, self_loop, copy.copy(gfa.Sigma)), out_transition, copy.copy(gfa.Sigma))
             else:
-                if (is_epsilon(r1) and is_epsilon(r3)):
+                if is_epsilon(in_transition) and is_epsilon(out_transition):
                     save_count_concat += 2
                     r = CEpsilon()
-                elif is_epsilon(r1):
+                elif is_epsilon(in_transition):
                     save_count_concat += 2
-                    r = r3
-                elif is_epsilon(r3):
+                    r = out_transition
+                elif is_epsilon(out_transition):
                     save_count_concat += 2
-                    r = r1
+                    r = in_transition
                 else:
                     save_count_concat += 1
-                    r = CConcat(r1, r3, copy.copy(gfa.Sigma))
+                    r = CConcat(in_transition, out_transition, copy.copy(gfa.Sigma))
             all_count_concat += 2
-            if s1 in gfa.delta[s]:
-                check_included = is_included(r, gfa.delta[s][s1])
+            if j in gfa.delta[i]:
+                check_included = is_included(r, gfa.delta[i][j])
                 if check_included == 1 or check_included == 0:
                     save_count_disj += 1
                     all_count_disj += 1
                     continue
                 elif check_included == -1:
                     save_count_disj += 1
-                    new_regex = r
-                elif str(gfa.delta[s][s1]) > str(r):
-                    new_regex = CDisj(r, gfa.delta[s][s1], copy.copy(gfa.Sigma))
+                elif str(gfa.delta[i][j]) > str(r):
+                    r = CDisj(r, gfa.delta[i][j], copy.copy(gfa.Sigma))
                 else:
-                    new_regex = CDisj(gfa.delta[s][s1], r, copy.copy(gfa.Sigma))
-                if tokenize and new_regex.treeLength() > CToken.threshold:
-                    gfa.delta[s][s1] = CToken(new_regex)
+                    r = CDisj(gfa.delta[i][j], r, copy.copy(gfa.Sigma))
+                if tokenize and r.treeLength() > CToken.threshold:
+                    gfa.delta[i][j] = CToken(r)
                 else:
-                    gfa.delta[s][s1] = new_regex
+                    gfa.delta[i][j] = r
                 all_count_disj += 1
             else:
                 if tokenize and r.treeLength() > CToken.threshold:
-                    gfa.delta[s][s1] = CToken(r)
+                    gfa.delta[i][j] = CToken(r)
                 else:
-                    gfa.delta[s][s1] = r
+                    gfa.delta[i][j] = r
+            gfa.predecessors[j].add(i)
     if delete_state:
         gfa.deleteState(st)
     else:
