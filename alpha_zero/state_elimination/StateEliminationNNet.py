@@ -24,37 +24,22 @@ class EmbeddingWithLSTM(nn.Module):
         return regex
 
 class ForwardBackwardGNN(nn.Module):
-    def __init__(self):
+    def __init__(self, load_pretrained_embedding_with_lstm):
         super(ForwardBackwardGNN, self).__init__()
         self.state_id_dim = MAX_STATES + 3
         self.initial_and_final_dim = 2
-        self.connectivity_dim = MAX_STATES + 3
-        self.length_dim = MAX_STATES + 3
-        self.regex_idx = self.state_id_dim + self.initial_and_final_dim + self.connectivity_dim + self.length_dim
-        self.hidden_vector_dim = self.regex_idx + MAX_STATES + 3
+        self.transition_dim = (MAX_STATES + 3) * 3
+        self.in_regex_idx = self.state_id_dim + self.initial_and_final_dim + (MAX_STATES + 3) * 2
+        self.out_regex_idx = self.in_regex_idx + self.transition_dim
+        self.hidden_vector_dim = self.out_regex_idx + MAX_STATES + 3
 
         self.embedding_with_lstm = EmbeddingWithLSTM()
-        #self.embedding_with_lstm.load_state_dict(torch.load("0.191.pth"))
+        if load_pretrained_embedding_with_lstm:
+            self.embedding_with_lstm.load_state_dict(torch.load("0.191.pth"))
         self.lin1 = nn.Linear(LSTM_DIMENSION * 2, 32)
         self.lin2 = nn.Linear(32, 1)
         self.forward_conv1 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
         self.backward_conv1 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        '''
-        self.forward_conv2 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv2 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.forward_conv3 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv3 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.forward_conv4 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv4 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.forward_conv5 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv5 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.forward_conv5 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv5 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.forward_conv6 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv6 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.forward_conv7 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        self.backward_conv7 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
-        '''
 
     def forward(self, forward_graph, backward_graph=None):
         forward_edge_attr = self.embedding_with_lstm(forward_graph.edge_attr)
@@ -65,30 +50,21 @@ class ForwardBackwardGNN(nn.Module):
         backward_edge_attr = F.relu(self.lin1(backward_edge_attr))
         backward_graph.edge_attr = torch.flatten(F.relu(self.lin2(backward_edge_attr)))
 
+        forward_source_state_id = torch.argmax(forward_graph.x[forward_graph.edge_index[0], :53], dim=-1)
         forward_target_state_id = torch.argmax(forward_graph.x[forward_graph.edge_index[1], :53], dim=-1)
+        backward_source_state_id = torch.argmax(backward_graph.x[backward_graph.edge_index[0], :53], dim=-1)
         backward_target_state_id = torch.argmax(backward_graph.x[backward_graph.edge_index[1], :53], dim=-1)
 
-        forward_graph.x[forward_graph.edge_index[0], self.regex_idx + forward_target_state_id] = forward_graph.edge_attr
-        backward_graph.x[backward_graph.edge_index[1], self.regex_idx + backward_target_state_id] = backward_graph.edge_attr
+        #in_regex update
+        forward_graph.x[forward_graph.edge_index[1], self.in_regex_idx + forward_source_state_id] = forward_graph.edge_attr
+        backward_graph.x[backward_graph.edge_index[1], self.in_regex_idx + backward_source_state_id] = backward_graph.edge_attr
+
+        #out_regex update
+        forward_graph.x[forward_graph.edge_index[0], self.out_regex_idx + forward_target_state_id] = forward_graph.edge_attr
+        backward_graph.x[backward_graph.edge_index[0], self.out_regex_idx + backward_target_state_id] = backward_graph.edge_attr
 
         forward_graph.x = F.relu(self.forward_conv1(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        '''
-        forward_graph.x = F.relu(self.forward_conv2(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        forward_graph.x = F.relu(self.forward_conv3(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        forward_graph.x = F.relu(self.forward_conv4(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        forward_graph.x = F.relu(self.forward_conv5(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        forward_graph.x = F.relu(self.forward_conv6(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        forward_graph.x = F.relu(self.forward_conv7(forward_graph.x, forward_graph.edge_index) + forward_graph.x)
-        '''
         backward_graph.x = F.relu(self.backward_conv1(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        '''
-        backward_graph.x = F.relu(self.backward_conv2(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        backward_graph.x = F.relu(self.backward_conv3(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        backward_graph.x = F.relu(self.backward_conv4(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        backward_graph.x = F.relu(self.backward_conv5(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        backward_graph.x = F.relu(self.backward_conv6(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        backward_graph.x = F.relu(self.backward_conv7(backward_graph.x, backward_graph.edge_index) + backward_graph.x)
-        '''
         graph = torch.cat((forward_graph.x, backward_graph.x), dim=-1)
         return graph
 

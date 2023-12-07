@@ -75,18 +75,21 @@ class StateEliminationGame():
                     predecessor_id = int(gfa.States[predecessor])
                     in_connectivity[predecessor_id] = 1
                     in_length[predecessor_id] = gfa.delta[predecessor][source].treeLength()
-
                 out_transition = out_connectivity + out_length + out_regex
                 in_transition = in_connectivity + in_length + in_regex
                 x.append(source_state_number + [is_initial_state, is_final_state] + in_transition + out_transition)
             else:
                 source_state_number = self.get_one_hot_vector(0)
                 is_initial_state = is_final_state = 0
-                connectivity = [0] * (self.maxN + 3)
-                length = [0] * (self.maxN + 3)
-                regex = [0] * (self.maxN + 3)
-                transition = connectivity + length + regex
-                x.append(source_state_number + [is_initial_state, is_final_state] + transition)
+                out_connectivity = [0] * (self.maxN + 3)
+                out_length = [0] * (self.maxN + 3)
+                out_regex = [0] * (self.maxN + 3)
+                in_connectivity = [0] * (self.maxN + 3)
+                in_length = [0] * (self.maxN + 3)
+                in_regex = [0] * (self.maxN + 3)
+                out_transition = out_connectivity + out_length + out_regex
+                in_transition = in_connectivity + in_length + in_regex
+                x.append(source_state_number + [is_initial_state, is_final_state] + in_transition + out_transition)
         x = torch.FloatTensor(x)
         edge_index = torch.LongTensor(edge_index)
         edge_attr = torch.LongTensor(edge_attr)
