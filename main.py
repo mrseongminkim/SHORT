@@ -48,7 +48,7 @@ def train_alpha_zero():
     if LOAD_MODEL:
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
-    #c.load_initial_data()
+    c.load_initial_data()
     log.info('Starting the learning process')
     c.learn()
 
@@ -227,7 +227,7 @@ def get_optimal_ordering(minimization=False):
     for n in range(N_RANGE):
         length = 0
         for i in range(SAMPLE_SIZE):
-            if n + MIN_N != VICTIM: continue
+            if n + MIN_N != VICTIM_STATE: continue
             if i != 0: continue
             print(f"n: {n}, i: {i}")
             CToken.clear_memory()

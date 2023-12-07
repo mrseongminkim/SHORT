@@ -38,40 +38,16 @@ def make_fado_recognizable_nfa(n: int, k: int, nfa: gmpy2.mpz, finals: gmpy2.mpz
             fa.addTransition(src + 1, str(lbl), dst + 1)
     fa.setInitial({0})
     fa.setFinal({n + 1})
-
-    initial_states = len(fa.States)
-    original_fa = fa.dup()
     fa = fa.trim()
-    trimmed_states = len(fa.States)
-
-    if trimmed_states < initial_states:
-        copied_fa = fa.dup()
-
     fa = fa.lrEquivNFA()
-    reduced_fa = fa.dup()
-    reduced_states = len(fa.States)
-
     '''NFA is reduced'''
     shuffle_fa(fa)
-    shuffled_fa = fa.dup()
-
     rename_states(fa)
-    renamed_fa = fa.dup()
 
     '''NFA is randomly sorted'''
     #gfa로 바꾸면 final state에 대해서 empty transition이 생긴다.
     if return_type == "gfa":
         fa = convert_nfa_to_gfa(fa)
-        '''
-        if trimmed_states < initial_states and reduced_states < trimmed_states:
-            print("original:", original_fa.delta, original_fa.States)
-            print("trimmed:", copied_fa.delta, copied_fa.States)
-            print("reduced:", reduced_fa.delta, reduced_fa.States)
-            print("shuffled:", shuffled_fa.delta, shuffled_fa.States)
-            print("renamed:", renamed_fa.delta, renamed_fa.States)
-            print("gfa:", fa.delta, fa.States, fa.Final)
-            exit()
-        '''
     return fa
 
 

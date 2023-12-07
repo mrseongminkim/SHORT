@@ -239,7 +239,6 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
         gfa.deleteState(st)
     else:
         del gfa.delta[st]
-    #print_counter()
     return gfa
 
 
@@ -297,7 +296,6 @@ def convert_nfa_to_gfa(nfa: NFA) -> GFA:
         for c in sorted(nfa.delta[s].keys(), reverse=False):
             for s1 in nfa.delta[s][c]:
                 gfa.addTransition(s, c, s1)
-    #empty transition이 생기는 이유(final에서 특히)
     for i in range(len(gfa.States)):
         if i not in gfa.delta:
             gfa.delta[i] = {}

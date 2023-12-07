@@ -5,8 +5,6 @@ import numpy as np
 
 from alpha_zero.state_elimination.StateEliminationGame import StateEliminationGame
 
-from utils.fadomata import get_weight
-
 from config import *
 
 log = logging.getLogger(__name__)
@@ -28,27 +26,6 @@ class MCTS():
     #    return (q - q_min) / (q_max - q_min + EPS)
 
     def getActionProb(self, gfa):
-        '''
-        여기서 굳이 step할 필요도 없음
-        state weight가 작은 것들이 높은 점수를 가지도록하면 될듯
-        기본적으로 작은 거 먼저 지워야 한다.
-
-        '''
-        state_weight = [0] * self.game.getActionSize()
-        min_weight = float("inf")
-        min_idx = -1
-        for i in range(len(gfa.States)):
-            if i == gfa.Initial or i in gfa.Final:
-                continue
-            weight = get_weight(gfa, i)
-            if weight < min_weight:
-                min_weight = weight
-                min_idx = i
-        state_weight[min_idx] = 1
-        return state_weight
-        
-        
-
         for _ in range(NUMBER_OF_MCTS_SIMULATIONS):
             _, dead_end, _ = self.search(gfa)
             if dead_end:

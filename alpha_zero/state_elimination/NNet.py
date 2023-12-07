@@ -17,12 +17,11 @@ log = logging.getLogger(__name__)
 
 class NNetWrapper():
     def __init__(self, game):
-        self.nnet = sennet(game)
+        self.nnet = sennet()
         self.action_size = game.getActionSize()
         if CUDA:
             self.nnet.cuda()
         self.verbose = False
-        self.kld = torch.nn.KLDivLoss(reduction='batchmean')
 
     def train(self, examples):
         optimizer = optim.AdamW(self.nnet.parameters(), lr=LR)
@@ -33,7 +32,6 @@ class NNetWrapper():
                 self.verbose = True
             else:
                 self.verbose = False
-            #print(self.nnet.policy_head1.weight)
             self.nnet.train()
             pi_losses = AverageMeter()
             v_losses = AverageMeter()
@@ -117,7 +115,6 @@ class NNetWrapper():
             print("targets:", targets[0][:8])
             print("outputs:", torch.exp(outputs[0][:8]))
         return -torch.sum(targets * outputs) / targets.size()[0]
-        #return self.kld(outputs, targets)
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]

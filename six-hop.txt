@@ -1,0 +1,28 @@
+Iter 1
+targets: tensor([0.0000, 0.2689, 0.7311, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000], device='cuda:0')
+outputs: tensor([    0.0000,     0.4041,     0.1947,     0.4013,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0', grad_fn=<ExpBackward0>)
+train_loss: 7.92e-01
+targets: tensor([    0.3333,     0.0001,     0.3333,     0.0000,     0.0000,     0.0000,     0.0000,     0.3333], device='cuda:0')
+outputs: tensor([    0.0079,     0.0084,     0.8140,     0.0008,     0.0080,     0.0012,     0.0903,     0.0693], device='cuda:0', grad_fn=<ExpBackward0>)
+valid_loss: 1.81e+00
+Iter 2
+targets: tensor([    0.0000,     0.0000,     0.0067,     0.9933,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0')
+outputs: tensor([    0.0000,     0.0031,     0.0037,     0.9932,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0', grad_fn=<ExpBackward0>)
+train_loss: 5.67e-01
+targets: tensor([    0.3333,     0.0001,     0.3333,     0.0000,     0.0000,     0.0000,     0.0000,     0.3333], device='cuda:0')
+outputs: tensor([    0.0015,     0.0010,     0.6024,     0.0000,     0.0035,     0.0000,     0.0321,     0.3595], device='cuda:0', grad_fn=<ExpBackward0>)
+valid_loss: 1.97e+00
+Iter 3
+targets: tensor([    0.0000,     0.0000,     1.0000,     0.0000,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0')
+outputs: tensor([    0.0049,     0.0000,     0.9951,     0.0000,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0', grad_fn=<ExpBackward0>)
+train_loss: 5.31e-01
+targets: tensor([    0.3333,     0.0001,     0.3333,     0.0000,     0.0000,     0.0000,     0.0000,     0.3333], device='cuda:0')
+outputs: tensor([    0.0002,     0.0001,     0.5295,     0.0000,     0.0007,     0.0000,     0.0323,     0.4372], device='cuda:0', grad_fn=<ExpBackward0>)
+valid_loss: 1.86e+00
+Iter 4
+targets: tensor([    0.0000,     0.0000,     1.0000,     0.0000,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0')
+outputs: tensor([    0.0000,     0.0004,     0.9996,     0.0000,     0.0000,     0.0000,     0.0000,     0.0000], device='cuda:0', grad_fn=<ExpBackward0>)
+train_loss: 4.73e-01
+targets: tensor([    0.3333,     0.0001,     0.3333,     0.0000,     0.0000,     0.0000,     0.0000,     0.3333], device='cuda:0')
+outputs: tensor([    0.0006,     0.0002,     0.1138,     0.0000,     0.0003,     0.0000,     0.0694,     0.8158], device='cuda:0', grad_fn=<ExpBackward0>)
+valid_loss: 1.90e+00
