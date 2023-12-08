@@ -370,13 +370,13 @@ def libera_me():
     print("y_v", y_v)
     '''
 
-train_alpha_zero()
+#train_alpha_zero()
 
 #get_optimal_ordering(False)
 #test_alpha_zero_with_mcts(True, "nfa", False)
 #print("done")
-#test_alpha_zero_without_mcts(True, "nfa", False)
-#test_alpha_zero_without_mcts(False, "nfa", False)
+test_alpha_zero_without_mcts(True, "nfa", True)
+test_alpha_zero_without_mcts(False, "nfa", True)
 
-#test_heuristics(True, "nfa", False)
-#test_heuristics(False, "nfa", False)
+#test_heuristics(True, "nfa", True)
+#test_heuristics(False, "nfa", True)

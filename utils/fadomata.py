@@ -1,4 +1,5 @@
 from queue import Queue
+from collections import deque
 import copy
 import random
 
@@ -9,6 +10,25 @@ from utils.CToken import *
 from utils.inclusion_checker import *
 
 from config import *
+
+def get_shortest_path(gfa: GFA):
+    def bfs_shortest_distance(gfa, initial, final):
+        queue = deque([initial])
+        visited = set([initial])
+        dist = {initial: 0}
+        while queue:
+            curr = queue.popleft()
+            if curr == final:
+                return dist[curr]
+            for next in gfa.delta[curr]:
+                if next not in visited:
+                    visited.add(next)
+                    queue.append(next)
+                    dist[next] = dist[curr] + 1
+        return -1
+    initial = gfa.Initial
+    final = list(gfa.Final)[0]
+    return bfs_shortest_distance(gfa, initial, final)
 
 def reverse_gfa(gfa: GFA):
     rev = GFA()
@@ -138,26 +158,31 @@ def eliminate(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True):
                 rex = gfa.delta[i][st]
                 #self loop
                 if st in gfa.delta[st]:
-                    rex = reex.CConcat(rex, reex.CStar(gfa.delta[st][st], copy(gfa.Sigma)), copy(gfa.Sigma))
+                    rex = reex.CConcat(rex, reex.CStar(gfa.delta[st][st], copy.copy(gfa.Sigma)), copy.copy(gfa.Sigma))
                 #out transition
-                rex = reex.CConcat(rex, gfa.delta[st][j], copy(gfa.Sigma))
+                rex = reex.CConcat(rex, gfa.delta[st][j], copy.copy(gfa.Sigma))
                 #if there was already transition
                 if j in gfa.delta[i]:
-                    rex = reex.CDisj(gfa.delta[i][j], rex, copy(gfa.Sigma))
+                    rex = reex.CDisj(gfa.delta[i][j], rex, copy.copy(gfa.Sigma))
                 if tokenize and rex.treeLength() > CToken.threshold:
                     gfa.delta[i][j] = CToken(rex)
                 else:
                     gfa.delta[i][j] = rex
                 #deleting st from predecessors happens in deleteState
                 gfa.predecessors[j].add(i)
+        if i != st:
+            del gfa.delta[i][st]
+    for j in gfa.delta[st]:
+        gfa.predecessors[j].remove(st)
     if delete_state:
         gfa.deleteState(st)
     else:
         del gfa.delta[st]
+        del gfa.predecessors[st]
     return gfa
 
-#이제 여기에 predecessor를 추가하면 됩니다 ㅎ
 def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, tokenize: bool=True, minimize: bool=True):
+    global save_count_star, save_count_concat, save_count_disj, all_count_star, all_count_concat, all_count_disj
     if not minimize:
         return eliminate(gfa, st, delete_state, tokenize)
     self_loop = None
@@ -170,6 +195,7 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
         all_count_star += 1
     for i in gfa.predecessors[st]:
         in_transition = copy.copy(gfa.delta[i][st])
+        del gfa.delta[i][st]
         for j in gfa.delta[st]:
             out_transition = copy.copy(gfa.delta[st][j])
             if self_loop:
@@ -224,6 +250,8 @@ def eliminate_with_minimization(gfa: GFA, st: int, delete_state: bool=True, toke
                 else:
                     gfa.delta[i][j] = r
             gfa.predecessors[j].add(i)
+    for j in gfa.delta[st]:
+        gfa.predecessors[j].remove(st)
     if delete_state:
         gfa.deleteState(st)
     else:

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch_geometric.nn.conv import GATv2Conv
+from torch_geometric.nn.pool import global_add_pool, global_max_pool, global_mean_pool
 
 from alpha_zero.utils import *
 
@@ -24,7 +25,7 @@ class EmbeddingWithLSTM(nn.Module):
         return regex
 
 class ForwardBackwardGNN(nn.Module):
-    def __init__(self, load_pretrained_embedding_with_lstm):
+    def __init__(self, load_pretrained_embedding_with_lstm=False):
         super(ForwardBackwardGNN, self).__init__()
         self.state_id_dim = MAX_STATES + 3
         self.initial_and_final_dim = 2
@@ -38,10 +39,11 @@ class ForwardBackwardGNN(nn.Module):
             self.embedding_with_lstm.load_state_dict(torch.load("0.191.pth"))
         self.lin1 = nn.Linear(LSTM_DIMENSION * 2, 32)
         self.lin2 = nn.Linear(32, 1)
+
         self.forward_conv1 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
         self.backward_conv1 = GATv2Conv(self.hidden_vector_dim, self.hidden_vector_dim, add_self_loops=False)
 
-    def forward(self, forward_graph, backward_graph=None):
+    def forward(self, forward_graph, backward_graph):
         forward_edge_attr = self.embedding_with_lstm(forward_graph.edge_attr)
         forward_edge_attr = F.relu(self.lin1(forward_edge_attr))
         forward_graph.edge_attr = torch.flatten(F.relu(self.lin2(forward_edge_attr)))
@@ -69,36 +71,44 @@ class ForwardBackwardGNN(nn.Module):
         return graph
 
 class StateEliminationNNet(nn.Module):
-    def __init__(self):
+    def __init__(self, load_pretrained_embedding_with_lstm=False, load_forward_backward_gnn=False):
         super(StateEliminationNNet, self).__init__()
-        self.forward_backward_gnn = ForwardBackwardGNN()
-        self.forward_backward_gnn.load_state_dict(torch.load("./alpha_zero/state_elimination/state_weight_7.65gnn.pth"))
-        self.lin1 = nn.Linear(428, 256)
-        self.lin2 = nn.Linear(256, 128)
-        self.lin3 = nn.Linear(128, 64)
-        self.lin4 = nn.Linear(64, 32)
-        self.lin5 = nn.Linear(32, 1)
-        self.value_lin1 = nn.Linear(428, 256)
-        self.value_lin2 = nn.Linear(256, 128)
-        self.value_lin3 = nn.Linear(128, 64)
-        self.value_lin4 = nn.Linear(64, 32)
-        self.value_lin5 = nn.Linear(32, 1)
+        self.forward_backward_gnn = ForwardBackwardGNN(load_pretrained_embedding_with_lstm)
+        if load_forward_backward_gnn:
+            self.forward_backward_gnn.load_state_dict(torch.load("./alpha_zero/state_elimination/state_weight_7.65gnn.pth"))
+        #Single: 373
+        #Both: 746
+        self.lin1 = nn.Linear(746, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, 128)
+        self.lin4 = nn.Linear(128, 64)
+        self.lin5 = nn.Linear(64, 32)
+        self.lin6 = nn.Linear(32, 1)
+        self.value_lin1 = nn.Linear(746, 512)
+        self.value_lin2 = nn.Linear(512, 256)
+        self.value_lin3 = nn.Linear(256, 128)
+        self.value_lin4 = nn.Linear(128, 64)
+        self.value_lin5 = nn.Linear(64, 32)
+        self.value_lin6 = nn.Linear(32, 1)
 
     def forward(self, forward_graph, backward_graph=None):
-        final_node_index = torch.flatten(torch.nonzero(forward_graph.x[:, self.forward_backward_gnn.state_id_dim + 1]))
+        #final_node_index = torch.flatten(torch.nonzero(forward_graph.x[:, self.forward_backward_gnn.state_id_dim + 1]))
         graph = self.forward_backward_gnn(forward_graph, backward_graph)
-        final_nodes = graph[final_node_index]
+        final_nodes = global_add_pool(graph, forward_graph.batch)
+        #final_nodes = graph[final_node_index]
         final_nodes = F.relu(self.value_lin1(final_nodes))
         final_nodes = F.relu(self.value_lin2(final_nodes))
         final_nodes = F.relu(self.value_lin3(final_nodes))
         final_nodes = F.relu(self.value_lin4(final_nodes))
-        final_nodes = self.value_lin5(final_nodes)
+        final_nodes = F.relu(self.value_lin5(final_nodes))
+        final_nodes = self.value_lin6(final_nodes)
 
         graph = F.relu(self.lin1(graph))
         graph = F.relu(self.lin2(graph))
         graph = F.relu(self.lin3(graph))
         graph = F.relu(self.lin4(graph))
-        graph = self.lin5(graph)
+        graph = F.relu(self.lin5(graph))
+        graph = self.lin6(graph)
         graph = graph.view(-1, 52)
         
         pi = graph
