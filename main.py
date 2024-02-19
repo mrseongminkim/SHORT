@@ -101,8 +101,9 @@ def test_alpha_zero_without_mcts(model_updated, type, minimize):
     data = load_data(type)
     g = Game()
     nnet = nn(g)
-    assert LOAD_MODEL
-    nnet.load_checkpoint(CHECKPOINT, LOAD_FOLDER_FILE[1])
+    nnet.nnet.load_state_dict(torch.load("./alpha_zero/state_elimination/0.80gnn.pth"))
+    #assert LOAD_MODEL
+    #nnet.load_checkpoint(CHECKPOINT, LOAD_FOLDER_FILE[1])
     exp = [[0, 0] for i in range(N_RANGE)]
     for n in range(N_RANGE):
         for i in range(SAMPLE_SIZE):
@@ -369,6 +370,21 @@ def libera_me():
     print("train_pi", v)
     print("y_v", y_v)
     '''
+
+
+def get_batch_data():
+    from pickle import Pickler
+    data_id = 4
+    g = Game()
+    nnet = nn(g)
+    c = Coach(g, nnet)
+    trainExamplesHistory = c.learn()
+    print(trainExamplesHistory)
+    with open(f"./batch_data/id_{data_id}.pkl", "wb+") as f:
+        Pickler(f).dump(trainExamplesHistory)
+    f.closed
+
+#get_batch_data()
 
 #train_alpha_zero()
 

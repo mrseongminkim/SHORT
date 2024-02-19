@@ -57,16 +57,16 @@ class Coach():
             log.info(f"Starting Iter #{i} ...")
             print(f"Iter {i}")
             if not self.skipFirstSelfPlay or i > 1:
-                iterationTrainExamples = deque([], maxlen=MAXIMUM_LENGTH_OF_QUEUE)
+                iterationTrainExamples = deque([])
                 for _ in tqdm(range(NUMBER_OF_EPISODES), desc="Self Play"):
                     self.mcts = MCTS(self.game, self.nnet)
                     iterationTrainExamples += self.executeEpisode()
                 self.trainExamplesHistory.append(iterationTrainExamples)
-            if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
-                log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
-                self.trainExamplesHistory.pop(0)
+            #if len(self.trainExamplesHistory) > NUMBER_OF_ITERATIONS_FOR_TRAIN_EXAMPLES_HISTORY:
+            #    log.warning(f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
+            #    self.trainExamplesHistory.pop(0)
             if i % 100 == 0 or i == 1:
-                self.saveTrainExamples(i - 1)
+                self.saveTrainExamples(i)
             trainExamples = []
             for e in self.trainExamplesHistory:
                 trainExamples.extend(e)
